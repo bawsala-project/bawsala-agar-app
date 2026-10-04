@@ -1,0 +1,48 @@
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
+import type { Tables } from "@/types/database";
+
+export const ALLOWED_CITIES = [
+  "الرياض",
+  "جدة",
+  "الدمام",
+  "الخبر",
+  "مكة المكرمة",
+  "المدينة المنورة",
+] as const;
+
+export type AllowedCity = (typeof ALLOWED_CITIES)[number];
+
+export async function ensureSession(): Promise<User> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    return user;
+  }
+
+  const { data, error } = await supabase.auth.signInAnonymously();
+  if (error || !data.user) {
+    throw new Error(error?.message || "Failed to create anonymous session");
+  }
+
+  return data.user;
+}
+
+export async function requireCase(caseId: string): Promise<Tables<"decision_cases">> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("decision_cases")
+    .select("*")
+    .eq("id", caseId)
+    .single();
+
+  if (error || !data) {
+    notFound();
+  }
+
+  return data;
+}
