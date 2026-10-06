@@ -264,7 +264,7 @@ export default function PropertyDetailPage() {
             }}
           >
             <div className="w-12 h-1.5 rounded-full bg-[#130F08]/20 hover:bg-[#130F08]/40 transition-colors" />
-            <div className="flex items-center gap-1 mt-1 text-[10px] text-[#130F08]/50">
+            <div className="flex items-center gap-1 mt-1 text-[10px] text-[#130F08]/75">
               <span>{sheetSnap === "peek" ? "اسحب للتفاصيل" : sheetSnap === "half" ? "اسحب للتوسيع" : "اسحب للأسفل"}</span>
               {sheetSnap === "peek" ? <ChevronUp className="w-3 h-3" /> : sheetSnap === "full" ? <ChevronDown className="w-3 h-3" /> : null}
             </div>
@@ -274,7 +274,9 @@ export default function PropertyDetailPage() {
           <div className="px-5 pt-1 pb-3 flex items-baseline justify-between border-b border-[#E9DFD0]/60">
             <div>
               <h1 className="text-lg font-bold text-[#130F08]">{property.title}</h1>
-              <p className="text-xs text-[#130F08]/65">{property.district} • {property.areaM2} م² • {property.rooms} غرف</p>
+              <p className="text-xs text-[#130F08]/75">
+                {property.district} • <bdi dir="ltr">{property.areaM2} م²</bdi> • <bdi dir="ltr">{property.rooms} غرف</bdi>
+              </p>
             </div>
             <div className="text-left">
               <BdiNumber
@@ -282,7 +284,7 @@ export default function PropertyDetailPage() {
                 unit="ر.س"
                 className="text-xl font-bold text-[#130F08]"
               />
-              <span className="text-[11px] text-[#130F08]/60 block">سنوي</span>
+              <span className="text-[11px] text-[#130F08]/75 block">سنوي</span>
             </div>
           </div>
 
@@ -302,7 +304,7 @@ export default function PropertyDetailPage() {
                     className={`h-11 px-4 text-xs font-semibold rounded-full transition-all cursor-pointer flex items-center justify-center ${
                       isActive
                         ? "bg-[#130F08] text-[#FAF6EF] shadow-sm"
-                        : "bg-[#E9DFD0]/50 text-[#130F08]/75 hover:bg-[#E9DFD0] hover:text-[#130F08]"
+                        : "bg-[#E9DFD0]/50 text-[#130F08]/80 hover:bg-[#E9DFD0] hover:text-[#130F08]"
                     }`}
                   >
                     {tab.label}
@@ -320,7 +322,7 @@ export default function PropertyDetailPage() {
                 <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between shadow-xs">
                   <div>
                     <span className="text-xs font-semibold text-[#130F08] block">سقف الميزانية</span>
-                    <span className="text-xs text-[#130F08]/65">
+                    <span className="text-xs text-[#130F08]/75">
                       {property.isOverBudget ? `تجاوز (${property.budgetDelta})` : "مطابق للسقف تماماً"}
                     </span>
                   </div>
@@ -333,8 +335,8 @@ export default function PropertyDetailPage() {
                 <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between shadow-xs">
                   <div>
                     <span className="text-xs font-semibold text-[#130F08] block">القرب من العمل</span>
-                    <span className="text-xs text-[#130F08]/65">
-                      {property.travelTimeWorkMin} دقيقة عبر المسار المعتاد
+                    <span className="text-xs text-[#130F08]/75">
+                      <bdi dir="ltr">{property.travelTimeWorkMin} دقيقة</bdi> عبر المسار المعتاد
                     </span>
                   </div>
                   <FitArc
@@ -346,7 +348,9 @@ export default function PropertyDetailPage() {
                 <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between shadow-xs">
                   <div>
                     <span className="text-xs font-semibold text-[#130F08] block">عدد الغرف</span>
-                    <span className="text-xs text-[#130F08]/65">{property.rooms} غرف نوم وصالة</span>
+                    <span className="text-xs text-[#130F08]/75">
+                      <bdi dir="ltr">{property.rooms}</bdi> غرف نوم وصالة
+                    </span>
                   </div>
                   <FitArc level="excellent" label="ممتاز" />
                 </div>
@@ -361,7 +365,7 @@ export default function PropertyDetailPage() {
                     خريطة الموقع التفاعلية ومسار العمل:
                   </span>
                   <span className="font-semibold text-[#14756E] px-2.5 py-0.5 rounded-full bg-[#14756E]/10">
-                    {property.travelTimeWorkMin} دقيقة للعمل
+                    <bdi dir="ltr">{property.travelTimeWorkMin} دقيقة</bdi> للعمل
                   </span>
                 </div>
 
@@ -374,7 +378,7 @@ export default function PropertyDetailPage() {
                   />
                 </div>
 
-                <div className="p-3 rounded-xl bg-white/70 border border-[#E9DFD0] text-xs text-[#130F08]/80 leading-relaxed">
+                <div className="p-3.5 rounded-2xl bg-white/80 border border-[#E9DFD0] text-xs text-[#130F08]/80 leading-relaxed">
                   يقع العقار في {property.district}، ضمن نطاق دائرة الوصول المستهدفة نحو مركز الملك عبد الله المالي (KAFD) دون اختناقات رئيسية.
                 </div>
               </div>
@@ -388,17 +392,17 @@ export default function PropertyDetailPage() {
                     <span className="text-xs font-semibold text-[#130F08] block">
                       غير كافٍ للتقدير الإحصائي
                     </span>
-                    <p className="text-xs text-[#130F08]/70 leading-relaxed">
+                    <p className="text-xs text-[#130F08]/75 leading-relaxed">
                       الصفقات الموثقة في هذا المربع العقاري قليلة جداً حالياً.
                     </p>
                   </div>
                 ) : (
                   <div className="p-4 rounded-2xl bg-white border border-[#E9DFD0] space-y-2 shadow-xs">
-                    <span className="text-xs text-[#130F08]/65 block font-medium">النطاق السعري الاسترشادي للمتر</span>
+                    <span className="text-xs text-[#130F08]/75 block font-medium">النطاق السعري الاسترشادي للمتر</span>
                     <span className="text-base font-semibold text-[#130F08] block tabular-nums">
                       {property.fairPriceRange}
                     </span>
-                    <div className="text-xs text-[#130F08]/75 pt-1 border-t border-[#E9DFD0]/60">
+                    <div className="text-xs text-[#130F08]/80 pt-1 border-t border-[#E9DFD0]/60">
                       سعر المتر التقريبي: <BdiNumber value={formatNumber(Math.round(property.price / property.areaM2))} unit="ر.س" />
                     </div>
                   </div>
@@ -418,11 +422,11 @@ export default function PropertyDetailPage() {
                   .map((fact) => (
                     <div
                       key={fact.id}
-                      className="p-3.5 rounded-xl bg-white/70 border border-[#E9DFD0] flex items-start justify-between text-xs"
+                      className="p-3.5 rounded-2xl bg-white/70 border border-[#E9DFD0] flex items-start justify-between text-xs"
                     >
                       <div>
                         <span className="font-semibold text-[#130F08] block">{fact.label}</span>
-                        <p className="text-xs text-[#130F08]/75 mt-0.5">{fact.value}</p>
+                        <p className="text-xs text-[#130F08]/80 mt-0.5">{fact.value}</p>
                       </div>
                       <CertaintyChip level={fact.certainty} size="sm" variant="paper" />
                     </div>
@@ -445,7 +449,7 @@ export default function PropertyDetailPage() {
                     return (
                       <div
                         key={fact.id}
-                        className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                        className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
                           isConflict
                             ? "bg-[#C2643A]/10 border-[#C2643A]/40 text-[#130F08]"
                             : "bg-white/70 border-[#E9DFD0] text-[#130F08]"
