@@ -1,283 +1,276 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Lock, Edit3, SlidersHorizontal, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Lock, Edit3, ArrowRight, ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { GlassSheet } from "@/components/ui/GlassSheet";
-import { OnboardingCTA } from "@/components/ui/OnboardingCTA";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { useAppStore } from "@/lib/store";
 import { COPY } from "@/lib/copy";
-import { BdiNumber, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 
 export default function NeedsPage() {
+  const router = useRouter();
   const { userNeed, updateHardBudget, updatePreferencePriority } = useAppStore();
-  const [editingBudget, setEditingBudget] = useState(false);
-  const [editingPref, setEditingPref] = useState<string | null>(null);
+  const [isEditingSheetOpen, setIsEditingSheetOpen] = useState(false);
+  const [editingTarget, setEditingTarget] = useState<"budget" | "proximity" | "bedrooms">("budget");
   const [tempBudget, setTempBudget] = useState(userNeed.hardConstraint.numericBudget);
 
-  const activePref = userNeed.preferences.find((p) => p.id === editingPref);
+  const handleOpenEdit = (target: "budget" | "proximity" | "bedrooms") => {
+    setEditingTarget(target);
+    setTempBudget(userNeed.hardConstraint.numericBudget);
+    setIsEditingSheetOpen(true);
+  };
 
   const handleSaveBudget = () => {
     updateHardBudget(tempBudget);
-    setEditingBudget(false);
+    setIsEditingSheetOpen(false);
   };
 
   return (
-    <AppShell showStepper activeStep="needs">
-      <div className="px-5 py-6 flex-1 flex flex-col justify-between max-w-md mx-auto w-full" dir="rtl">
-        <div className="space-y-6">
-          {/* Headline and Subtitle */}
-          <div className="space-y-1.5 text-right">
-            <span className="eyebrow-caption text-[#130F08]/65 block font-medium">
-              الخطوة 01 // مراجعة الشروط
+    <AppShell hideTopBar>
+      {/* Header: Back Arrow, Headline, 5-Segment Progress Bar */}
+      <header className="sticky top-0 z-40 w-full bg-[#FAF6EF]/92 backdrop-blur-md border-b border-[#E9DFD0]/70 px-4 sm:px-5 pt-3 pb-2.5 space-y-2" dir="rtl">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 text-[#130F08] hover:bg-[#E9DFD0]/60 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
+            aria-label="الرجوع للخلف"
+          >
+            <ArrowRight className="w-5 h-5 text-[#130F08]" />
+          </button>
+
+          {/* 1 Headline: "ما فهمناه من طلبك" */}
+          <h1 className="text-base font-semibold text-[#130F08]">
+            {COPY.needs.title}
+          </h1>
+
+          <div className="w-10 h-10" />
+        </div>
+
+        {/* 1 Supporting Line: 5-Segment Progress Bar */}
+        <div className="flex items-center justify-between text-xs text-[#130F08]/65 font-medium">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 w-20" dir="rtl">
+              {[1, 2, 3, 4, 5].map((step) => (
+                <div
+                  key={step}
+                  className={`h-1 flex-1 rounded-full ${
+                    step <= 1 ? "bg-[#130F08]" : "bg-[#E9DFD0]"
+                  }`}
+                />
+              ))}
+            </div>
+            <span>
+              <bdi dir="ltr">1 من 5</bdi>
             </span>
-            <h1 className="text-2xl md:text-[28px] font-semibold text-[#130F08]">
-              {COPY.needs.title}
-            </h1>
-            <p className="text-xs text-[#130F08]/70 leading-relaxed">
-              {COPY.needs.subtitle}
-            </p>
           </div>
 
-          {/* 1. Hard Constraint Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-2"
+          <span className="text-[11px] text-[#130F08]/60">
+            {COPY.needs.subtitle}
+          </span>
+        </div>
+      </header>
+
+      {/* Main Body (Strictly Max 3 Content Blocks) */}
+      <div className="px-4 sm:px-5 pt-4 pb-32 flex-1 flex flex-col justify-between max-w-md mx-auto w-full" dir="rtl">
+        <div className="space-y-4">
+          {/* Content Block 1: One Hero Card for Hard Constraint */}
+          <div
+            className="p-5 rounded-3xl border border-[#E9DFD0] shadow-sm relative overflow-hidden text-right"
+            style={{
+              background: "linear-gradient(135deg, #FAF6EF 0%, #E9DFD0 100%)",
+            }}
           >
-            <div className="flex items-center justify-between text-xs text-[#130F08]/65 px-1">
-              <span className="font-semibold text-[#130F08] flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-[#14756E]" />
-                <span>{COPY.needs.hardConstraintHeader}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#130F08]/70 font-medium">
+                    {userNeed.hardConstraint.title}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#14756E]/12 text-[#14756E] border border-[#14756E]/30">
+                    شرط قاطع
+                  </span>
+                </div>
+
+                <div className="pt-0.5">
+                  <bdi dir="ltr" className="text-3xl sm:text-4xl text-[#130F08] font-bold tabular-nums block leading-none">
+                    {formatNumber(userNeed.hardConstraint.numericBudget)} <span className="text-sm font-medium text-[#130F08]/70">ر.س</span>
+                  </bdi>
+                </div>
+              </div>
+
+              <div className="w-11 h-11 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shrink-0 shadow-xs">
+                <Lock className="w-5 h-5 text-[#14756E]" />
+              </div>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-[#130F08]/10 flex items-center justify-between text-xs">
+              <span className="text-[#130F08]/75">
+                {COPY.needs.hardConstraintTip}
               </span>
               <button
                 type="button"
-                onClick={() => {
-                  setTempBudget(userNeed.hardConstraint.numericBudget);
-                  setEditingBudget(true);
-                }}
-                className="inline-flex items-center gap-1 text-xs text-[#14756E] hover:underline transition-colors cursor-pointer font-medium"
+                onClick={() => handleOpenEdit("budget")}
+                className="inline-flex items-center gap-1 font-semibold text-[#14756E] hover:underline cursor-pointer min-h-[36px] px-2 py-1"
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                <span>تعديل السقف</span>
+                <span>تعديل</span>
               </button>
             </div>
+          </div>
 
-            {/* Filled Hero Card with Ivory-to-Sand Gradient */}
-            <div
-              className="relative p-6 rounded-3xl overflow-hidden text-right border border-[#E9DFD0] shadow-sm"
-              style={{
-                background: "linear-gradient(135deg, #FAF6EF 0%, #E9DFD0 100%)",
-              }}
-            >
-              <div className="relative z-10 flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[#130F08]/65 block font-medium">
-                      {userNeed.hardConstraint.title}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#14756E]/12 text-[#14756E] border border-[#14756E]/30">
-                      شرط قاطع
-                    </span>
-                  </div>
-
-                  {/* Budget with Tabular Numerals wrapped in BdiNumber */}
-                  <div className="pt-1 pb-1">
-                    <BdiNumber
-                      value={formatNumber(userNeed.hardConstraint.numericBudget)}
-                      unit="ر.س"
-                      className="text-3xl sm:text-4xl text-[#130F08] font-semibold tracking-normal block leading-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Tactile Lock Glyph Emblem */}
-                <div className="w-12 h-12 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shrink-0 shadow-xs">
-                  <Lock className="w-5 h-5 text-[#14756E]" />
-                </div>
+          {/* Content Block 2: Preference Row 1 (Simple Row) */}
+          {userNeed.preferences[0] && (
+            <div className="p-4 rounded-2xl glass-light border border-[#E9DFD0] flex items-center justify-between shadow-2xs">
+              <div className="text-right space-y-0.5">
+                <span className="text-xs text-[#130F08]/65 block font-medium">
+                  {userNeed.preferences[0].title}
+                </span>
+                <span className="text-sm font-semibold text-[#130F08] block">
+                  {userNeed.preferences[0].value}
+                </span>
               </div>
+              <button
+                type="button"
+                onClick={() => handleOpenEdit("proximity")}
+                className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] hover:bg-white active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
+                title="تعديل التفضيل"
+                aria-label="تعديل التفضيل"
+              >
+                <Edit3 className="w-4 h-4 text-[#14756E]" />
+              </button>
+            </div>
+          )}
 
-              <div className="relative z-10 mt-4 pt-3 border-t border-[#130F08]/10 flex items-center justify-between text-xs text-[#130F08]/75">
-                <p className="leading-relaxed">
-                  {COPY.needs.hardConstraintTip}
-                </p>
+          {/* Content Block 3: Preference Row 2 (Simple Row) */}
+          {userNeed.preferences[1] && (
+            <div className="p-4 rounded-2xl glass-light border border-[#E9DFD0] flex items-center justify-between shadow-2xs">
+              <div className="text-right space-y-0.5">
+                <span className="text-xs text-[#130F08]/65 block font-medium">
+                  {userNeed.preferences[1].title}
+                </span>
+                <span className="text-sm font-semibold text-[#130F08] block">
+                  {userNeed.preferences[1].value}
+                </span>
               </div>
+              <button
+                type="button"
+                onClick={() => handleOpenEdit("bedrooms")}
+                className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] hover:bg-white active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
+                title="تعديل التفضيل"
+                aria-label="تعديل التفضيل"
+              >
+                <Edit3 className="w-4 h-4 text-[#14756E]" />
+              </button>
             </div>
-          </motion.div>
-
-          {/* 2. Preferences Cards: Glass cards with 3-dot priority control and edit trigger */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.16, duration: 0.45 }}
-            className="space-y-3"
-          >
-            <div className="flex items-center justify-between text-xs text-[#130F08]/65 px-1">
-              <span className="font-semibold text-[#130F08]">{COPY.needs.preferencesHeader}</span>
-              <span className="text-xs text-[#130F08]/65">{COPY.needs.preferencesTip}</span>
-            </div>
-
-            {userNeed.preferences.map((pref) => {
-              const activeDotsCount =
-                pref.priority === "high" ? 3 : pref.priority === "medium" ? 2 : 1;
-
-              return (
-                <GlassCard
-                  key={pref.id}
-                  variant="light"
-                  className="p-4 flex items-center justify-between transition-all hover:border-[#130F08]/25 group shadow-xs"
-                >
-                  <div className="space-y-1.5 text-right flex-1 min-w-0 pr-1">
-                    <span className="text-xs text-[#130F08]/65 block font-medium">
-                      {pref.title}
-                    </span>
-                    <span className="text-sm font-semibold text-[#130F08] block truncate">
-                      {pref.value}
-                    </span>
-
-                    {/* 3-Dot Priority Interactive Selector */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <div className="flex items-center gap-1.5 bg-white/70 px-2.5 py-1 rounded-full border border-[#130F08]/10">
-                        {(["low", "medium", "high"] as const).map((pLevel, dotIdx) => {
-                          const isDotActive = dotIdx < activeDotsCount;
-                          return (
-                            <button
-                              key={pLevel}
-                              type="button"
-                              onClick={() => updatePreferencePriority(pref.id, pLevel)}
-                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                                isDotActive
-                                  ? "bg-[#14756E] scale-110 shadow-xs"
-                                  : "bg-[#130F08]/20 hover:bg-[#130F08]/40"
-                              }`}
-                              title={`تعيين الأولوية كـ ${pLevel}`}
-                              aria-label={`تحديد ${pLevel}`}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      <span className="text-xs text-[#130F08]/75 font-medium">
-                        {pref.priorityLabel}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Edit Pencil Button -> 48px glass circle */}
-                  <button
-                    type="button"
-                    onClick={() => setEditingPref(pref.id)}
-                    className="w-11 h-11 rounded-full glass-light border border-[#130F08]/10 text-[#130F08] hover:bg-[#E9DFD0]/60 flex items-center justify-center cursor-pointer transition-colors active:scale-95 shrink-0 mr-3 shadow-xs"
-                    title="تعديل هذا التفضيل"
-                    aria-label={`تعديل ${pref.title}`}
-                  >
-                    <Edit3 className="w-4 h-4 text-[#130F08]" />
-                  </button>
-                </GlassCard>
-              );
-            })}
-
-            <p className="text-xs text-[#130F08]/65 text-center pt-2">
-              {COPY.needs.footerNotice}
-            </p>
-          </motion.div>
+          )}
         </div>
 
-        {/* Sticky Action Footer */}
-        <div className="pt-6 pb-2">
-          <OnboardingCTA
+        {/* 1 Primary Brass CTA (min 48px height) */}
+        <div className="pt-6">
+          <PrimaryButton
             label={COPY.needs.cta}
-            href="/case/demo/properties"
+            onClick={() => router.push("/case/demo/properties")}
+            size="56"
+            className="w-full shadow-lg"
           />
         </div>
       </div>
 
-      {/* GlassSheet for Editing Budget */}
+      {/* Edit Sheet */}
       <GlassSheet
-        isOpen={editingBudget}
-        onClose={() => setEditingBudget(false)}
-        title="تعديل الميزانية القصوى"
-        subtitle="الشرط الصارم غير القابل للتفاوض في المفاضلة"
+        isOpen={isEditingSheetOpen}
+        onClose={() => setIsEditingSheetOpen(false)}
+        title={COPY.needs.sheetTitle}
+        subtitle={COPY.needs.sheetSubtitle}
+        variant="light"
         initialSnap="half"
       >
-        <div className="space-y-6 pt-2">
-          {/* Display Amount */}
-          <div className="p-5 rounded-2xl bg-white border border-[#E9DFD0] text-center space-y-1 shadow-xs">
-            <span className="text-xs text-[#130F08]/65 block font-medium">السقف المالي المعتمد</span>
-            <BdiNumber
-              value={formatNumber(tempBudget)}
-              unit="ر.س"
-              className="text-3xl font-semibold text-[#130F08] block"
-            />
-          </div>
+        <div className="space-y-4 text-right" dir="rtl">
+          {editingTarget === "budget" && (
+            <div className="space-y-3">
+              <label className="text-xs font-semibold text-[#130F08] block">
+                تعديل سقف الميزانية الصارم:
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step="50000"
+                  min="300000"
+                  max="5000000"
+                  value={tempBudget}
+                  onChange={(e) => setTempBudget(Number(e.target.value))}
+                  className="flex-1 min-h-[48px] px-4 rounded-xl border border-[#E9DFD0] bg-white text-base font-semibold text-[#130F08] tabular-nums focus:outline-none"
+                />
+                <span className="text-xs font-semibold text-[#130F08]/70">ر.س</span>
+              </div>
 
-          {/* Interactive Range Slider */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-[#130F08]/65 font-medium">
-              <span>700 ألف</span>
-              <span>1.5 مليون</span>
+              <div className="pt-2">
+                <PrimaryButton
+                  label="حفظ السقف الجديد"
+                  onClick={handleSaveBudget}
+                  size="48"
+                  className="w-full"
+                />
+              </div>
             </div>
-            <input
-              type="range"
-              min={700000}
-              max={1500000}
-              step={25000}
-              value={tempBudget}
-              onChange={(e) => setTempBudget(Number(e.target.value))}
-              className="w-full h-2 rounded-lg bg-[#E9DFD0] appearance-none cursor-pointer accent-[#14756E]"
-            />
-          </div>
+          )}
 
-          <PrimaryButton
-            onClick={handleSaveBudget}
-            fullWidth
-            label="حفظ الميزانية الجديدة"
-          />
+          {editingTarget === "proximity" && (
+            <div className="space-y-3">
+              <span className="text-xs font-semibold text-[#130F08] block">
+                تحديد أولوية القرب من مقر العمل:
+              </span>
+              {(["high", "medium", "low"] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => {
+                    updatePreferencePriority("proximity", lvl);
+                    setIsEditingSheetOpen(false);
+                  }}
+                  className="w-full min-h-[48px] p-3 rounded-xl border border-[#E9DFD0] bg-white hover:bg-[#FAF6EF] flex items-center justify-between text-xs font-semibold text-[#130F08] cursor-pointer"
+                >
+                  <span>
+                    {lvl === "high" ? "أولوية قصوى (حتى 15 دقيقة)" : lvl === "medium" ? "أولوية متوسطة (حتى 25 دقيقة)" : "أولوية عادية (حتى 35 دقيقة)"}
+                  </span>
+                  <span className="text-[11px] text-[#14756E]">
+                    {lvl === "high" ? "مرتفعة" : lvl === "medium" ? "متوسطة" : "منخفضة"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {editingTarget === "bedrooms" && (
+            <div className="space-y-3">
+              <span className="text-xs font-semibold text-[#130F08] block">
+                تحديد عدد الغرف المطلوب:
+              </span>
+              {(["high", "medium", "low"] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => {
+                    updatePreferencePriority("bedrooms", lvl);
+                    setIsEditingSheetOpen(false);
+                  }}
+                  className="w-full min-h-[48px] p-3 rounded-xl border border-[#E9DFD0] bg-white hover:bg-[#FAF6EF] flex items-center justify-between text-xs font-semibold text-[#130F08] cursor-pointer"
+                >
+                  <span>
+                    {lvl === "high" ? "3 غرف نوم مؤكدة (شرط أساسي)" : lvl === "medium" ? "3 غرف نوم مفضلة" : "غرفتان أو أكثر"}
+                  </span>
+                  <span className="text-[11px] text-[#14756E]">
+                    {lvl === "high" ? "مرتفعة" : lvl === "medium" ? "متوسطة" : "منخفضة"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </GlassSheet>
-
-      {/* GlassSheet for Editing Preferences */}
-      <GlassSheet
-        isOpen={!!editingPref}
-        onClose={() => setEditingPref(null)}
-        title={activePref ? `تعديل: ${activePref.title}` : "تعديل التفضيل"}
-        subtitle="اختر مستوى الأهمية لتوجيه الترتيب"
-        initialSnap="peek"
-      >
-        {activePref && (
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              {(["high", "medium", "low"] as const).map((level) => {
-                const isCurrent = activePref.priority === level;
-                const label =
-                  level === "high" ? "أولوية مرتفعة" : level === "medium" ? "أولوية متوسطة" : "أولوية منخفضة";
-
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => {
-                      updatePreferencePriority(activePref.id, level);
-                      setEditingPref(null);
-                    }}
-                    className={`w-full p-4 rounded-2xl border text-right flex items-center justify-between transition-colors cursor-pointer ${
-                      isCurrent
-                        ? "bg-[#FAF6EF] border-[#14756E] text-[#14756E] font-semibold"
-                        : "glass-light border-[#130F08]/10 text-[#130F08] hover:bg-[#E9DFD0]/60"
-                    }`}
-                  >
-                    <span>{label}</span>
-                    {isCurrent && <Check className="w-4 h-4 text-[#14756E]" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </GlassSheet>
     </AppShell>
   );
