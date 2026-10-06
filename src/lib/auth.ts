@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { User } from "@supabase/supabase-js";
-import type { Tables } from "@/types/database";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { Database, Tables } from "@/types/database";
 
 export const ALLOWED_CITIES = [
   "الرياض",
@@ -32,8 +32,11 @@ export async function ensureSession(): Promise<User> {
   return data.user;
 }
 
-export async function requireCase(caseId: string): Promise<Tables<"decision_cases">> {
-  const supabase = createClient();
+export async function requireCase(
+  caseId: string,
+  client?: SupabaseClient<Database>
+): Promise<Tables<"decision_cases">> {
+  const supabase = client ?? createClient();
   const { data, error } = await supabase
     .from("decision_cases")
     .select("*")

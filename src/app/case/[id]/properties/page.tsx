@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createSignedImageUrls } from "@/lib/storage";
 import { PropertiesView } from "./properties-view";
 
+export const maxDuration = 60;
+
 export default async function PropertiesPage({
   params,
 }: {
@@ -21,10 +23,20 @@ export default async function PropertiesPage({
     redirect(`/case/${params.id}/needs`);
   }
 
-  // Fetch properties
+  // Fetch properties with latest extraction runs and extracted facts
   const { data: properties } = await supabase
     .from("properties")
-    .select("*")
+    .select(`
+      *,
+      extraction_runs (
+        id,
+        status,
+        error_code,
+        started_at,
+        finished_at
+      ),
+      property_facts (*)
+    `)
     .eq("case_id", params.id)
     .order("created_at", { ascending: true });
 

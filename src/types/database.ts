@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -39,6 +39,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_runs: {
+        Row: {
+          base_state_version: number
+          case_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          model: string | null
+          outcome_code: string | null
+          prompt_version: string | null
+          status: string
+        }
+        Insert: {
+          base_state_version: number
+          case_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          model?: string | null
+          outcome_code?: string | null
+          prompt_version?: string | null
+          status: string
+        }
+        Update: {
+          base_state_version?: number
+          case_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          model?: string | null
+          outcome_code?: string | null
+          prompt_version?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_runs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "decision_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_cases: {
         Row: {
           city: string
@@ -71,6 +115,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      extraction_runs: {
+        Row: {
+          error_code: string | null
+          finished_at: string | null
+          id: string
+          model: string | null
+          prompt_version: string | null
+          property_id: string
+          source_snapshot: string | null
+          started_at: string
+          status: string
+        }
+        Insert: {
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          model?: string | null
+          prompt_version?: string | null
+          property_id: string
+          source_snapshot?: string | null
+          started_at?: string
+          status: string
+        }
+        Update: {
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          model?: string | null
+          prompt_version?: string | null
+          property_id?: string
+          source_snapshot?: string | null
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraction_runs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
@@ -128,6 +216,129 @@ export type Database = {
           },
         ]
       }
+      property_assessments: {
+        Row: {
+          constraint_results: Json
+          created_at: string
+          evidence_fields: string[]
+          fit_rating: string
+          fit_summary: string
+          id: string
+          key_unknowns: Json
+          price_per_sqm: number | null
+          property_id: string
+          risks: Json
+          run_id: string
+          strengths: Json
+          visit_priority: string
+          visit_priority_reason: string
+        }
+        Insert: {
+          constraint_results: Json
+          created_at?: string
+          evidence_fields: string[]
+          fit_rating: string
+          fit_summary: string
+          id?: string
+          key_unknowns: Json
+          price_per_sqm?: number | null
+          property_id: string
+          risks: Json
+          run_id: string
+          strengths: Json
+          visit_priority: string
+          visit_priority_reason: string
+        }
+        Update: {
+          constraint_results?: Json
+          created_at?: string
+          evidence_fields?: string[]
+          fit_rating?: string
+          fit_summary?: string
+          id?: string
+          key_unknowns?: Json
+          price_per_sqm?: number | null
+          property_id?: string
+          risks?: Json
+          run_id?: string
+          strengths?: Json
+          visit_priority?: string
+          visit_priority_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_assessments_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_assessments_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_facts: {
+        Row: {
+          created_at: string
+          evidence_text: string | null
+          evidence_verified: boolean
+          extraction_run_id: string | null
+          field: string
+          id: string
+          property_id: string
+          raw_text: string | null
+          scope: string
+          source: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          evidence_text?: string | null
+          evidence_verified?: boolean
+          extraction_run_id?: string | null
+          field: string
+          id?: string
+          property_id: string
+          raw_text?: string | null
+          scope: string
+          source: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          evidence_text?: string | null
+          evidence_verified?: boolean
+          extraction_run_id?: string | null
+          field?: string
+          id?: string
+          property_id?: string
+          raw_text?: string | null
+          scope?: string
+          source?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_facts_extraction_run_id_fkey"
+            columns: ["extraction_run_id"]
+            isOneToOne: false
+            referencedRelation: "extraction_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_facts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requirements: {
         Row: {
           case_id: string
@@ -180,7 +391,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      commit_analysis: {
+        Args: { p_assessments: Json; p_run_id: string }
+        Returns: string
+      }
       delete_case: { Args: { case_id: string }; Returns: undefined }
+      replace_extracted_facts: {
+        Args: { p_facts: Json; p_run_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

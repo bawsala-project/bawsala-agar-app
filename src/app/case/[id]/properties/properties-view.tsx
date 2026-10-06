@@ -8,17 +8,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { formatSAR } from "@/lib/utils";
-import { addProperty, removeProperty, PropertyActionState } from "@/actions/properties";
+import { addProperty, removeProperty, retryExtraction, PropertyActionState } from "@/actions/properties";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, uploadPropertyImage } from "@/lib/storage";
+import { resolveFacts, PropertyFact } from "@/lib/evidence/resolve";
 import type { Database } from "@/types/database";
 
 type PropertyRow = Database["public"]["Tables"]["properties"]["Row"];
 
+export type PropertyWithExtraction = PropertyRow & {
+  extraction_runs?: Array<{
+    id: string;
+    status: string;
+    error_code: string | null;
+    started_at: string;
+    finished_at: string | null;
+  }>;
+  property_facts?: PropertyFact[];
+};
+
 interface PropertiesViewProps {
   caseId: string;
   userId: string;
-  properties: PropertyRow[];
+  properties: PropertyWithExtraction[];
   signedThumbnails: Record<string, string>;
 }
 
@@ -51,6 +63,49 @@ function getUrlHost(urlString: string | null): string {
   } catch {
     return urlString;
   }
+}
+
+function RetryExtractionButton({
+  caseId,
+  propertyId,
+  label = "إعادة المحاولة",
+}: {
+  caseId: string;
+  propertyId: string;
+  label?: string;
+}) {
+  const [pending, startTransition] = React.useTransition();
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleRetry = () => {
+    setError(null);
+    startTransition(async () => {
+      const res = await retryExtraction(caseId, propertyId);
+      if (!res.success && res.error) {
+        if (res.error === "attempt_limit") {
+          setError("الحد الأقصى 5 محاولات");
+        } else {
+          setError("فشلت المحاولة");
+        }
+      }
+    });
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1.5">
+      <Button
+        type="button"
+        variant="secondary"
+        pending={pending}
+        disabled={pending}
+        onClick={handleRetry}
+        className="text-xs px-2.5 py-1 h-auto"
+      >
+        {label}
+      </Button>
+      {error && <span className="text-[11px] text-red-600 font-medium">{error}</span>}
+    </div>
+  );
 }
 
 export function PropertiesView({
@@ -231,9 +286,12 @@ export function PropertiesView({
                         <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">
                           {modeLabel}
                         </span>
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                        <Link
+                          href={`/case/${caseId}/properties/${p.id}`}
+                          className="text-sm sm:text-base font-bold text-gray-900 hover:text-blue-600 truncate transition-colors inline-block"
+                        >
                           {displayName}
-                        </h3>
+                        </Link>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs text-gray-600">
@@ -252,19 +310,97 @@ export function PropertiesView({
                       {p.notes && p.input_mode !== "image" && (
                         <p className="text-xs text-gray-500 mt-1 truncate">{p.notes}</p>
                       )}
+
+                      {/* Extraction Status & Summary */}
+                      {(() => {
+                        const latestRun =
+                          p.extraction_runs && p.extraction_runs.length > 0
+                            ? [...p.extraction_runs].sort(
+                                (a, b) =>
+                                  new Date(b.started_at).getTime() -
+                                  new Date(a.started_at).getTime()
+                              )[0]
+                            : null;
+                        const factsCount = p.property_facts?.length ?? 0;
+                        const resolved = resolveFacts(p.property_facts || []);
+                        const conflictingCount = Object.values(resolved.fields).filter(
+                          (f) => f.status === "conflicting"
+                        ).length;
+                        const unknownCount = Object.values(resolved.fields).filter(
+                          (f) => f.status === "unknown"
+                        ).length;
+
+                        return (
+                          <div className="space-y-1.5 mt-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {latestRun?.status === "running" && (
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                                  جارٍ التحليل
+                                </span>
+                              )}
+
+                              {latestRun?.status === "succeeded" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                  تم استخراج {factsCount} معلومة
+                                </span>
+                              )}
+
+                              {latestRun?.status === "failed" && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                    تعذر الاستخراج
+                                  </span>
+                                  <RetryExtractionButton caseId={caseId} propertyId={p.id} />
+                                </div>
+                              )}
+
+                              {!latestRun && (
+                                <RetryExtractionButton
+                                  caseId={caseId}
+                                  propertyId={p.id}
+                                  label="استخراج البيانات"
+                                />
+                              )}
+
+                              {/* Per-property summary: N متعارضة · M ناقصة */}
+                              <span className="text-xs text-gray-700 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded font-medium">
+                                {conflictingCount} متعارضة · {unknownCount} ناقصة
+                              </span>
+                            </div>
+
+                            {latestRun?.status === "failed" && p.input_mode === "url" && (
+                              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+                                تعذر قراءة الرابط. أضف صورًا للإعلان أو أدخل البيانات يدويًا.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    pending={deletingId === p.id}
-                    disabled={deletingId === p.id}
-                    onClick={() => handleDelete(p.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-3 py-1.5 self-end sm:self-center"
-                  >
-                    حذف
-                  </Button>
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <Link href={`/case/${caseId}/properties/${p.id}`}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-xs px-2.5 py-1.5 h-auto text-blue-700 hover:bg-blue-50"
+                      >
+                        تدقيق وتفاصيل
+                      </Button>
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      pending={deletingId === p.id}
+                      disabled={deletingId === p.id}
+                      onClick={() => handleDelete(p.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-3 py-1.5 h-auto"
+                    >
+                      حذف
+                    </Button>
+                  </div>
                 </div>
               );
             })}

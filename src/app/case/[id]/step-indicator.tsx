@@ -45,16 +45,17 @@ export function StepIndicator({ caseId }: { caseId: string }) {
         ←
       </span>
 
-      <span
+      <Link
+        href={`/case/${caseId}/preflight`}
         className={cn(
-          "cursor-not-allowed select-none",
+          "transition-colors",
           isPreflight
             ? "font-bold text-blue-600 underline underline-offset-4"
-            : "text-gray-400"
+            : "text-gray-600 hover:text-gray-900"
         )}
       >
         الفحص المبدئي
-      </span>
+      </Link>
     </nav>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { propertySchema } from "@/lib/schemas/property";
 import { deletePropertyImages } from "@/lib/storage";
+import { runExtraction } from "@/lib/extraction/run-extraction";
 
 export interface PropertyActionState {
   errors?: Record<string, string[] | undefined>;
@@ -83,13 +84,17 @@ export async function addProperty(
     notes: parsed.data.notes || null,
   };
 
-  const { error: insertError } = await supabase.from("properties").insert(insertPayload);
+  const { data: insertedProp, error: insertError } = await supabase
+    .from("properties")
+    .insert(insertPayload)
+    .select("id")
+    .single();
 
-  if (insertError) {
+  if (insertError || !insertedProp) {
     if (
-      insertError.code === "23505" ||
-      insertError.message.includes("unique") ||
-      insertError.message.includes("properties_case_id_source_url_key")
+      insertError?.code === "23505" ||
+      insertError?.message.includes("unique") ||
+      insertError?.message.includes("properties_case_id_source_url_key")
     ) {
       return {
         errors: {
@@ -99,8 +104,8 @@ export async function addProperty(
     }
 
     if (
-      insertError.message.includes("Cannot add more than 5 properties to a case") ||
-      insertError.code === "P0001"
+      insertError?.message.includes("Cannot add more than 5 properties to a case") ||
+      insertError?.code === "P0001"
     ) {
       return {
         errors: {
@@ -111,7 +116,7 @@ export async function addProperty(
 
     return {
       errors: {
-        form: [insertError.message || "حدث خطأ أثناء حفظ العقار"],
+        form: [insertError?.message || "حدث خطأ أثناء حفظ العقار"],
       },
     };
   }
@@ -122,11 +127,27 @@ export async function addProperty(
     .update({ status: "properties_complete" })
     .eq("id", caseId);
 
+  // Run extraction pipeline immediately and await it
+  await runExtraction(insertedProp.id);
+
   revalidatePath(`/case/${caseId}/properties`);
 
   return {
     success: true,
   };
+}
+
+export async function retryExtraction(
+  caseId: string,
+  propertyId: string
+): Promise<{ success: boolean; error?: string }> {
+  const result = await runExtraction(propertyId);
+  revalidatePath(`/case/${caseId}/properties`);
+
+  if (!result.ok) {
+    return { success: false, error: result.errorCode };
+  }
+  return { success: true };
 }
 
 export async function removeProperty(
