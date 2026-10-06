@@ -24,7 +24,7 @@ const ONBOARDING_SLIDES: SlideData[] = [
   {
     id: 1,
     headline: "قرارك العقاري، <em>بوضوح</em>",
-    subtitle: "أضف حتى ٥ شقق، واعرف ما هو مؤكد وما يحتاج إلى تحقق، قبل أن تقرر.",
+    subtitle: "أضف حتى <bdi dir=\"ltr\">5</bdi> شقق، واعرف ما هو مؤكد وما يحتاج إلى تحقق، قبل أن تقرر.",
     bgZoom: 1.0,
     bgX: 0,
     bgY: 0,
@@ -331,7 +331,7 @@ export function IntroSequence() {
           >
             <RotateCcw className="w-3 h-3 text-[#F2EBE2]" />
             <span>إعادة العرض</span>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] uppercase font-sans font-medium rounded bg-[#3D271A]/80 text-[#FAF6EF]/90 border border-[#645A4E]/40">
+            <kbd className="hidden sm:inline-block px-2 py-0.5 text-[10px] uppercase font-sans font-medium rounded-full bg-[#3D271A]/80 text-[#FAF6EF]/90 border border-[#645A4E]/40">
               R
             </kbd>
           </button>
@@ -486,9 +486,10 @@ export function IntroSequence() {
                   </h1>
 
                   {/* Supporting text: 15px, sandstone at 80% */}
-                  <p className="text-[15px] text-[#D7CBBE]/80 font-normal leading-relaxed max-w-[340px]">
-                    {activeSlideData.subtitle}
-                  </p>
+                  <p
+                    className="text-[15px] text-[#D7CBBE]/80 font-normal leading-relaxed max-w-[340px]"
+                    dangerouslySetInnerHTML={{ __html: activeSlideData.subtitle }}
+                  />
                 </motion.div>
               </AnimatePresence>
             </motion.div>
