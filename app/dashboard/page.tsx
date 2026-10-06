@@ -65,7 +65,7 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-[#130F08]">
                 أهلاً بك، مصطفى
               </h1>
-              <p className="text-xs text-[#130F08]/70">
+              <p className="text-xs text-[#130F08]/80">
                 تابع تقدم قراراتك العقارية واستكمل المقارنات المحفوظة
               </p>
             </div>
@@ -114,11 +114,11 @@ export default function DashboardPage() {
                     الرياض
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF6EF] border border-[#E9DFD0] text-[#130F08] font-medium">
-                    3 عقارات
+                    <bdi dir="ltr">3</bdi> عقارات
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#14756E]/10 text-[#14756E] font-semibold flex items-center gap-0.5">
                     <CheckCircle2 className="w-2.5 h-2.5" />
-                    <span>مكتمل 100%</span>
+                    <span>مكتمل <bdi dir="ltr">100%</bdi></span>
                   </span>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                 <span className="text-xs font-bold text-[#130F08] block">
                   حالة جديدة
                 </span>
-                <span className="text-[11px] text-[#130F08]/65 block">
+                <span className="text-[11px] text-[#130F08]/75 block">
                   بدء قرار جديد
                 </span>
               </div>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
                 <span className="text-xs font-bold text-[#130F08] block">
                   إضافة عقار
                 </span>
-                <span className="text-[11px] text-[#130F08]/65 block">
+                <span className="text-[11px] text-[#130F08]/75 block">
                   تضمين بديل
                 </span>
               </div>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
           {/* BLOCK 3: Recent Cases as Photo Cards (Max 3 Chips per Card) */}
           <div className="space-y-2.5">
-            <span className="text-xs font-bold text-[#130F08]/75 block">
+            <span className="text-xs font-bold text-[#130F08]/80 block">
               سجل الحالات والمقارنات السابقة:
             </span>
 
@@ -268,12 +268,12 @@ export default function DashboardPage() {
                         {c.title}
                       </h3>
 
-                      <p className="text-[11px] text-[#130F08]/70">
+                      <p className="text-[11px] text-[#130F08]/80 font-medium">
                         السقف: <BdiNumber value={c.budget} />
                       </p>
 
                       <div className="pt-0.5 flex items-center justify-between">
-                        <span className="text-[10px] text-[#130F08]/50 flex items-center gap-1">
+                        <span className="text-[10px] text-[#130F08]/75 flex items-center gap-1">
                           <Clock className="w-3 h-3 text-[#14756E]" />
                           <span>{c.lastUpdated}</span>
                         </span>
@@ -289,7 +289,7 @@ export default function DashboardPage() {
                                 : "/case/demo/results"
                             )
                           }
-                          className="h-9 px-3 rounded-lg text-xs font-semibold text-[#14756E] hover:bg-[#14756E]/10 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="h-9 px-3.5 rounded-full text-xs font-semibold text-[#14756E] hover:bg-[#14756E]/10 transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <span>عرض</span>
                           <ArrowLeft className="w-3 h-3" />
