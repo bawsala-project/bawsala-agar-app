@@ -39,7 +39,7 @@ export function FloatingNav({
               key={item.id}
               type="button"
               onClick={() => onChange?.(item.id)}
-              className={`relative z-10 h-10 px-4 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+              className={`relative z-10 h-12 px-3.5 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                 isActive
                   ? "text-[#FAF6EF] font-semibold"
                   : "text-[#130F08]/65 hover:text-[#130F08]"
