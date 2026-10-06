@@ -59,7 +59,7 @@ export default function CheckoutPage() {
         </div>
 
         {/* 1 Supporting Line */}
-        <p className="text-xs text-[#130F08]/65 font-medium text-right">
+        <p className="text-xs text-[#130F08]/75 font-medium text-right">
           {COPY.checkout.subtitle}
         </p>
       </header>
@@ -74,7 +74,7 @@ export default function CheckoutPage() {
                 <span className="w-2 h-2 rounded-full bg-[#14756E] animate-pulse" />
                 <span>تحليل كامل وفوري</span>
               </span>
-              <span className="text-xs text-[#130F08]/65 font-medium">
+              <span className="text-xs text-[#130F08]/75 font-medium">
                 دفعة واحدة
               </span>
             </div>
@@ -82,15 +82,15 @@ export default function CheckoutPage() {
             {/* Price Large */}
             <div className="py-2 flex items-baseline justify-between">
               <div>
-                <span className="text-xs text-[#130F08]/70 block font-medium">
+                <span className="text-xs text-[#130F08]/80 block font-medium">
                   {COPY.checkout.priceLabel}
                 </span>
-                <span className="text-xs text-[#130F08]/55">
+                <span className="text-xs text-[#130F08]/75">
                   شامل محاور المقارنة والمعاينة
                 </span>
               </div>
               <bdi dir="ltr" className="text-5xl sm:text-6xl font-bold text-[#130F08] tabular-nums leading-none">
-                10 <span className="text-lg font-medium text-[#130F08]/70">ر.س</span>
+                10 <span className="text-lg font-medium text-[#130F08]/80">ر.س</span>
               </bdi>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function CheckoutPage() {
           </div>
 
           {/* Content Block 3: Guarantee & Demo Notice */}
-          <div className="p-3.5 rounded-2xl bg-white/80 border border-[#E9DFD0] text-xs text-[#130F08]/75 text-right space-y-1 shadow-2xs">
+          <div className="p-3.5 rounded-2xl bg-white/80 border border-[#E9DFD0] text-xs text-[#130F08]/80 text-right space-y-1 shadow-2xs">
             <span className="font-semibold text-[#14756E] block">
               ضمان بوصلة:
             </span>
