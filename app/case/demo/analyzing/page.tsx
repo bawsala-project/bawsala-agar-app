@@ -70,7 +70,7 @@ export default function AnalyzingPage() {
           <h1 className="text-2xl font-semibold text-[#130F08]">
             {COPY.analyzing.title}
           </h1>
-          <p className="text-xs text-[#130F08]/75 leading-relaxed font-normal">
+          <p className="text-xs text-[#130F08]/80 leading-relaxed font-normal">
             {COPY.analyzing.subtitle}
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function AnalyzingPage() {
               return (
                 <div
                   key={idx}
-                  className={`flex items-center gap-2.5 p-2 rounded-xl transition-all duration-300 ${
+                  className={`flex items-center gap-2.5 p-2.5 rounded-2xl transition-all duration-300 ${
                     isCurrent
                       ? "bg-white/80 border border-[#14756E]/20"
                       : "border border-transparent"
@@ -129,7 +129,7 @@ export default function AnalyzingPage() {
                         ? "bg-[#14756E] text-[#FAF6EF]"
                         : isCurrent
                         ? "bg-[#130F08] text-[#FAF6EF] animate-pulse"
-                        : "bg-[#E9DFD0] text-[#130F08]/50"
+                        : "bg-[#E9DFD0] text-[#130F08]/75"
                     }`}
                   >
                     {isPast ? <Check className="w-3.5 h-3.5" /> : <bdi dir="ltr">{idx + 1}</bdi>}
@@ -139,8 +139,8 @@ export default function AnalyzingPage() {
                       isCurrent
                         ? "font-semibold text-[#130F08]"
                         : isPast
-                        ? "text-[#130F08]/75 font-medium"
-                        : "text-[#130F08]/45"
+                        ? "text-[#130F08]/80 font-medium"
+                        : "text-[#130F08]/65"
                     }`}
                   >
                     {step}
