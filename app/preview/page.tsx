@@ -113,12 +113,12 @@ export default function PreviewPage() {
             href="/"
             className="flex items-center gap-2 group text-xs text-[#D7CBBE]/80 hover:text-[#D7CBBE] transition-colors"
           >
-            <div className="w-7 h-7 rounded-lg bg-[#3D271A]/70 border border-[#645A4E]/40 flex items-center justify-center text-[#D7CBBE] group-hover:border-[#D7CBBE]/50 transition-all">
-              <Compass className="w-3.5 h-3.5" />
+            <div className="w-8 h-8 rounded-full bg-[#3D271A]/70 border border-[#645A4E]/40 flex items-center justify-center text-[#D7CBBE] group-hover:border-[#D7CBBE]/50 transition-all shadow-xs">
+              <Compass className="w-4 h-4" />
             </div>
             <div>
-              <span className="font-serif tracking-widest text-[11px] uppercase block leading-none">BAWSALA</span>
-              <span className="text-[10px] text-[#645A4E]">عرض الهاتف (Mockup Preview)</span>
+              <span className="font-sans font-semibold tracking-wider text-[11px] uppercase block leading-none text-[#FAF6EF]">BAWSALA</span>
+              <span className="text-[10px] text-[#D7CBBE]/75">عرض الهاتف (Mockup Preview)</span>
             </div>
           </Link>
         </div>
@@ -128,10 +128,10 @@ export default function PreviewPage() {
           {/* Styleguide link */}
           <Link
             href="/styleguide"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-[#D7CBBE]/80 hover:text-[#D7CBBE] bg-[#130F08]/60 hover:bg-[#130F08]/90 border border-[#645A4E]/30 backdrop-blur-md transition-all active:scale-95 shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs text-[#FAF6EF]/90 hover:text-[#FAF6EF] bg-[#130F08]/60 hover:bg-[#130F08]/90 border border-[#645A4E]/40 backdrop-blur-md transition-all active:scale-95 shadow-sm"
             title="دليل المكونات (Styleguide)"
           >
-            <Palette className="w-3.5 h-3.5 text-[#D7CBBE]" />
+            <Palette className="w-3.5 h-3.5 text-[#FAF6EF]" />
             <span className="hidden sm:inline">دليل المكونات</span>
           </Link>
 
@@ -140,10 +140,10 @@ export default function PreviewPage() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-[#D7CBBE]/80 hover:text-[#D7CBBE] bg-[#130F08]/60 hover:bg-[#130F08]/90 border border-[#645A4E]/30 backdrop-blur-md transition-all active:scale-95 shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs text-[#FAF6EF]/90 hover:text-[#FAF6EF] bg-[#130F08]/60 hover:bg-[#130F08]/90 border border-[#645A4E]/40 backdrop-blur-md transition-all active:scale-95 shadow-sm"
             title="فتح التطبيق في نافذة مستقلة"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-[#D7CBBE]" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#FAF6EF]" />
             <span className="hidden sm:inline">نافذة كاملة</span>
           </a>
         </div>
@@ -209,14 +209,14 @@ export default function PreviewPage() {
           <button
             type="button"
             onClick={handleReplayIntro}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#D7CBBE] text-[#130F08] hover:bg-[#D7CBBE]/90 font-medium text-xs transition-all active:scale-97 cursor-pointer shadow-md"
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-full bg-[#D7CBBE] text-[#130F08] hover:bg-[#D7CBBE]/90 font-medium text-xs transition-all active:scale-97 cursor-pointer shadow-md"
             title="إعادة تشغيل حركة الدخول وحذف ذاكرة الجلسة"
           >
             <div className="flex items-center gap-2">
               <RotateCcw className="w-3.5 h-3.5" />
               <span>إعادة المشهد الحركي</span>
             </div>
-            <kbd className="text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded bg-[#130F08]/15 border border-[#130F08]/20">
+            <kbd className="text-[10px] font-sans font-semibold px-2 py-0.5 rounded-full bg-[#130F08]/15 border border-[#130F08]/20">
               R
             </kbd>
           </button>
@@ -232,7 +232,7 @@ export default function PreviewPage() {
                     key={preset.id}
                     type="button"
                     onClick={() => setSelectedDevice(preset)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2 rounded-full text-xs transition-all cursor-pointer ${
                       isActive
                         ? "bg-[#3D271A] text-[#D7CBBE] border border-[#D7CBBE]/40 shadow-sm"
                         : "bg-[#130F08]/40 hover:bg-[#130F08]/80 text-[#D7CBBE]/70 border border-[#645A4E]/20"
@@ -258,7 +258,7 @@ export default function PreviewPage() {
             <button
               type="button"
               onClick={() => setBackdropMode((m) => (m === "dark" ? "light" : "dark"))}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#130F08]/60 hover:bg-[#130F08] border border-[#645A4E]/30 text-xs text-[#D7CBBE] cursor-pointer transition-colors active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#130F08]/60 hover:bg-[#130F08] border border-[#645A4E]/30 text-xs text-[#D7CBBE] cursor-pointer transition-colors active:scale-95"
             >
               {isDark ? (
                 <>
@@ -278,12 +278,12 @@ export default function PreviewPage() {
 
       {/* Bottom Compact Controls Bar (for tablets/narrower screens) */}
       <footer className="xl:hidden absolute bottom-4 inset-x-0 z-30 flex items-center justify-center gap-2 pointer-events-auto px-4">
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl bawsala-glass-dark border border-[#645A4E]/30 backdrop-blur-xl shadow-xl">
+        <div className="flex items-center gap-2 p-1.5 rounded-full bawsala-glass-dark border border-[#645A4E]/30 backdrop-blur-xl shadow-xl">
           {/* Replay */}
           <button
             type="button"
             onClick={handleReplayIntro}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#D7CBBE] text-[#130F08] text-xs font-medium cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#D7CBBE] text-[#130F08] text-xs font-medium cursor-pointer active:scale-95"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>إعادة المشهد</span>
@@ -296,7 +296,7 @@ export default function PreviewPage() {
                 key={p.id}
                 type="button"
                 onClick={() => setSelectedDevice(p)}
-                className={`px-2.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer ${
                   p.id === selectedDevice.id
                     ? "bg-[#3D271A] text-[#D7CBBE] border border-[#D7CBBE]/30"
                     : "text-[#645A4E] hover:text-[#D7CBBE]"
@@ -311,7 +311,7 @@ export default function PreviewPage() {
           <button
             type="button"
             onClick={() => setBackdropMode((m) => (m === "dark" ? "light" : "dark"))}
-            className="p-1.5 rounded-xl text-[#D7CBBE]/80 hover:text-[#D7CBBE] cursor-pointer"
+            className="p-1.5 rounded-full text-[#D7CBBE]/80 hover:text-[#D7CBBE] cursor-pointer"
             title="تبديل إضاءة الخلفية"
           >
             {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
