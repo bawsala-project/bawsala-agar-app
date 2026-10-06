@@ -54,19 +54,19 @@ export default function StartPage() {
             <h1 className="text-2xl sm:text-[28px] font-semibold text-[#130F08] leading-tight">
               {COPY.start.title}
             </h1>
-            <p className="text-xs sm:text-sm text-[#130F08]/70 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-[#130F08]/80 leading-relaxed font-normal">
               {COPY.start.subtitle}
             </p>
           </div>
 
           {/* Content Block 1: Compass Dial City Picker */}
           <div className="rounded-3xl glass-light border border-[#E9DFD0] shadow-xs overflow-hidden">
-            <div className="px-4 pt-3 pb-1 flex items-center justify-between text-xs text-[#130F08]/70 border-b border-[#E9DFD0]">
+            <div className="px-4 pt-3 pb-1 flex items-center justify-between text-xs text-[#130F08]/80 border-b border-[#E9DFD0]">
               <span className="flex items-center gap-1.5 font-medium">
                 <MapPin className="w-3.5 h-3.5 text-[#14756E]" />
                 <span>اختر المدينة بالسحب أو النقر</span>
               </span>
-              <span className="text-xs text-[#130F08]/65 font-medium">
+              <span className="text-xs text-[#130F08]/75 font-medium">
                 {currentCityObj.caption}
               </span>
             </div>
@@ -80,7 +80,7 @@ export default function StartPage() {
 
           {/* Content Block 2: One Glass Input Card */}
           <div className="p-4 rounded-3xl glass-light border border-[#E9DFD0] space-y-2 shadow-xs text-right">
-            <label htmlFor="needs-input" className="text-xs text-[#130F08]/75 block font-medium">
+            <label htmlFor="needs-input" className="text-xs text-[#130F08]/80 block font-medium">
               صف ما تبحث عنه بحرية:
             </label>
             <textarea
@@ -91,7 +91,7 @@ export default function StartPage() {
               placeholder="مثلاً: أبحث عن شقة في حي هادئ، قريبة من المدارس وميزانيتي أقل من مليون..."
               className="w-full bg-transparent text-[#130F08] text-sm md:text-base leading-relaxed placeholder-[#130F08]/40 focus:outline-none resize-none font-normal"
             />
-            <div className="flex justify-between items-center pt-2 border-t border-[#E9DFD0] text-xs text-[#130F08]/65">
+            <div className="flex justify-between items-center pt-2 border-t border-[#E9DFD0] text-xs text-[#130F08]/75">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#14756E] animate-pulse" />
                 <span>استخراج فوري للمحددات</span>
@@ -117,9 +117,9 @@ export default function StartPage() {
                 </span>
               </div>
               {showSuggestions ? (
-                <ChevronUp className="w-4 h-4 text-[#130F08]/60" />
+                <ChevronUp className="w-4 h-4 text-[#130F08]/75" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-[#130F08]/60" />
+                <ChevronDown className="w-4 h-4 text-[#130F08]/75" />
               )}
             </button>
 
