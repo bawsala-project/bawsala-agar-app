@@ -86,7 +86,7 @@ export default function InspectionPage() {
             <h1 className="text-xl font-bold text-[#130F08]">
               {COPY.inspection.title}
             </h1>
-            <p className="text-xs text-[#130F08]/70">
+            <p className="text-xs text-[#130F08]/80">
               سؤال واحد في كل شاشة لتوثيق الملاحظات أثناء معاينتك
             </p>
           </div>
@@ -105,7 +105,7 @@ export default function InspectionPage() {
                     className={`h-12 px-2 text-xs font-semibold rounded-xl transition-all cursor-pointer truncate flex items-center justify-center ${
                       isActive
                         ? "bg-[#130F08] text-[#FAF6EF] shadow-xs"
-                        : "text-[#130F08]/70 hover:bg-white/60 hover:text-[#130F08]"
+                        : "text-[#130F08]/75 hover:bg-white/60 hover:text-[#130F08]"
                     }`}
                   >
                     {p.district.split("،")[0]}
@@ -167,7 +167,7 @@ export default function InspectionPage() {
                 <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FAF6EF] text-[#130F08] border border-[#E9DFD0]">
                   {currentItem.categoryTag}
                 </span>
-                <span className="text-xs font-bold text-[#130F08]/50">
+                <span className="text-xs font-bold text-[#130F08]/75">
                   #{currentQuestionIndex + 1}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export default function InspectionPage() {
                 <h2 className="text-base sm:text-lg font-bold text-[#130F08] leading-snug">
                   {currentItem.title}
                 </h2>
-                <p className="text-xs text-[#130F08]/75 leading-relaxed">
+                <p className="text-xs text-[#130F08]/80 leading-relaxed">
                   {currentItem.whyItMatters}
                 </p>
               </div>
@@ -186,13 +186,13 @@ export default function InspectionPage() {
               <button
                 type="button"
                 onClick={() => setIsHowSheetOpen(true)}
-                className="w-full h-11 px-3.5 rounded-xl bg-[#FAF6EF] border border-[#E9DFD0] text-xs font-semibold text-[#14756E] hover:bg-[#E9DFD0]/40 transition-colors flex items-center justify-between cursor-pointer"
+                className="w-full h-11 px-3.5 rounded-2xl bg-[#FAF6EF] border border-[#E9DFD0] text-xs font-semibold text-[#14756E] hover:bg-[#E9DFD0]/40 transition-colors flex items-center justify-between cursor-pointer"
               >
                 <span className="flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5" />
                   <span>طريقة الفحص الميداني الدقيقة</span>
                 </span>
-                <span className="text-[11px] text-[#130F08]/50">عرض الإرشادات ←</span>
+                <span className="text-[11px] text-[#130F08]/75">عرض الإرشادات ←</span>
               </button>
 
               {/* BIG ANSWER BUTTONS (Each >= 48px tap target) */}
@@ -254,13 +254,13 @@ export default function InspectionPage() {
                   className={`w-full h-14 px-4 rounded-2xl border text-right font-semibold text-sm transition-all flex items-center justify-between cursor-pointer shadow-xs ${
                     currentStatus === "unchecked"
                       ? "bg-[#130F08] border-[#130F08] text-[#FAF6EF]"
-                      : "bg-[#FAF6EF] border-[#E9DFD0] text-[#130F08]/75 hover:border-[#130F08]/30"
+                      : "bg-[#FAF6EF] border-[#E9DFD0] text-[#130F08]/80 hover:border-[#130F08]/30"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <HelpCircle
                       className={`w-5 h-5 ${
-                        currentStatus === "unchecked" ? "text-[#FAF6EF]" : "text-[#130F08]/50"
+                        currentStatus === "unchecked" ? "text-[#FAF6EF]" : "text-[#130F08]/75"
                       }`}
                     />
                     <span>لم أتحقق من هذا البند بعد</span>
@@ -281,7 +281,7 @@ export default function InspectionPage() {
               type="button"
               onClick={handlePrev}
               disabled={currentQuestionIndex === 0}
-              className={`h-12 px-4 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`h-12 px-4 rounded-full border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
                 currentQuestionIndex === 0
                   ? "opacity-35 cursor-not-allowed bg-transparent border-[#130F08]/10 text-[#130F08]/40"
                   : "glass-light border-[#130F08]/15 text-[#130F08] hover:bg-white"
@@ -291,14 +291,14 @@ export default function InspectionPage() {
               <span>السابق</span>
             </button>
 
-            <span className="text-[11px] text-[#130F08]/50">
+            <span className="text-[11px] text-[#130F08]/75">
               اسحب يميناً أو يساراً للتنقل
             </span>
 
             <button
               type="button"
               onClick={handleNext}
-              className="h-12 px-4 rounded-xl glass-light border border-[#130F08]/15 text-xs font-semibold text-[#130F08] hover:bg-white flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="h-12 px-4 rounded-full glass-light border border-[#130F08]/15 text-xs font-semibold text-[#130F08] hover:bg-white flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <span>{isLastQuestion ? "النتائج" : "التالي"}</span>
               <ChevronLeft className="w-4 h-4" />
@@ -364,7 +364,7 @@ export default function InspectionPage() {
             <span className="text-xs font-semibold text-[#130F08] block">
               لماذا يهم هذا الفحص؟
             </span>
-            <p className="text-xs text-[#130F08]/70 leading-relaxed">
+            <p className="text-xs text-[#130F08]/80 leading-relaxed">
               {currentItem.whyItMatters}
             </p>
           </div>
