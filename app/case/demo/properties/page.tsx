@@ -51,7 +51,7 @@ export default function PropertiesPage() {
         </div>
 
         {/* 1 Supporting Line: 5-Segment Progress Bar */}
-        <div className="flex items-center justify-between text-xs text-[#130F08]/65 font-medium">
+        <div className="flex items-center justify-between text-xs text-[#130F08]/75 font-medium">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 w-20" dir="rtl">
               {[1, 2, 3, 4, 5].map((step) => (
@@ -68,8 +68,8 @@ export default function PropertiesPage() {
             </span>
           </div>
 
-          <span className="text-[11px] text-[#130F08]/60">
-            {COPY.properties.slotsCounter(properties.length)}
+          <span className="text-[11px] text-[#130F08]/75">
+            <bdi dir="ltr">{properties.length} من 5</bdi> عقارات
           </span>
         </div>
       </header>
@@ -154,7 +154,7 @@ export default function PropertiesPage() {
                           <CheckCircle2 className="w-3 h-3 text-[#14756E]" />
                           <span>تمت القراءة</span>
                         </span>
-                        <span className="text-[11px] text-[#130F08]/65 font-medium truncate">
+                        <span className="text-[11px] text-[#130F08]/75 font-medium truncate">
                           {property.sourceLabel}
                         </span>
                       </div>
@@ -164,7 +164,7 @@ export default function PropertiesPage() {
                       </h2>
 
                       {/* Max 3 Chips: Price, Area, District */}
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#130F08]/75">
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#130F08]/80">
                         <span className="font-bold text-[#130F08]">
                           <bdi dir="ltr">{formatNumber(property.price)} ر.س</bdi>
                         </span>
