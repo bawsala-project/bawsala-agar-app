@@ -2,25 +2,33 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, PanInfo } from "framer-motion";
 import {
   ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Check,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { PaperCard } from "@/components/ui/PaperCard";
 import { PropertyImage } from "@/components/ui/PropertyImage";
-import { GlassSheet } from "@/components/ui/GlassSheet";
 import { VisitPriorityBadge } from "@/components/ui/VisitPriorityBadge";
 import { CertaintyChip } from "@/components/ui/CertaintyChip";
 import { FitArc } from "@/components/ui/FitArc";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { MapView } from "@/components/ui/MapView";
 import { useAppStore } from "@/lib/store";
-import { COPY } from "@/lib/copy";
 import { BdiNumber, formatNumber } from "@/lib/format";
 
 type PropertyTab = "fit" | "location" | "price" | "daily" | "risks";
+type SheetSnap = "peek" | "half" | "full";
+
+const SNAP_HEIGHTS: Record<SheetSnap, string> = {
+  peek: "32vh",
+  half: "58vh",
+  full: "88vh",
+};
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -45,10 +53,13 @@ export default function PropertyDetailPage() {
       ? requestedTab
       : "fit"
   );
-  const [isSheetOpen, setIsSheetOpen] = useState(requestedTab === "location");
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>(
+    requestedTab === "location" ? "half" : "half"
+  );
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
-  const activeImage = property.images?.[selectedPhotoIndex] || property.images?.[0];
+  const images = property.images && property.images.length > 0 ? property.images : [];
+  const activeImage = images[selectedPhotoIndex % (images.length || 1)] || null;
 
   const tabs: { id: PropertyTab; label: string }[] = [
     { id: "fit", label: "الملاءمة" },
@@ -61,28 +72,99 @@ export default function PropertyDetailPage() {
   const handleToggleVisit = () => {
     toggleSelectForVisit(property.id);
     if (!isSelected) {
-      showToast(`تمت إضافة ${property.title} لقائمة المعاينة`);
+      showToast(`تمت إضافة ${property.title} لقائمة المعاينة الميدانية`);
     } else {
       showToast(`تمت إزالة ${property.title} من قائمة المعاينة`);
     }
   };
 
-  const openTabInSheet = (tab: PropertyTab) => {
-    setActiveTab(tab);
-    setIsSheetOpen(true);
+  const nextPhoto = () => {
+    if (images.length > 1) {
+      setSelectedPhotoIndex((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const prevPhoto = () => {
+    if (images.length > 1) {
+      setSelectedPhotoIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const deltaY = info.offset.y;
+    const velocityY = info.velocity.y;
+
+    if (deltaY > 80 || velocityY > 400) {
+      if (sheetSnap === "full") setSheetSnap("half");
+      else if (sheetSnap === "half") setSheetSnap("peek");
+    } else if (deltaY < -80 || velocityY < -400) {
+      if (sheetSnap === "peek") setSheetSnap("half");
+      else if (sheetSnap === "half") setSheetSnap("full");
+    }
   };
 
   return (
     <AppShell backHref="/case/demo/results" pageTitle={property.title}>
-      <div className="flex-1 flex flex-col justify-between pb-32 max-w-lg mx-auto w-full">
-        {/* Full-Bleed Hero with PropertyImage */}
-        <div className="relative w-full h-80 overflow-hidden border-b border-[#E9DFD0] text-right select-none">
+      <div className="relative w-full h-[calc(100vh-64px)] max-w-lg mx-auto overflow-hidden bg-[#FAF6EF]">
+        {/* BLOCK 1: Circular Thumbnails to Switch Properties (Floating Top Bar) */}
+        <div className="absolute top-3 inset-x-0 px-4 z-20 flex items-center justify-between pointer-events-none" dir="rtl">
+          <div className="pointer-events-auto flex items-center gap-1.5 p-1 rounded-full glass-dark border border-white/20 shadow-md">
+            <span className="text-[11px] font-semibold text-[#FAF6EF] px-2">العقارات:</span>
+            {properties.map((p) => {
+              const isCurrent = p.id === property.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedPhotoIndex(0);
+                    router.push(`/case/demo/property/${p.id}`);
+                  }}
+                  className={`w-12 h-12 rounded-full overflow-hidden transition-all cursor-pointer relative flex items-center justify-center ${
+                    isCurrent
+                      ? "ring-2 ring-[#C2A370] ring-offset-2 ring-offset-[#130F08] scale-105 shadow-md"
+                      : "opacity-60 hover:opacity-100 hover:scale-100"
+                  }`}
+                  title={p.title}
+                  aria-label={`الانتقال إلى ${p.title}`}
+                >
+                  <PropertyImage
+                    image={p.images?.[0]}
+                    shape="circle"
+                    tone={p.colorTone || "sandstone"}
+                    alt={p.title}
+                    containerClassName="w-full h-full"
+                  />
+                  {isCurrent && (
+                    <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Inspection Action Pill */}
+          <div className="pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => router.push("/case/demo/inspection")}
+              className="h-11 px-3.5 rounded-full glass-dark border border-white/20 text-xs font-semibold text-[#FAF6EF] hover:bg-black/60 transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+              title="قائمة الفحص الميداني"
+            >
+              <ClipboardList className="w-4 h-4 text-[#C2A370]" />
+              <span className="hidden xs:inline">فحص</span>
+            </button>
+          </div>
+        </div>
+
+        {/* BLOCK 2: Full-Bleed Photo Carousel */}
+        <div className="absolute inset-0 w-full h-[68vh] overflow-hidden select-none">
           <motion.div
             key={activeImage?.file || property.id}
-            initial={{ scale: 1.05, opacity: 0.9 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0"
+            initial={false}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="w-full h-full relative"
           >
             <PropertyImage
               image={activeImage}
@@ -94,377 +176,243 @@ export default function PropertyDetailPage() {
             />
           </motion.div>
 
-          {/* Deep Architectural Gradient Overlay */}
+          {/* Architectural Gradient Overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "linear-gradient(180deg, rgba(19,15,8,0.2) 0%, rgba(19,15,8,0.3) 30%, rgba(19,15,8,0.85) 85%, #130F08 100%)",
+                "linear-gradient(180deg, rgba(19,15,8,0.4) 0%, rgba(19,15,8,0.1) 35%, rgba(19,15,8,0.6) 80%, rgba(19,15,8,0.95) 100%)",
             }}
           />
 
-          {/* Three Circular Thumbnails to Switch Property (Floating Top) */}
-          <div className="absolute top-4 inset-x-0 px-6 flex items-center justify-between z-20" dir="rtl">
-            <span className="text-xs font-semibold text-[#FAF6EF] glass-dark px-3 py-1 rounded-full border border-white/20">
-              العقارات:
-            </span>
+          {/* Photo Carousel Controls & Max 3 Chips */}
+          <div className="absolute top-20 inset-x-0 px-4 flex items-center justify-between z-10 pointer-events-none" dir="rtl">
+            {/* Max 3 Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full glass-dark text-[#FAF6EF] border border-white/20">
+                {property.district}
+              </span>
+              <div className="scale-90 origin-right">
+                <VisitPriorityBadge level={property.visitPriority} size="sm" />
+              </div>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-[#FAF6EF]">
+                {property.sourceLabel}
+              </span>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              {properties.map((p) => {
-                const isCurrent = p.id === property.id;
+          {/* Left/Right Photo Carousel Arrows (at least 48px tap targets) */}
+          {images.length > 1 && (
+            <div className="absolute inset-y-0 inset-x-2 flex items-center justify-between z-10 pointer-events-none">
+              <button
+                type="button"
+                onClick={prevPhoto}
+                className="w-12 h-12 rounded-full glass-dark border border-white/20 text-[#FAF6EF] flex items-center justify-center pointer-events-auto hover:bg-black/60 transition-colors cursor-pointer shadow-md"
+                aria-label="الصورة السابقة"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={nextPhoto}
+                className="w-12 h-12 rounded-full glass-dark border border-white/20 text-[#FAF6EF] flex items-center justify-center pointer-events-auto hover:bg-black/60 transition-colors cursor-pointer shadow-md"
+                aria-label="الصورة التالية"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
+          {/* Carousel Photo Dots (Bottom of photo area) */}
+          {images.length > 1 && (
+            <div className="absolute bottom-[34vh] inset-x-0 flex items-center justify-center gap-2 z-10">
+              {images.map((img, idx) => (
+                <button
+                  key={img.file}
+                  type="button"
+                  onClick={() => setSelectedPhotoIndex(idx)}
+                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                    (selectedPhotoIndex % images.length) === idx
+                      ? "w-7 bg-[#C2A370]"
+                      : "w-2.5 bg-white/40 hover:bg-white/70"
+                  }`}
+                  aria-label={`عرض الصورة ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* BLOCK 3: Glass Bottom Sheet with 3 Snaps */}
+        <motion.div
+          animate={{ height: SNAP_HEIGHTS[sheetSnap] }}
+          transition={{ type: "spring", damping: 30, stiffness: 320 }}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0.1, bottom: 0.2 }}
+          onDragEnd={handleDragEnd}
+          className="absolute bottom-0 inset-x-0 z-30 flex flex-col bg-[#FAF6EF]/95 backdrop-blur-xl border-t border-[#E9DFD0] rounded-t-3xl shadow-[0_-12px_32px_rgba(19,15,8,0.12)] text-right"
+          dir="rtl"
+        >
+          {/* Snap Drag Handle & Snap Cycle Toggle */}
+          <div
+            className="w-full pt-2.5 pb-1 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing select-none"
+            onClick={() => {
+              if (sheetSnap === "peek") setSheetSnap("half");
+              else if (sheetSnap === "half") setSheetSnap("full");
+              else setSheetSnap("peek");
+            }}
+          >
+            <div className="w-12 h-1.5 rounded-full bg-[#130F08]/20 hover:bg-[#130F08]/40 transition-colors" />
+            <div className="flex items-center gap-1 mt-1 text-[10px] text-[#130F08]/50">
+              <span>{sheetSnap === "peek" ? "اسحب للتفاصيل" : sheetSnap === "half" ? "اسحب للتوسيع" : "اسحب للأسفل"}</span>
+              {sheetSnap === "peek" ? <ChevronUp className="w-3 h-3" /> : sheetSnap === "full" ? <ChevronDown className="w-3 h-3" /> : null}
+            </div>
+          </div>
+
+          {/* Sheet Header Summary */}
+          <div className="px-5 pt-1 pb-3 flex items-baseline justify-between border-b border-[#E9DFD0]/60">
+            <div>
+              <h1 className="text-lg font-bold text-[#130F08]">{property.title}</h1>
+              <p className="text-xs text-[#130F08]/65">{property.district} • {property.areaM2} م² • {property.rooms} غرف</p>
+            </div>
+            <div className="text-left">
+              <BdiNumber
+                value={formatNumber(property.price)}
+                unit="ر.س"
+                className="text-xl font-bold text-[#130F08]"
+              />
+              <span className="text-[11px] text-[#130F08]/60 block">سنوي</span>
+            </div>
+          </div>
+
+          {/* 5 Tabs Inside the Sheet (Horizontal Scrollable Strip, >= 48px tap targets) */}
+          <div className="px-4 py-2 border-b border-[#E9DFD0]/60 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 min-w-max">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
                 return (
                   <button
-                    key={p.id}
+                    key={tab.id}
                     type="button"
                     onClick={() => {
-                      setSelectedPhotoIndex(0);
-                      router.push(`/case/demo/property/${p.id}`);
+                      setActiveTab(tab.id);
+                      if (sheetSnap === "peek") setSheetSnap("half");
                     }}
-                    className={`w-11 h-11 rounded-full overflow-hidden transition-all cursor-pointer relative shadow-md ${
-                      isCurrent
-                        ? "border-2 border-[#FAF6EF] scale-110 shadow-[0_0_12px_rgba(250,246,239,0.5)]"
-                        : "border border-white/30 opacity-60 hover:opacity-100 hover:scale-105"
+                    className={`h-11 px-4 text-xs font-semibold rounded-full transition-all cursor-pointer flex items-center justify-center ${
+                      isActive
+                        ? "bg-[#130F08] text-[#FAF6EF] shadow-sm"
+                        : "bg-[#E9DFD0]/50 text-[#130F08]/75 hover:bg-[#E9DFD0] hover:text-[#130F08]"
                     }`}
-                    title={p.title}
                   >
-                    <PropertyImage
-                      image={p.images?.[0]}
-                      shape="circle"
-                      tone={p.colorTone || "sandstone"}
-                      alt={p.title}
-                      containerClassName="w-full h-full"
-                    />
+                    {tab.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Bottom Hero Labels */}
-          <div className="absolute bottom-4 inset-x-0 px-6 space-y-2 z-10">
-            {/* Gallery Photo Selector (when multiple images are available) */}
-            {property.images && property.images.length > 1 && (
-              <div className="flex items-center gap-1.5 pb-1">
-                {property.images.map((img, photoIdx) => {
-                  const isCurrentPhoto = (selectedPhotoIndex % property.images.length) === photoIdx;
-                  const kindLabels: Record<string, string> = {
-                    exterior: "الواجهة",
-                    living: "الصالة",
-                    kitchen: "المطبخ",
-                    bedroom: "غرفة النوم",
-                    balcony: "الشرفة",
-                    map: "الخريطة",
-                    hero: "الرئيسية",
-                  };
-                  return (
-                    <button
-                      key={img.file}
-                      type="button"
-                      onClick={() => setSelectedPhotoIndex(photoIdx)}
-                      className={`text-xs px-2.5 py-0.5 rounded-full transition-all cursor-pointer font-medium ${
-                        isCurrentPhoto
-                          ? "bg-[#FAF6EF] text-[#130F08] shadow-sm font-semibold scale-105"
-                          : "glass-dark text-[#FAF6EF]/75 hover:text-[#FAF6EF] border border-white/15"
-                      }`}
-                    >
-                      {kindLabels[img.kind] || img.kind}
-                    </button>
-                  );
-                })}
+          {/* Scrollable Tab Content Body */}
+          <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+            {/* Tab 1: الملاءمة (Fit) */}
+            {activeTab === "fit" && (
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between shadow-xs">
+                  <div>
+                    <span className="text-xs font-semibold text-[#130F08] block">سقف الميزانية</span>
+                    <span className="text-xs text-[#130F08]/65">
+                      {property.isOverBudget ? `تجاوز (${property.budgetDelta})` : "مطابق للسقف تماماً"}
+                    </span>
+                  </div>
+                  <FitArc
+                    level={property.isOverBudget ? "acceptable" : "excellent"}
+                    label={property.isOverBudget ? "مقبول" : "ممتاز"}
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between shadow-xs">
+                  <div>
+                    <span className="text-xs font-semibold text-[#130F08] block">القرب من العمل</span>
+                    <span className="text-xs text-[#130F08]/65">
+                      {property.travelTimeWorkMin} دقيقة عبر المسار المعتاد
+                    </span>
+                  </div>
+                  <FitArc
+                    level={property.travelTimeWorkMin <= 16 ? "excellent" : "good"}
+                    label={property.travelTimeWorkMin <= 16 ? "ممتاز" : "جيد"}
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between shadow-xs">
+                  <div>
+                    <span className="text-xs font-semibold text-[#130F08] block">عدد الغرف</span>
+                    <span className="text-xs text-[#130F08]/65">{property.rooms} غرف نوم وصالة</span>
+                  </div>
+                  <FitArc level="excellent" label="ممتاز" />
+                </div>
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-[#FAF6EF] font-medium">
-                {property.sourceLabel}
-              </span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#130F08]/80 text-[#FAF6EF] border border-white/20">
-                {property.district}
-              </span>
-            </div>
-
-            <div className="flex items-baseline justify-between">
-              <h1 className="text-xl md:text-2xl font-semibold text-[#FAF6EF]">
-                {property.title}
-              </h1>
-              <BdiNumber
-                value={formatNumber(property.price)}
-                unit="ر.س"
-                className="text-2xl font-semibold text-[#FAF6EF]"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="px-6 pt-5 space-y-5">
-          {/* Four-Fact Strip with Hairline Separators and Tiny Certainty Dots */}
-          <div className="p-3.5 rounded-2xl glass-light border border-[#130F08]/10 grid grid-cols-4 divide-x divide-x-reverse divide-[#130F08]/10 text-center shadow-xs">
-            {/* Fact 1: السعر */}
-            <div className="px-1.5 space-y-1">
-              <span className="text-xs text-[#130F08]/65 block font-medium">السعر</span>
-              <div className="flex items-center justify-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#14756E]" title="مؤكد" />
-                <BdiNumber
-                  value={formatNumber(property.price)}
-                  className="text-xs font-semibold text-[#130F08] truncate"
-                />
-              </div>
-            </div>
-
-            {/* Fact 2: المساحة */}
-            <div className="px-1.5 space-y-1">
-              <span className="text-xs text-[#130F08]/65 block font-medium">المساحة</span>
-              <div className="flex items-center justify-center gap-1">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    property.id === "p1" ? "bg-[#C2643A]" : "bg-[#14756E]"
-                  }`}
-                  title={property.id === "p1" ? "تعارض مساحة" : "مطابق"}
-                />
-                <BdiNumber
-                  value={property.areaM2}
-                  unit="م²"
-                  className="text-xs font-semibold text-[#130F08]"
-                />
-              </div>
-            </div>
-
-            {/* Fact 3: مدة العمل */}
-            <div className="px-1.5 space-y-1">
-              <span className="text-xs text-[#130F08]/65 block font-medium">العمل</span>
-              <div className="flex items-center justify-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#14756E]" title="محسوب بدقة" />
-                <BdiNumber
-                  value={property.travelTimeWorkMin}
-                  unit="د"
-                  className="text-xs font-semibold text-[#130F08]"
-                />
-              </div>
-            </div>
-
-            {/* Fact 4: الغرف */}
-            <div className="px-1.5 space-y-1">
-              <span className="text-xs text-[#130F08]/65 block font-medium">الغرف</span>
-              <div className="flex items-center justify-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#14756E]" title="مؤكد" />
-                <BdiNumber
-                  value={property.rooms}
-                  unit="غرف"
-                  className="text-xs font-semibold text-[#130F08]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Advisory Priority Paper Card */}
-          <PaperCard className="p-4 flex items-center justify-between gap-3 text-right">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-[#130F08]/65 block">
-                أولوية المعاينة
-              </span>
-              <p className="text-xs text-[#130F08] font-normal leading-relaxed">
-                {property.visitPriorityReason}
-              </p>
-            </div>
-            <div className="shrink-0">
-              <VisitPriorityBadge level={property.visitPriority} size="md" />
-            </div>
-          </PaperCard>
-
-          {/* Tabs Section Triggering GlassSheet */}
-          <div className="space-y-3 text-right">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[#130F08]/75 font-semibold">
-                محاور التحليل وخريطة الموقع:
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsSheetOpen(true)}
-                className="text-xs text-[#14756E] hover:underline flex items-center gap-1 cursor-pointer font-medium"
-              >
-                <span>فتح التفاصيل</span>
-                <ChevronUp className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => openTabInSheet(tab.id)}
-                  className={`p-3.5 rounded-2xl glass-light border text-right transition-all cursor-pointer shadow-xs ${
-                    activeTab === tab.id
-                      ? "border-[#14756E] bg-white shadow-sm"
-                      : "border-[#130F08]/10 hover:border-[#130F08]/25"
-                  }`}
-                >
-                  <span className="text-xs font-semibold text-[#130F08] block">
-                    {tab.label}
+            {/* Tab 2: الموقع (Location) with Full MapView */}
+            {activeTab === "location" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#130F08]">
+                    خريطة الموقع التفاعلية ومسار العمل:
                   </span>
-                  <span className="text-xs text-[#130F08]/60 block mt-1">
-                    انقر لعرض البيانات
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Sticky Action Footer */}
-        <div className="fixed bottom-0 inset-x-0 mx-auto max-w-[430px] p-6 bg-gradient-to-t from-[#FAF6EF] via-[#FAF6EF]/95 to-transparent pt-10 z-30 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-3">
-            <PrimaryButton
-              label={isSelected ? "محدد للمعاينة الميدانية ✓" : COPY.propertyDetail.selectForVisit}
-              onClick={handleToggleVisit}
-              className={`flex-1 shadow-xl transition-all ${
-                isSelected
-                  ? "bg-[#14756E] text-[#FAF6EF]"
-                  : ""
-              }`}
-            />
-            <button
-              type="button"
-              onClick={() => router.push("/case/demo/inspection")}
-              className="h-14 px-5 rounded-full glass-light border border-[#130F08]/15 text-xs font-semibold text-[#130F08] hover:bg-[#E9DFD0]/60 transition-colors shadow-xs cursor-pointer shrink-0"
-            >
-              قائمة الفحص
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* GlassSheet Holding the 4 Tabs */}
-      <GlassSheet
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-        title={`تحليل: ${property.title}`}
-        subtitle="فحص تفصيلي للملاءمة، السعر، والمخاطر"
-        initialSnap="half"
-        variant="light"
-      >
-        <div className="space-y-4">
-          {/* Segmented Tab Headers inside Sheet (40px pills) */}
-          <div className="p-1 rounded-full glass-light border border-[#130F08]/10 grid grid-cols-5 gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`h-9 px-1 text-[11px] font-semibold rounded-full transition-all text-center cursor-pointer ${
-                  activeTab === tab.id
-                    ? "bg-[#130F08] text-[#FAF6EF] shadow-xs"
-                    : "text-[#130F08]/65 hover:text-[#130F08]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab 1: الملاءمة (Fit) */}
-          {activeTab === "fit" && (
-            <div className="space-y-3 text-right">
-              <div className="flex items-center justify-between py-2 border-b border-[#E9DFD0]">
-                <div>
-                  <span className="text-xs font-semibold text-[#130F08] block">سقف الميزانية</span>
-                  <span className="text-xs text-[#130F08]/65">
-                    {property.isOverBudget ? `تجاوز (${property.budgetDelta})` : "مطابق للسقف تماماً"}
+                  <span className="font-semibold text-[#14756E] px-2.5 py-0.5 rounded-full bg-[#14756E]/10">
+                    {property.travelTimeWorkMin} دقيقة للعمل
                   </span>
                 </div>
-                <FitArc
-                  level={property.isOverBudget ? "acceptable" : "excellent"}
-                  label={property.isOverBudget ? "مقبول" : "ممتاز"}
-                />
-              </div>
 
-              <div className="flex items-center justify-between py-2 border-b border-[#E9DFD0]">
-                <div>
-                  <span className="text-xs font-semibold text-[#130F08] block">القرب من العمل</span>
-                  <span className="text-xs text-[#130F08]/65">
-                    {property.travelTimeWorkMin} دقيقة عبر المسار المعتاد
-                  </span>
+                {/* Full Interactive MapView */}
+                <div className="rounded-2xl overflow-hidden border border-[#E9DFD0] shadow-xs">
+                  <MapView
+                    variant="full"
+                    selectedPropertyId={property.id}
+                    className="w-full"
+                  />
                 </div>
-                <FitArc
-                  level={property.travelTimeWorkMin <= 16 ? "excellent" : "good"}
-                  label={property.travelTimeWorkMin <= 16 ? "ممتاز" : "جيد"}
-                />
-              </div>
 
-              <div className="flex items-center justify-between py-2">
-                <div>
-                  <span className="text-xs font-semibold text-[#130F08] block">عدد الغرف</span>
-                  <span className="text-xs text-[#130F08]/65">{property.rooms} غرف نوم وصالة</span>
+                <div className="p-3 rounded-xl bg-white/70 border border-[#E9DFD0] text-xs text-[#130F08]/80 leading-relaxed">
+                  يقع العقار في {property.district}، ضمن نطاق دائرة الوصول المستهدفة نحو مركز الملك عبد الله المالي (KAFD) دون اختناقات رئيسية.
                 </div>
-                <FitArc level="excellent" label="ممتاز" />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Tab 2: الموقع (Location) with Full MapView */}
-          {activeTab === "location" && (
-            <div className="space-y-3.5 text-right">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#130F08]">
-                  خريطة الموقع التفاعلية ومسار العمل:
-                </span>
-                <span className="font-semibold text-[#14756E] px-2.5 py-0.5 rounded-full bg-[#14756E]/10">
-                  {property.travelTimeWorkMin} دقيقة لمقر العمل
-                </span>
-              </div>
-
-              {/* Full Interactive MapView */}
-              <MapView
-                variant="full"
-                selectedPropertyId={property.id}
-                className="w-full"
-              />
-
-              <div className="p-3.5 rounded-2xl bg-[#FAF6EF] border border-[#E9DFD0] space-y-1.5 text-xs text-right shadow-2xs">
-                <span className="font-semibold text-[#130F08] block">
-                  تحليل النطاق الجغرافي والربط المروري:
-                </span>
-                <p className="text-[#130F08]/80 leading-relaxed">
-                  يقع العقار في {property.district}، ضمن نطاق دائرة الوصول المستهدفة (20 دقيقة عبر طريق الملك فهد وطريق أنس بن مالك). المسار مباشر نحو مركز الملك عبد الله المالي (KAFD) دون اختناقات رئيسية.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Tab 2: السعر (Price) */}
-          {activeTab === "price" && (
-            <div className="space-y-3 text-right">
-              {property.fairPriceStatus === "insufficient" ? (
-                <div className="p-4 rounded-2xl border border-dashed border-[#E9DFD0] text-center space-y-2 bg-white/50">
-                  <span className="text-xs font-semibold text-[#130F08] block">
-                    غير كافٍ للتقدير الإحصائي
-                  </span>
-                  <p className="text-xs text-[#130F08]/70 leading-relaxed">
-                    الصفقات الموثقة في هذا المربع العقاري قليلة جداً حالياً.
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-white border border-[#E9DFD0] space-y-2 shadow-xs">
-                  <span className="text-xs text-[#130F08]/65 block font-medium">النطاق السعري الاسترشادي للمتر</span>
-                  <span className="text-base font-semibold text-[#130F08] block tabular-nums">
-                    {property.fairPriceRange}
-                  </span>
-                  <div className="text-xs text-[#130F08]/75 pt-1">
-                    سعر المتر التقريبي: <BdiNumber value={formatNumber(Math.round(property.price / property.areaM2))} unit="ر.س" />
+            {/* Tab 3: السعر (Price) */}
+            {activeTab === "price" && (
+              <div className="space-y-3">
+                {property.fairPriceStatus === "insufficient" ? (
+                  <div className="p-4 rounded-2xl border border-dashed border-[#E9DFD0] text-center space-y-1.5 bg-white/50">
+                    <span className="text-xs font-semibold text-[#130F08] block">
+                      غير كافٍ للتقدير الإحصائي
+                    </span>
+                    <p className="text-xs text-[#130F08]/70 leading-relaxed">
+                      الصفقات الموثقة في هذا المربع العقاري قليلة جداً حالياً.
+                    </p>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab 3: الحياة اليومية (Daily) */}
-          {activeTab === "daily" && (
-            <div className="space-y-3 text-right">
-              <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between text-xs shadow-xs">
-                <span className="font-medium text-[#130F08]">زمن الوصول للعمل</span>
-                <BdiNumber value={property.travelTimeWorkMin} unit="دقيقة" className="font-semibold text-[#130F08]" />
+                ) : (
+                  <div className="p-4 rounded-2xl bg-white border border-[#E9DFD0] space-y-2 shadow-xs">
+                    <span className="text-xs text-[#130F08]/65 block font-medium">النطاق السعري الاسترشادي للمتر</span>
+                    <span className="text-base font-semibold text-[#130F08] block tabular-nums">
+                      {property.fairPriceRange}
+                    </span>
+                    <div className="text-xs text-[#130F08]/75 pt-1 border-t border-[#E9DFD0]/60">
+                      سعر المتر التقريبي: <BdiNumber value={formatNumber(Math.round(property.price / property.areaM2))} unit="ر.س" />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
+            )}
+
+            {/* Tab 4: الحياة اليومية (Daily) */}
+            {activeTab === "daily" && (
+              <div className="space-y-2.5">
+                <div className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] flex items-center justify-between text-xs shadow-xs">
+                  <span className="font-medium text-[#130F08]">زمن الوصول للعمل</span>
+                  <BdiNumber value={property.travelTimeWorkMin} unit="دقيقة" className="font-semibold text-[#130F08]" />
+                </div>
                 {property.facts
                   .filter((f) => f.scope === "micro_location" || f.scope === "neighborhood")
                   .map((fact) => (
@@ -480,47 +428,59 @@ export default function PropertyDetailPage() {
                     </div>
                   ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Tab 4: المخاطر والمجهولات (Risks) */}
-          {activeTab === "risks" && (
-            <div className="space-y-2.5 text-right">
-              {property.facts
-                .filter(
-                  (f) =>
-                    f.certainty === "conflicting" ||
-                    f.certainty === "unknown" ||
-                    f.certainty === "inferred"
-                )
-                .map((fact) => {
-                  const isConflict = fact.certainty === "conflicting";
-                  return (
-                    <div
-                      key={fact.id}
-                      className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
-                        isConflict
-                          ? "bg-[#C2643A]/10 border-[#C2643A]/40 text-[#130F08]"
-                          : "bg-white/70 border-[#E9DFD0] text-[#130F08]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-[#130F08]">{fact.label}</span>
-                        <CertaintyChip level={fact.certainty} size="sm" variant="paper" />
+            {/* Tab 5: المخاطر (Risks) */}
+            {activeTab === "risks" && (
+              <div className="space-y-2.5">
+                {property.facts
+                  .filter(
+                    (f) =>
+                      f.certainty === "conflicting" ||
+                      f.certainty === "unknown" ||
+                      f.certainty === "inferred"
+                  )
+                  .map((fact) => {
+                    const isConflict = fact.certainty === "conflicting";
+                    return (
+                      <div
+                        key={fact.id}
+                        className={`p-3.5 rounded-xl border text-xs space-y-1.5 ${
+                          isConflict
+                            ? "bg-[#C2643A]/10 border-[#C2643A]/40 text-[#130F08]"
+                            : "bg-white/70 border-[#E9DFD0] text-[#130F08]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[#130F08]">{fact.label}</span>
+                          <CertaintyChip level={fact.certainty} size="sm" variant="paper" />
+                        </div>
+                        <p className="text-xs text-[#130F08]/80">{fact.value}</p>
+                        {fact.impactExplanation && (
+                          <p className="text-xs text-[#C2643A] font-medium pt-1 border-t border-[#130F08]/10">
+                            الأثر: {fact.impactExplanation}
+                          </p>
+                        )}
                       </div>
-                      <p className="text-xs text-[#130F08]/80">{fact.value}</p>
-                      {fact.impactExplanation && (
-                        <p className="text-xs text-[#C2643A] font-medium pt-1 border-t border-[#130F08]/10">
-                          الأثر: {fact.impactExplanation}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-      </GlassSheet>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+
+          {/* Sticky Sheet Bottom Bar: 1 Primary CTA */}
+          <div className="p-4 pt-2 border-t border-[#E9DFD0] bg-[#FAF6EF]/90 backdrop-blur-md">
+            <PrimaryButton
+              label={isSelected ? "محدد للمعاينة الميدانية ✓" : "اختر للمعاينة الميدانية"}
+              icon={isSelected ? Check : undefined}
+              onClick={handleToggleVisit}
+              className={`w-full h-14 rounded-full text-base font-semibold shadow-lg ${
+                isSelected ? "bg-[#14756E] text-[#FAF6EF]" : ""
+              }`}
+            />
+          </div>
+        </motion.div>
+      </div>
     </AppShell>
   );
 }
