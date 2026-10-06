@@ -63,7 +63,7 @@ export default function PreflightPage() {
         </div>
 
         {/* 1 Supporting Line: 5-Segment Progress Bar */}
-        <div className="flex items-center justify-between text-xs text-[#130F08]/65 font-medium">
+        <div className="flex items-center justify-between text-xs text-[#130F08]/75 font-medium">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 w-20" dir="rtl">
               {[1, 2, 3, 4, 5].map((step) => (
@@ -80,7 +80,7 @@ export default function PreflightPage() {
             </span>
           </div>
 
-          <span className="text-[11px] text-[#130F08]/60">
+          <span className="text-[11px] text-[#130F08]/75">
             {COPY.preflight.subtitle}
           </span>
         </div>
@@ -97,7 +97,7 @@ export default function PreflightPage() {
                   <span className="text-sm font-bold text-[#130F08] tabular-nums">
                     <bdi dir="ltr">{readinessPercent}%</bdi>
                   </span>
-                  <span className="text-[10px] text-[#130F08]/65">جاهزية</span>
+                  <span className="text-[10px] text-[#130F08]/75">جاهزية</span>
                 </div>
               </TickRing>
             </div>
@@ -117,7 +117,7 @@ export default function PreflightPage() {
               <h2 className="text-sm font-semibold text-[#130F08] leading-tight">
                 {isReady ? COPY.preflight.readyText : COPY.preflight.incompleteText}
               </h2>
-              <p className="text-[11px] text-[#130F08]/75 leading-relaxed">
+              <p className="text-[11px] text-[#130F08]/80 leading-relaxed">
                 {isReady
                   ? "اكتملت المؤشرات المطلوبة، يمكنك الآن الانتقال للترتيب النهائي."
                   : `احسم النقطة الرئيسية لكل عقار بالأسفل لضمان مقارنة عادلة.`}
@@ -140,7 +140,7 @@ export default function PreflightPage() {
 
               if (property.id === "p1") {
                 primaryMissing = {
-                  title: "تعارض في المساحة (148 م² مقابل 160 م²)",
+                  title: "تعارض في المساحة",
                   desc: "حدد المساحة المعتمدة بناءً على رغبتك أو الصك الإلكتروني:",
                   isResolved: p1AreaResolved,
                   component: (
@@ -148,24 +148,24 @@ export default function PreflightPage() {
                       <button
                         type="button"
                         onClick={() => resolveP1Area("148")}
-                        className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                        className={`flex-1 min-h-[44px] px-3 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           p1SelectedArea === "148"
                             ? "bg-[#130F08] text-[#FAF6EF] border-[#130F08]"
                             : "bg-white text-[#130F08] border-[#E9DFD0] hover:bg-[#FAF6EF]"
                         }`}
                       >
-                        148 م² (صافي المعاينة)
+                        <bdi dir="ltr">148 م²</bdi> (صافي المعاينة)
                       </button>
                       <button
                         type="button"
                         onClick={() => resolveP1Area("160")}
-                        className={`flex-1 min-h-[44px] px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                        className={`flex-1 min-h-[44px] px-3 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                           p1SelectedArea === "160"
                             ? "bg-[#130F08] text-[#FAF6EF] border-[#130F08]"
                             : "bg-white text-[#130F08] border-[#E9DFD0] hover:bg-[#FAF6EF]"
                         }`}
                       >
-                        160 م² (حسب الصك)
+                        <bdi dir="ltr">160 م²</bdi> (حسب الصك)
                       </button>
                     </div>
                   ),
@@ -177,18 +177,22 @@ export default function PreflightPage() {
                   isResolved: p3AgeResolved,
                   component: (
                     <div className="flex items-center gap-2 pt-2">
-                      {["جديد (سنة)", "3 سنوات", "5 سنوات"].map((age) => (
+                      {[
+                        { key: "جديد (سنة)", label: "جديد (سنة)" },
+                        { key: "3 سنوات", label: <><bdi dir="ltr">3</bdi> سنوات</> },
+                        { key: "5 سنوات", label: <><bdi dir="ltr">5</bdi> سنوات</> },
+                      ].map((item) => (
                         <button
-                          key={age}
+                          key={item.key}
                           type="button"
-                          onClick={() => resolveP3Age(age)}
-                          className={`flex-1 min-h-[44px] px-2 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer truncate ${
-                            p3BuildingAge === age
+                          onClick={() => resolveP3Age(item.key)}
+                          className={`flex-1 min-h-[44px] px-2 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer truncate ${
+                            p3BuildingAge === item.key
                               ? "bg-[#130F08] text-[#FAF6EF] border-[#130F08]"
                               : "bg-white text-[#130F08] border-[#E9DFD0] hover:bg-[#FAF6EF]"
                           }`}
                         >
-                          {age}
+                          {item.label}
                         </button>
                       ))}
                     </div>
@@ -269,7 +273,7 @@ export default function PreflightPage() {
                         onClick={() => setActivePropertyForSheet(property)}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#14756E] hover:underline cursor-pointer min-h-[36px]"
                       >
-                        <span>باقي التفاصيل والنواقص ({property.facts.length - 1})</span>
+                        <span>باقي التفاصيل والنواقص (<bdi dir="ltr">{property.facts.length - 1}</bdi>)</span>
                         <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -317,13 +321,13 @@ export default function PreflightPage() {
                         ? "bg-[#14756E]/10 text-[#14756E]"
                         : fact.certainty === "conflicting"
                         ? "bg-[#C2643A]/10 text-[#C2643A]"
-                        : "bg-[#130F08]/8 text-[#130F08]/70"
+                        : "bg-[#130F08]/8 text-[#130F08]/75"
                     }`}
                   >
                     {fact.certainty === "confirmed" ? "مؤكد" : fact.certainty === "conflicting" ? "تعارض مصادر" : "غير معروف"}
                   </span>
                 </div>
-                <p className="text-xs text-[#130F08]/75 leading-relaxed">
+                <p className="text-xs text-[#130F08]/80 leading-relaxed">
                   {fact.value}
                 </p>
               </div>
