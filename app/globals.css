@@ -1,0 +1,269 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* 1. Brand Tokens (Light-First Reset) */
+    --ivory: #FAF6EF;       /* Base canvas */
+    --sand: #E9DFD0;        /* Surface / card / borders */
+    --espresso: #130F08;    /* Ink text and dark glass tint */
+    --cocoa: #3D271A;       /* Deep warm accents */
+    --brass: #E3A83A;       /* Primary accent & CTA start */
+    --brass-light: #F0C060; /* Soft brass gradient end */
+    --teal: #14756E;        /* Selection, trust, map highlights */
+    --copper: #C2643A;      /* Conflicts / warnings only */
+
+    /* Compatibility aliases */
+    --sandstone: #E9DFD0;
+    --cream: #FAF6EF;
+    --driftwood: #645A4E;
+
+    /* Text contrast: ink on ivory is espresso; muted is at least 65% (>= 7:1 contrast for body) */
+    --text-primary: #130F08;
+    --text-muted: rgba(19, 15, 8, 0.68);
+    --border-subtle: rgba(19, 15, 8, 0.12);
+
+    /* Typography: ONLY IBM Plex Sans Arabic everywhere */
+    --font-arabic: var(--font-ibm-plex-sans-arabic), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  body {
+    background-color: var(--ivory);
+    color: var(--espresso);
+    font-family: var(--font-arabic);
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 400;
+    letter-spacing: normal;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Headings: weight 600, no letter-spacing on Arabic, strict scale */
+  h1 {
+    font-size: 30px;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: normal;
+  }
+
+  h2 {
+    font-size: 22px;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: normal;
+  }
+
+  h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: normal;
+  }
+
+  p {
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 400;
+    letter-spacing: normal;
+  }
+
+  /* Captions: 13px (never below 12px), weight 500 */
+  .caption, .eyebrow-caption {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: normal;
+  }
+
+  /* Remove all calligraphic display & italics for Arabic */
+  h1 em, h2 em, h3 em, .hero-headline em, em, i {
+    font-style: normal;
+    font-family: var(--font-arabic);
+    font-weight: 600;
+  }
+
+  /* Tabular Numerals for prices & metrics */
+  .tabular-nums, .num-tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Hide Next.js dev indicator in screenshot mode */
+  nextjs-portal,
+  [data-nextjs-toast],
+  [data-nextjs-dev-overlay] {
+    display: none !important;
+  }
+}
+
+@theme {
+  --color-ivory: #FAF6EF;
+  --color-sand: #E9DFD0;
+  --color-espresso: #130F08;
+  --color-cocoa: #3D271A;
+  --color-brass: #E3A83A;
+  --color-brass-light: #F0C060;
+  --color-teal: #14756E;
+  --color-copper: #C2643A;
+
+  --color-sandstone: #E9DFD0;
+  --color-cream: #FAF6EF;
+  --color-driftwood: #645A4E;
+
+  --font-sans: var(--font-ibm-plex-sans-arabic), system-ui, sans-serif;
+  --font-arabic: var(--font-ibm-plex-sans-arabic), system-ui, sans-serif;
+}
+
+/* Survey Grid Pattern: very faint 24px cells */
+.survey-grid-paper {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(19, 15, 8, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(19, 15, 8, 0.05) 1px, transparent 1px);
+}
+
+.survey-grid-dark {
+  background-size: 24px 24px;
+  background-image: 
+    linear-gradient(to right, rgba(250, 246, 239, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(250, 246, 239, 0.04) 1px, transparent 1px);
+}
+
+/* =========================================================================
+   3. GLASS LEVELS (utilities)
+   - glass-light: (rgba(255,255,255,0.62), blur 24, saturate 160%, 1px rgba(255,255,255,0.7) border, soft shadow)
+   - glass-dark: (rgba(19,15,8,0.38), blur 28, saturate 140%, 1px rgba(255,255,255,0.22) border, top inner highlight)
+   ========================================================================= */
+
+.glass-light,
+.bawsala-glass-light {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 30px -8px rgba(19, 15, 8, 0.08);
+}
+
+.glass-dark,
+.bawsala-glass-dark {
+  background: rgba(19, 15, 8, 0.38);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+    0 20px 45px -10px rgba(19, 15, 8, 0.5);
+}
+
+/* Compatibility aliases for previous bawsala-glass classes */
+.bawsala-glass {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 30px -8px rgba(19, 15, 8, 0.08);
+}
+
+.bawsala-glass-subtle {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 6px 20px -6px rgba(19, 15, 8, 0.05);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-light,
+  .bawsala-glass-light,
+  .bawsala-glass {
+    background: #FAF6EF;
+    border: 1px solid #E9DFD0;
+    box-shadow: 0 10px 30px -8px rgba(19, 15, 8, 0.08);
+  }
+  .glass-dark,
+  .bawsala-glass-dark {
+    background: #1e1710;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* Fallback for users requesting reduced transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-light,
+  .bawsala-glass-light,
+  .bawsala-glass {
+    background: #FFFFFF;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid #E9DFD0;
+    box-shadow: 0 10px 30px -8px rgba(19, 15, 8, 0.08);
+  }
+  .glass-dark,
+  .bawsala-glass-dark {
+    background: #18120b;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* Light sweep effect on glass panel */
+@keyframes glassSweep {
+  0%, 80% {
+    transform: translateX(-150%) skewX(-20deg);
+    opacity: 0;
+  }
+  85% {
+    opacity: 0.35;
+  }
+  95%, 100% {
+    transform: translateX(250%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+.animate-glass-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-glass-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: glassSweep 8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  pointer-events: none;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(233, 223, 208, 0.5) 25%,
+    rgba(250, 246, 239, 0.8) 50%,
+    rgba(233, 223, 208, 0.5) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
