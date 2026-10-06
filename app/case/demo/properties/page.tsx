@@ -7,18 +7,18 @@ import {
   Link2,
   Image as ImageIcon,
   PenLine,
-  Plus,
   Trash2,
+  ArrowRight,
   CheckCircle2,
-  Compass,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { PropertyImage } from "@/components/ui/PropertyImage";
-import { SurveyBrackets } from "@/components/ui/SurveyBrackets";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
+import { MapView } from "@/components/ui/MapView";
 import { useAppStore } from "@/lib/store";
 import { COPY } from "@/lib/copy";
-import { BdiNumber, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
+import { getCoverImageForProperty } from "@/lib/images";
 
 export default function PropertiesPage() {
   const router = useRouter();
@@ -28,225 +28,191 @@ export default function PropertiesPage() {
     removeProperty,
   } = useAppStore();
 
-  const [extractedMap] = useState<Record<string, boolean>>({
-    p1: true,
-    p2: true,
-    p3: true,
-  });
-
-  const maxSlots = 5;
-  const emptySlotsCount = Math.max(0, maxSlots - properties.length);
-
   return (
-    <AppShell
-      showStepper
-      activeStep="properties"
-      backHref="/case/demo/needs"
-      pageTitle={COPY.properties.title}
-    >
-      <div className="relative z-10 flex-1 flex flex-col justify-between px-5 pt-6 pb-32 max-w-lg mx-auto w-full">
-        <div className="space-y-6">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-1.5 text-right"
+    <AppShell hideTopBar>
+      {/* Header: Back Arrow, Headline, 5-Segment Progress Bar */}
+      <header className="sticky top-0 z-40 w-full bg-[#FAF6EF]/92 backdrop-blur-md border-b border-[#E9DFD0]/70 px-4 sm:px-5 pt-3 pb-2.5 space-y-2" dir="rtl">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 text-[#130F08] hover:bg-[#E9DFD0]/60 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
+            aria-label="الرجوع للخلف"
           >
-            <div className="flex items-center justify-between">
-              <span className="eyebrow-caption text-[#130F08]/65 block font-medium">
-                الخطوة 02 // إدخال الخيارات
-              </span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#FAF6EF] border border-[#E9DFD0] text-[#130F08] font-semibold">
-                {COPY.properties.slotsCounter(properties.length)}
-              </span>
+            <ArrowRight className="w-5 h-5 text-[#130F08]" />
+          </button>
+
+          {/* 1 Headline: "أضف العقارات" */}
+          <h1 className="text-base font-semibold text-[#130F08]">
+            {COPY.properties.title}
+          </h1>
+
+          <div className="w-10 h-10" />
+        </div>
+
+        {/* 1 Supporting Line: 5-Segment Progress Bar */}
+        <div className="flex items-center justify-between text-xs text-[#130F08]/65 font-medium">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 w-20" dir="rtl">
+              {[1, 2, 3, 4, 5].map((step) => (
+                <div
+                  key={step}
+                  className={`h-1 flex-1 rounded-full ${
+                    step <= 2 ? "bg-[#130F08]" : "bg-[#E9DFD0]"
+                  }`}
+                />
+              ))}
             </div>
+            <span>
+              <bdi dir="ltr">2 من 5</bdi>
+            </span>
+          </div>
 
-            <h1 className="text-2xl md:text-[28px] font-semibold text-[#130F08]">
-              {COPY.properties.title}
-            </h1>
-            <p className="text-xs text-[#130F08]/70 leading-relaxed font-normal">
-              {COPY.properties.subtitle}
-            </p>
-          </motion.div>
+          <span className="text-[11px] text-[#130F08]/60">
+            {COPY.properties.slotsCounter(properties.length)}
+          </span>
+        </div>
+      </header>
 
-          {/* Three Entry Tiles with SurveyBrackets */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="grid grid-cols-3 gap-3"
-          >
-            {/* Tile 1: Link */}
-            <SurveyBrackets active={true} size={8} color="#14756E">
-              <button
-                type="button"
-                onClick={() => setAddSheetOpen(true)}
-                className="w-full p-3.5 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 group shadow-xs"
-              >
-                {/* 48px glass circle */}
-                <div className="w-12 h-12 rounded-full glass-light border border-[#130F08]/12 flex items-center justify-center text-[#14756E] group-hover:scale-105 transition-all shadow-xs">
-                  <Link2 className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-semibold text-[#130F08]">
-                  رابط إعلان
-                </span>
-              </button>
-            </SurveyBrackets>
+      {/* Main Body (Strictly Max 3 Content Blocks) */}
+      <div className="px-4 sm:px-5 pt-4 pb-32 flex-1 flex flex-col justify-between max-w-md mx-auto w-full" dir="rtl">
+        <div className="space-y-4">
+          {/* Content Block 1: Add Options as Three Glass Tiles */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <button
+              type="button"
+              onClick={() => setAddSheetOpen(true)}
+              className="p-3 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs min-h-[84px]"
+            >
+              <div className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shadow-2xs">
+                <Link2 className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-[#130F08]">
+                رابط إعلان
+              </span>
+            </button>
 
-            {/* Tile 2: Screenshot */}
-            <SurveyBrackets active={true} size={8} color="#14756E">
-              <button
-                type="button"
-                onClick={() => setAddSheetOpen(true)}
-                className="w-full p-3.5 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 group shadow-xs"
-              >
-                {/* 48px glass circle */}
-                <div className="w-12 h-12 rounded-full glass-light border border-[#130F08]/12 flex items-center justify-center text-[#14756E] group-hover:scale-105 transition-all shadow-xs">
-                  <ImageIcon className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-semibold text-[#130F08]">
-                  صورة / لقطة
-                </span>
-              </button>
-            </SurveyBrackets>
+            <button
+              type="button"
+              onClick={() => setAddSheetOpen(true)}
+              className="p-3 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs min-h-[84px]"
+            >
+              <div className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shadow-2xs">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-[#130F08]">
+                صورة / لقطة
+              </span>
+            </button>
 
-            {/* Tile 3: Manual Entry */}
-            <SurveyBrackets active={true} size={8} color="#14756E">
-              <button
-                type="button"
-                onClick={() => setAddSheetOpen(true)}
-                className="w-full p-3.5 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 group shadow-xs"
-              >
-                {/* 48px glass circle */}
-                <div className="w-12 h-12 rounded-full glass-light border border-[#130F08]/12 flex items-center justify-center text-[#14756E] group-hover:scale-105 transition-all shadow-xs">
-                  <PenLine className="w-5 h-5" />
-                </div>
-                <span className="text-xs font-semibold text-[#130F08]">
-                  إدخال يدوي
-                </span>
-              </button>
-            </SurveyBrackets>
-          </motion.div>
+            <button
+              type="button"
+              onClick={() => setAddSheetOpen(true)}
+              className="p-3 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs min-h-[84px]"
+            >
+              <div className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shadow-2xs">
+                <PenLine className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-[#130F08]">
+                إدخال يدوي
+              </span>
+            </button>
+          </div>
 
-          {/* Properties Stack List */}
-          <div className="space-y-3 pt-2">
-            <AnimatePresence mode="popLayout">
-              {properties.map((property, idx) => {
-                const isExtracted = extractedMap[property.id] ?? true;
+          {/* Content Block 2: Property Cards as Photo Cards (PropertyImage) with small glass status chip */}
+          <div className="space-y-3">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {properties.map((property) => {
+                const coverImage = property.images?.[0] || getCoverImageForProperty(property.id);
 
                 return (
                   <motion.div
                     key={property.id}
                     layout
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={false}
+                    animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.35, delay: idx * 0.05 }}
-                    className="relative overflow-hidden rounded-3xl glass-light border border-[#130F08]/10 p-3.5 group hover:border-[#130F08]/25 transition-all shadow-xs"
+                    transition={{ duration: 0.2 }}
+                    className="p-3 rounded-2xl glass-light border border-[#E9DFD0] flex items-center gap-3 shadow-2xs relative"
                   >
-                    <div className="flex items-center gap-3.5">
-                      {/* PropertyImage Capsule Thumbnail */}
-                      <div className="w-16 h-22 shrink-0">
-                        <PropertyImage
-                          image={property.images?.[0]}
-                          shape="capsule"
-                          tone={property.colorTone || "sandstone"}
-                          alt={property.title}
-                          priority={idx === 0}
-                          containerClassName="w-16 h-22 shadow-xs"
-                        />
+                    {/* Thumbnail using PropertyImage */}
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-[#E9DFD0] relative">
+                      <PropertyImage
+                        image={coverImage}
+                        tone={property.colorTone || "sandstone"}
+                        alt={property.title}
+                        containerClassName="w-full h-full"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    {/* Details with max 3 chips */}
+                    <div className="flex-1 min-w-0 space-y-1 text-right">
+                      {/* Small glass status chip */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-full glass-dark text-[10px] font-semibold text-[#FAF6EF] shadow-2xs flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-[#14756E]" />
+                          <span>تمت القراءة</span>
+                        </span>
+                        <span className="text-[11px] text-[#130F08]/65 font-medium truncate">
+                          {property.sourceLabel}
+                        </span>
                       </div>
 
-                      {/* Info & Extraction Status */}
-                      <div className="flex-1 min-w-0 space-y-1.5 text-right">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="text-sm font-semibold text-[#130F08] truncate">
-                            {property.title}
-                          </h3>
-                          <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#FAF6EF] border border-[#E9DFD0] text-[#130F08] shrink-0 font-medium">
-                            {property.sourceLabel}
-                          </span>
-                        </div>
+                      <h2 className="text-xs sm:text-sm font-semibold text-[#130F08] truncate">
+                        {property.title}
+                      </h2>
 
-                        <div className="flex items-baseline gap-2">
-                          <BdiNumber
-                            value={formatNumber(property.price)}
-                            unit="ر.س"
-                            className="text-base font-semibold text-[#130F08]"
-                          />
-                          <span className="text-xs text-[#130F08]/65">
-                            • <BdiNumber value={property.areaM2} unit="م²" /> • {property.district}
-                          </span>
-                        </div>
-
-                        {/* Extraction Status Line */}
-                        <div className="flex items-center justify-between pt-1">
-                          <div className="flex items-center gap-1.5">
-                            {isExtracted ? (
-                              <div className="flex items-center gap-1.5 text-xs text-[#14756E] font-medium">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-[#14756E]" />
-                                <span>تم استخراج البيانات بنجاح</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 text-xs text-[#130F08]/70">
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                >
-                                  <Compass className="w-3.5 h-3.5 text-[#130F08]/65" />
-                                </motion.div>
-                                <span>جارٍ قراءة وفحص المصدر...</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Delete action */}
-                          <button
-                            type="button"
-                            onClick={() => removeProperty(property.id)}
-                            className="p-1.5 rounded-full text-[#130F08]/50 hover:text-[#C2643A] hover:bg-[#C2643A]/10 transition-colors cursor-pointer"
-                            title="حذف العقار"
-                            aria-label={`حذف ${property.title}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      {/* Max 3 Chips: Price, Area, District */}
+                      <div className="flex items-center gap-1.5 text-[11px] text-[#130F08]/75">
+                        <span className="font-bold text-[#130F08]">
+                          <bdi dir="ltr">{formatNumber(property.price)} ر.س</bdi>
+                        </span>
+                        <span>•</span>
+                        <span>
+                          <bdi dir="ltr">{property.areaM2} م²</bdi>
+                        </span>
+                        <span>•</span>
+                        <span className="truncate">{property.district}</span>
                       </div>
                     </div>
+
+                    {/* Delete button (at least 48px tap target) */}
+                    {properties.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeProperty(property.id)}
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-[#130F08]/40 hover:text-[#C2643A] active:scale-95 transition-all cursor-pointer shrink-0"
+                        title="حذف هذا العقار"
+                        aria-label="حذف هذا العقار"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </motion.div>
                 );
               })}
             </AnimatePresence>
+          </div>
 
-            {/* Dashed Capsule Placeholders */}
-            {Array.from({ length: emptySlotsCount }).map((_, idx) => (
-              <button
-                key={`empty-slot-${idx}`}
-                type="button"
-                onClick={() => setAddSheetOpen(true)}
-                className="w-full h-16 rounded-full border-2 border-dashed border-[#E9DFD0] hover:border-[#14756E] bg-white/40 flex items-center justify-center gap-2 text-xs text-[#130F08]/65 hover:text-[#130F08] transition-all cursor-pointer group shadow-2xs"
-              >
-                <Plus className="w-4 h-4 text-[#130F08]/50 group-hover:text-[#14756E] transition-colors" />
-                <span className="font-semibold text-xs">
-                  إضافة عقار آخر ({properties.length + idx + 1} من {maxSlots})
-                </span>
-              </button>
-            ))}
+          {/* Content Block 3: Map Pins Mini Card */}
+          <div className="rounded-2xl border border-[#E9DFD0] overflow-hidden shadow-2xs bg-[#FAF6EF]">
+            <MapView
+              variant="mini"
+              properties={properties}
+              className="w-full h-36"
+            />
           </div>
         </div>
 
-        {/* Sticky Action Footer */}
-        <div className="fixed bottom-0 inset-x-0 mx-auto max-w-[430px] p-6 bg-gradient-to-t from-[#FAF6EF] via-[#FAF6EF]/95 to-transparent pt-10 z-30 pointer-events-none">
-          <div className="pointer-events-auto">
-            <PrimaryButton
-              label={COPY.properties.cta}
-              onClick={() => router.push("/case/demo/preflight")}
-              disabled={properties.length === 0}
-              className="w-full shadow-xl"
-              size="56"
-            />
-          </div>
+        {/* 1 Primary Brass CTA (min 48px height) */}
+        <div className="pt-6">
+          <PrimaryButton
+            label={COPY.properties.cta}
+            onClick={() => router.push("/case/demo/preflight")}
+            size="56"
+            className="w-full shadow-lg"
+          />
         </div>
       </div>
     </AppShell>
