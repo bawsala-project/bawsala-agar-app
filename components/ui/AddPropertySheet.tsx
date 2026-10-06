@@ -107,7 +107,7 @@ export function AddPropertySheet() {
                 <h3 className="text-base md:text-lg font-semibold text-[#130F08]">
                   {COPY.properties.sheetAddTitle}
                 </h3>
-                <p className="text-xs text-[#130F08]/65">
+                <p className="text-xs text-[#130F08]/80">
                   {COPY.properties.sheetAddSubtitle}
                 </p>
               </div>
@@ -131,7 +131,7 @@ export function AddPropertySheet() {
                   className={`h-10 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     activeTab === "link"
                       ? "bg-[#130F08] text-[#FAF6EF] shadow-xs"
-                      : "text-[#130F08]/65 hover:text-[#130F08]"
+                      : "text-[#130F08]/80 hover:text-[#130F08]"
                   }`}
                 >
                   <Link2 className="w-3.5 h-3.5" />
@@ -144,7 +144,7 @@ export function AddPropertySheet() {
                   className={`h-10 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     activeTab === "screenshot"
                       ? "bg-[#130F08] text-[#FAF6EF] shadow-xs"
-                      : "text-[#130F08]/65 hover:text-[#130F08]"
+                      : "text-[#130F08]/80 hover:text-[#130F08]"
                   }`}
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
@@ -157,7 +157,7 @@ export function AddPropertySheet() {
                   className={`h-10 px-3 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                     activeTab === "manual"
                       ? "bg-[#130F08] text-[#FAF6EF] shadow-xs"
-                      : "text-[#130F08]/65 hover:text-[#130F08]"
+                      : "text-[#130F08]/80 hover:text-[#130F08]"
                   }`}
                 >
                   <PenLine className="w-3.5 h-3.5" />
@@ -171,7 +171,7 @@ export function AddPropertySheet() {
               {activeTab === "link" && (
                 <div className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-[#130F08]/75 block">رابط إعلان العقار</label>
+                    <label className="text-xs font-medium text-[#130F08]/80 block">رابط إعلان العقار</label>
                     <div className="flex gap-2" dir="ltr">
                       <input
                         type="url"
@@ -189,7 +189,7 @@ export function AddPropertySheet() {
                       </button>
                     </div>
                   </div>
-                  <p className="text-xs text-[#130F08]/65 leading-relaxed">
+                  <p className="text-xs text-[#130F08]/80 leading-relaxed">
                     ندعم استيراد الروابط من منصة عقار، زاهب، ديل، والمواقع العقارية المعتمدة.
                   </p>
                 </div>
@@ -207,7 +207,7 @@ export function AddPropertySheet() {
                     <span className="text-xs text-[#130F08] font-semibold">
                       {isUploading ? "تم التعرف على لقطة الإعلان" : "اضغط لرفع لقطة الشاشة أو صورة العرض"}
                     </span>
-                    <span className="text-xs text-[#130F08]/60">
+                    <span className="text-xs text-[#130F08]/75">
                       JPG, PNG حتى 10 ميجابايت
                     </span>
                   </div>

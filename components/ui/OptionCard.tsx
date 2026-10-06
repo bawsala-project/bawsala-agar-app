@@ -62,7 +62,7 @@ export function OptionCard({
             )}
           </div>
           {subtitle && (
-            <p className="text-xs text-[#130F08]/65 truncate">
+            <p className="text-xs text-[#130F08]/80 truncate">
               {subtitle}
             </p>
           )}

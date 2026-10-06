@@ -145,7 +145,7 @@ export function LoginSheet() {
                   <h3 className="text-base font-semibold text-[#130F08]">
                     {step === "phone" ? COPY.login.sheetTitle : COPY.login.enterOtpTitle}
                   </h3>
-                  <p className="text-xs text-[#130F08]/65">
+                  <p className="text-xs text-[#130F08]/80">
                     {step === "phone" ? COPY.login.sheetSubtitle : COPY.login.enterOtpSubtitle}
                   </p>
                 </div>
@@ -173,12 +173,12 @@ export function LoginSheet() {
                     <CheckCircle2 className="w-8 h-8" />
                   </motion.div>
                   <h4 className="text-lg font-semibold text-[#130F08]">تم التحقق بنجاح</h4>
-                  <p className="text-xs text-[#130F08]/65">جاري نقلك إلى لوحة التحكم وحفظ الحالة...</p>
+                  <p className="text-xs text-[#130F08]/80">جاري نقلك إلى لوحة التحكم وحفظ الحالة...</p>
                 </div>
               ) : step === "phone" ? (
                 <form onSubmit={handleSendCode} className="space-y-5">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-[#130F08]/75 block">
+                    <label className="text-xs font-medium text-[#130F08]/80 block">
                       {COPY.login.phoneLabel}
                     </label>
 
@@ -201,7 +201,7 @@ export function LoginSheet() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#130F08]/65 leading-relaxed">
+                  <p className="text-xs text-[#130F08]/80 leading-relaxed">
                     ملاحظة: هذا نموذج تجريبي (Demo). أي رقم مدخل سيتلقى رمزاً تجريبياً فورياً.
                   </p>
 
@@ -235,7 +235,7 @@ export function LoginSheet() {
                   {/* Resend info */}
                   <div className="text-center text-xs">
                     {countdown > 0 ? (
-                      <span className="text-[#130F08]/65">
+                      <span className="text-[#130F08]/80">
                         {COPY.login.resendTimer(countdown)}
                       </span>
                     ) : (

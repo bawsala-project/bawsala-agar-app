@@ -42,7 +42,7 @@ export function FloatingNav({
               className={`relative z-10 h-12 px-3.5 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                 isActive
                   ? "text-[#FAF6EF] font-semibold"
-                  : "text-[#130F08]/65 hover:text-[#130F08]"
+                  : "text-[#130F08]/80 hover:text-[#130F08]"
               }`}
             >
               {/* Spring-animated Sliding Dark Pill Indicator */}

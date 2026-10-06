@@ -437,21 +437,21 @@ export function MapView({
       {/* Full Variant: Interactive Map Controls (Zoom In, Zoom Out, Recenter) */}
       {!isMini && (
         <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5">
-          <div className="flex flex-col rounded-2xl glass-dark border border-white/20 p-1 shadow-md">
+          <div className="flex flex-col rounded-full glass-dark border border-white/20 p-1 shadow-md items-center">
             <button
               type="button"
               onClick={handleZoomIn}
               title="تكبير"
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FAF6EF] hover:bg-white/20 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#FAF6EF] hover:bg-white/20 transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
             </button>
-            <div className="w-full h-px bg-white/15 my-0.5" />
+            <div className="w-4 h-px bg-white/15 my-0.5" />
             <button
               type="button"
               onClick={handleZoomOut}
               title="تصغير"
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-[#FAF6EF] hover:bg-white/20 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#FAF6EF] hover:bg-white/20 transition-colors cursor-pointer"
             >
               <Minus className="w-4 h-4" />
             </button>
@@ -461,7 +461,7 @@ export function MapView({
             type="button"
             onClick={handleReset}
             title="إعادة ضبط الموقع"
-            className="w-10 h-10 rounded-2xl glass-dark border border-white/20 flex items-center justify-center text-[#FAF6EF] hover:bg-white/20 transition-colors shadow-md cursor-pointer"
+            className="w-10 h-10 rounded-full glass-dark border border-white/20 flex items-center justify-center text-[#FAF6EF] hover:bg-white/20 transition-colors shadow-md cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
           </button>

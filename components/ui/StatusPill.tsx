@@ -21,17 +21,17 @@ const STATUS_CONFIG: Record<
   ranked: {
     label: "ترتيب واضح ومكتمل",
     icon: CheckCircle2,
-    containerClass: "bg-[#F2EBE2] text-[#130F08] font-medium border border-[#F2EBE2] shadow-sm",
+    containerClass: "bg-[#14756E]/12 text-[#14756E] font-semibold border border-[#14756E]/40 shadow-2xs",
   },
   provisional: {
     label: "ترتيب مبدئي قابل للتحديث",
     icon: Clock,
-    containerClass: "bg-[#3D271A]/70 text-[#F2EBE2] border border-[#645A4E]/50",
+    containerClass: "bg-[#FAF6EF] text-[#130F08] font-semibold border border-[#E9DFD0] shadow-2xs",
   },
   insufficient: {
     label: "لا تكفي البيانات للمقارنة القاطعة",
     icon: AlertCircle,
-    containerClass: "bg-[#130F08]/80 text-[#D7CBBE] border border-[#645A4E]/60 border-dashed",
+    containerClass: "bg-white text-[#C2643A] font-semibold border border-[#C2643A]/40 border-dashed",
   },
 };
 
@@ -50,7 +50,7 @@ export function StatusPill({
 
   return (
     <span
-      className={`inline-flex items-center tracking-wide select-none ${sizeClasses} ${config.containerClass} ${className}`}
+      className={`inline-flex items-center select-none ${sizeClasses} ${config.containerClass} ${className}`}
     >
       <Icon className={size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4"} />
       <span className="leading-none">{config.label}</span>

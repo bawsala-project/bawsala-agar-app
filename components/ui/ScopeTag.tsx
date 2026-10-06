@@ -23,22 +23,22 @@ const SCOPE_CONFIG: Record<
   property: {
     defaultLabel: "عقار",
     icon: Building2,
-    containerClass: "bg-sandstone/15 text-sandstone border border-sandstone/30",
+    containerClass: "bg-[#FAF6EF] text-[#130F08] border border-[#E9DFD0] shadow-2xs",
   },
   micro_location: {
     defaultLabel: "موقع دقيق",
     icon: MapPin,
-    containerClass: "bg-cocoa/50 text-sandstone border border-sandstone/25",
+    containerClass: "bg-[#14756E]/10 text-[#14756E] border border-[#14756E]/30 font-semibold",
   },
   neighborhood: {
     defaultLabel: "نطاق الحي",
     icon: Compass,
-    containerClass: "bg-transparent text-driftwood border border-driftwood/45 border-dashed",
+    containerClass: "bg-white text-[#130F08] border border-[#E9DFD0] border-dashed",
   },
   market: {
     defaultLabel: "السوق العام",
     icon: Globe2,
-    containerClass: "bg-transparent text-driftwood/90 border border-driftwood/35 border-dashed",
+    containerClass: "bg-white text-[#130F08] border border-[#E9DFD0]",
   },
 };
 
@@ -59,7 +59,7 @@ export function ScopeTag({
 
   return (
     <span
-      className={`inline-flex items-center tracking-wide font-normal transition-colors ${sizeClasses} ${config.containerClass} ${className}`}
+      className={`inline-flex items-center font-normal transition-colors select-none ${sizeClasses} ${config.containerClass} ${className}`}
     >
       <Icon className={size === "sm" ? "w-3 h-3 shrink-0" : "w-3.5 h-3.5 shrink-0"} />
       <span className="leading-none">{displayLabel}</span>

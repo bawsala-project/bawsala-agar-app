@@ -145,7 +145,7 @@ export function GlassSheet({
                     </h3>
                   )}
                   {subtitle && (
-                    <p className={`text-xs mt-0.5 ${isLight ? "text-[#130F08]/65" : "text-[#FAF6EF]/70"}`}>
+                    <p className={`text-xs mt-0.5 ${isLight ? "text-[#130F08]/80" : "text-[#FAF6EF]/80"}`}>
                       {subtitle}
                     </p>
                   )}
