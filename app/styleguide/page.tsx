@@ -37,6 +37,8 @@ import { Wordmark } from "@/components/brand/Wordmark";
 import { CertaintyChip, CertaintyLevel } from "@/components/ui/CertaintyChip";
 import { ScopeTag, ScopeType } from "@/components/ui/ScopeTag";
 import { VisitPriorityBadge, PriorityLevel } from "@/components/ui/VisitPriorityBadge";
+import { StatusPill } from "@/components/ui/StatusPill";
+import { FitArc } from "@/components/ui/FitArc";
 import { PaperCard } from "@/components/ui/PaperCard";
 import { PropertyImage } from "@/components/ui/PropertyImage";
 import { MapView } from "@/components/ui/MapView";
@@ -206,7 +208,7 @@ export default function StyleguidePage() {
 
           <div className="p-5 rounded-3xl bg-white border border-[#E9DFD0] space-y-4 shadow-2xs">
             <div className="space-y-1">
-              <span className="text-xs text-[#130F08]/65 font-medium block">
+              <span className="text-xs text-[#130F08]/75 font-medium block">
                 h1: 30px / line-height 1.3 (Weight 600)
               </span>
               <h1 className="text-[30px] font-semibold leading-[1.3] text-[#130F08]">
@@ -215,7 +217,7 @@ export default function StyleguidePage() {
             </div>
 
             <div className="space-y-1 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/65 font-medium block">
+              <span className="text-xs text-[#130F08]/75 font-medium block">
                 h2: 22px / line-height 1.35 (Weight 600)
               </span>
               <h2 className="text-[22px] font-semibold leading-[1.35] text-[#130F08]">
@@ -224,7 +226,7 @@ export default function StyleguidePage() {
             </div>
 
             <div className="space-y-1 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/65 font-medium block">
+              <span className="text-xs text-[#130F08]/75 font-medium block">
                 body: 16px / line-height 1.6 (Weight 400)
               </span>
               <p className="text-base font-normal leading-[1.6] text-[#130F08]/85">
@@ -233,7 +235,7 @@ export default function StyleguidePage() {
             </div>
 
             <div className="space-y-2 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/65 font-medium block">
+              <span className="text-xs text-[#130F08]/75 font-medium block">
                 عزل الأرقام والوحدات لمنع الانعكاس (Wrap in BdiNumber):
               </span>
               <div className="flex flex-wrap gap-4 text-sm font-semibold">
@@ -266,7 +268,7 @@ export default function StyleguidePage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
               {/* Primary */}
               <div className="space-y-2 text-center">
-                <span className="text-xs text-[#130F08]/65 block font-semibold">
+                <span className="text-xs text-[#130F08]/75 block font-semibold">
                   Primary Button (56px Pill + Brass Gradient)
                 </span>
                 <PrimaryButton label="متابعة التحليل الكامل" size="56" className="w-full" />
@@ -274,7 +276,7 @@ export default function StyleguidePage() {
 
               {/* Secondary */}
               <div className="space-y-2 text-center">
-                <span className="text-xs text-[#130F08]/65 block font-semibold">
+                <span className="text-xs text-[#130F08]/75 block font-semibold">
                   Secondary Button (56px Glass Pill)
                 </span>
                 <SecondaryButton label="قارن المواصفات" size="56" className="w-full" />
@@ -282,7 +284,7 @@ export default function StyleguidePage() {
 
               {/* Tertiary */}
               <div className="space-y-2 text-center flex flex-col items-center">
-                <span className="text-xs text-[#130F08]/65 block font-semibold">
+                <span className="text-xs text-[#130F08]/75 block font-semibold">
                   Tertiary Button (Draw-in Underline)
                 </span>
                 <TertiaryButton label="عرض مسودة الشروط الكاملة" />
@@ -291,7 +293,7 @@ export default function StyleguidePage() {
 
             {/* Icon Buttons (Canonical 48px Glass Circle) */}
             <div className="pt-4 border-t border-[#E9DFD0] space-y-2">
-              <span className="text-xs text-[#130F08]/65 block font-semibold">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
                 Icon Buttons: canonical 48px glass circle (Heights 40, 48, 56)
               </span>
               <div className="flex items-center gap-4">
@@ -299,7 +301,7 @@ export default function StyleguidePage() {
                   <IconButton size="40" label="حفظ">
                     <Bookmark className="w-4 h-4" />
                   </IconButton>
-                  <span className="text-xs text-[#130F08]/65 font-medium">40px</span>
+                  <span className="text-xs text-[#130F08]/75 font-medium">40px</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -313,7 +315,7 @@ export default function StyleguidePage() {
                   <IconButton size="56" label="مشاركة">
                     <Share2 className="w-6 h-6" />
                   </IconButton>
-                  <span className="text-xs text-[#130F08]/65 font-medium">56px</span>
+                  <span className="text-xs text-[#130F08]/75 font-medium">56px</span>
                 </div>
               </div>
             </div>
@@ -431,7 +433,7 @@ export default function StyleguidePage() {
           <div className="p-6 rounded-3xl bg-white border border-[#E9DFD0] space-y-6 shadow-2xs">
             {/* Select Chips */}
             <div className="space-y-2">
-              <span className="text-xs text-[#130F08]/65 block font-semibold">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
                 Selectable Pill Chips (40px Full Pill, Teal selection)
               </span>
               <div className="flex flex-wrap gap-2.5">
@@ -460,7 +462,7 @@ export default function StyleguidePage() {
 
             {/* Option Cards */}
             <div className="space-y-2 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/65 block font-semibold">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
                 Option Cards (48px Glass Circle Icon, Teal selection check)
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -545,8 +547,8 @@ export default function StyleguidePage() {
                   لتبويب الموقع في تفاصيل العقار
                 </span>
               </div>
-              <p className="text-xs text-[#130F08]/65">
-                تتضمن دبابيس نحاسية متدرجة، هالة نبضية حول الخيار النشط، دبوس مقر العمل بلون الإسبريسو، وحلقة وقت الوصول (20 دقيقة). جرب سحب الخريطة أو التكبير أو النقر على أحد الدبابيس.
+              <p className="text-xs text-[#130F08]/80">
+                تتضمن دبابيس نحاسية متدرجة، هالة نبضية حول الخيار النشط، دبوس مقر العمل بلون الإسبريسو، وحلقة وقت الوصول (<bdi dir="ltr">20 دقيقة</bdi>). جرب سحب الخريطة أو التكبير أو النقر على أحد الدبابيس.
               </p>
               <div className="w-full">
                 <MapView variant="full" />
@@ -554,7 +556,150 @@ export default function StyleguidePage() {
             </div>
           </div>
         </section>
+
+        {/* Section 9: Indicators, Badges & Status Pills */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
+            <Activity className="w-3.5 h-3.5" />
+            <span>9. المؤشرات والشارات وحالات الثقة (StatusPill, CertaintyChip, Badges, FitArc &amp; TickRing)</span>
+          </div>
+
+          <div className="p-6 rounded-3xl bg-white border border-[#E9DFD0] space-y-6 shadow-2xs">
+            {/* StatusPills */}
+            <div className="space-y-2">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
+                أ. كبسولات حالة الترتيب (StatusPill: Ranked, Provisional, Insufficient):
+              </span>
+              <div className="flex flex-wrap gap-3">
+                <StatusPill status="ranked" />
+                <StatusPill status="provisional" />
+                <StatusPill status="insufficient" />
+              </div>
+            </div>
+
+            {/* Visit Priority Badges */}
+            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
+                ب. شارات أولوية المعاينة (VisitPriorityBadge: High, Medium, Low, Insufficient):
+              </span>
+              <div className="flex flex-wrap gap-3">
+                <VisitPriorityBadge level="high" />
+                <VisitPriorityBadge level="medium" />
+                <VisitPriorityBadge level="low" />
+                <VisitPriorityBadge level="insufficient_data" />
+              </div>
+            </div>
+
+            {/* Certainty Chips */}
+            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
+                ج. رقائق موثوقية المعلومة (CertaintyChip: 7 مستويات موثقة):
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {certaintyLevels.map((lvl) => (
+                  <CertaintyChip key={lvl} level={lvl} />
+                ))}
+              </div>
+            </div>
+
+            {/* Scope Tags */}
+            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
+                د. وسوم نطاق المعيار (ScopeTag):
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {(["unit", "building", "micro_location", "neighborhood", "city"] as ScopeType[]).map((scope) => (
+                  <ScopeTag key={scope} scope={scope} />
+                ))}
+              </div>
+            </div>
+
+            {/* Gauge Dials: FitArc, TickRing, NeedleBadge */}
+            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
+              <span className="text-xs text-[#130F08]/75 block font-semibold">
+                هـ. مؤشرات القياس الدائرية (FitArc, NeedleBadge &amp; TickRing):
+              </span>
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <FitArc level="excellent" label="ممتاز" />
+                  <FitArc level="good" label="جيد" />
+                  <FitArc level="acceptable" label="مقبول" />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <NeedleBadge rank={1} />
+                  <NeedleBadge rank={2} />
+                  <NeedleBadge rank={3} />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <TickRing progress={100} size={54}>
+                    <span className="text-xs font-bold text-[#14756E] tabular-nums">100%</span>
+                  </TickRing>
+                  <TickRing progress={65} size={54}>
+                    <span className="text-xs font-bold text-[#130F08] tabular-nums">65%</span>
+                  </TickRing>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 10: Modals & Bottom Sheets */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
+            <Layers className="w-3.5 h-3.5" />
+            <span>10. القوائم والصفحات المنبثقة (GlassSheet Modal)</span>
+          </div>
+
+          <div className="p-6 rounded-3xl glass-light border border-[#E9DFD0] space-y-4 shadow-2xs">
+            <p className="text-xs text-[#130F08]/80 leading-relaxed">
+              تعتمد شاشات بوصلة على اللوحات الزجاجية المنبثقة من الأسفل (<code className="px-1.5 py-0.5 rounded-full bg-[#E9DFD0] text-[#130F08] font-mono text-[11px]">GlassSheet</code>) لعرض التفاصيل الإضافية أو تعديل المدخلات دون كسر ميزانية المحتوى (بحد أقصى 3 كتل في الشاشة الأساسية).
+            </p>
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsGlassSheetOpen(true)}
+                className="h-12 px-6 rounded-full font-semibold text-xs text-[#FAF6EF] bg-[#130F08] hover:bg-[#3D271A] flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-98"
+              >
+                <Layers className="w-4 h-4 text-[#FAF6EF]" />
+                <span>فتح صفحة زجاجية منبثقة تجريبية</span>
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
+
+      {/* Interactive GlassSheet Demo */}
+      <GlassSheet
+        isOpen={isGlassSheetOpen}
+        onClose={() => setIsGlassSheetOpen(false)}
+        title="لوحة زجاجية تجريبية"
+        subtitle="دليل مكون GlassSheet في نمط الضوء الأول"
+        initialSnap={glassSheetSnap}
+        variant="light"
+      >
+        <div className="space-y-4 text-right" dir="rtl">
+          <div className="p-4 rounded-2xl bg-white border border-[#E9DFD0] space-y-2 shadow-xs">
+            <span className="text-xs font-bold text-[#14756E] block">
+              نظام المحتوى الذكي
+            </span>
+            <p className="text-xs text-[#130F08]/80 leading-relaxed">
+              تحتوي هذه اللوحة على مفاصل السحب التفاعلية (<bdi dir="ltr">Snap Points: peek, half, full</bdi>) وتغلق بالسحب أو بالنقر على الخلفية المعتمة.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <PrimaryButton
+              label="إغلاق اللوحة"
+              onClick={() => setIsGlassSheetOpen(false)}
+              size="48"
+              className="w-full"
+            />
+          </div>
+        </div>
+      </GlassSheet>
     </div>
   );
 }
