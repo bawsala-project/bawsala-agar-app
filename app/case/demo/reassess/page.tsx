@@ -77,7 +77,7 @@ export default function ReassessPage() {
                 <h3 className="text-base font-bold text-[#130F08]">
                   {COPY.reassess.analyzingMini}
                 </h3>
-                <p className="text-xs text-[#130F08]/70 leading-relaxed">
+                <p className="text-xs text-[#130F08]/80 leading-relaxed">
                   تحديث التقييم الهندسي والمالي وفقاً لملاحظاتك الميدانية
                 </p>
               </div>
@@ -98,14 +98,14 @@ export default function ReassessPage() {
                     الخطوة 06 // التحديث النهائي
                   </span>
                   <span className="text-xs text-[#130F08]/30">•</span>
-                  <span className="text-[11px] font-medium text-[#130F08]/70">
+                  <span className="text-[11px] font-medium text-[#130F08]/75">
                     تم التقييم الميداني
                   </span>
                 </div>
                 <h1 className="text-xl font-bold text-[#130F08]">
                   {COPY.reassess.title}
                 </h1>
-                <p className="text-xs text-[#130F08]/70">
+                <p className="text-xs text-[#130F08]/80">
                   {COPY.reassess.subtitle}
                 </p>
               </div>
@@ -118,7 +118,7 @@ export default function ReassessPage() {
                     <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#14756E] text-[#FAF6EF] font-bold">
                       المركز الأول الجديد ↑
                     </span>
-                    <span className="text-[11px] text-[#FAF6EF]/60 font-medium">
+                    <span className="text-[11px] text-[#FAF6EF]/80 font-medium">
                       بعد المعاينة
                     </span>
                   </div>
@@ -140,8 +140,8 @@ export default function ReassessPage() {
                         <BdiNumber value={formatNumber(p3.price)} unit="ر.س" />
                       </div>
                       {/* One-Line Reason */}
-                      <p className="text-[11px] text-[#FAF6EF]/80 leading-relaxed line-clamp-2">
-                        السبب: سلامة تامة من العيوب الإنشائية وتوفير 80 ألف ر.س.
+                      <p className="text-[11px] text-[#FAF6EF]/85 leading-relaxed line-clamp-2">
+                        السبب: سلامة تامة من العيوب الإنشائية وتوفير <bdi dir="ltr">80 ألف ر.س</bdi>.
                       </p>
                     </div>
                   </div>
@@ -153,7 +153,7 @@ export default function ReassessPage() {
                     <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#C2643A]/15 text-[#C2643A] font-bold">
                       تراجع للمركز الثاني ↓
                     </span>
-                    <span className="text-[11px] text-[#130F08]/50 font-medium">
+                    <span className="text-[11px] text-[#130F08]/75 font-medium">
                       كان #1 قبل المعاينة
                     </span>
                   </div>
@@ -199,7 +199,7 @@ export default function ReassessPage() {
                   </span>
                   <span className="text-[11px] px-2.5 py-1 rounded-full bg-white border border-[#E9DFD0] text-[#130F08] font-medium flex items-center gap-1 shadow-2xs">
                     <CheckCircle2 className="w-3 h-3 text-[#14756E]" />
-                    <span>تأكيد الصك 148 م²</span>
+                    <span>تأكيد الصك <bdi dir="ltr">148 م²</bdi></span>
                   </span>
                 </div>
               </div>
@@ -229,13 +229,13 @@ export default function ReassessPage() {
                 <button
                   type="button"
                   onClick={() => setIsDetailsOpen(true)}
-                  className="w-full h-11 px-3.5 rounded-xl glass-light border border-[#130F08]/15 text-xs font-semibold text-[#14756E] hover:bg-[#FAF6EF] transition-colors flex items-center justify-between cursor-pointer"
+                  className="w-full h-11 px-3.5 rounded-2xl glass-light border border-[#130F08]/15 text-xs font-semibold text-[#14756E] hover:bg-[#FAF6EF] transition-colors flex items-center justify-between cursor-pointer"
                 >
                   <span className="flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5" />
                     <span>لماذا تفوقت شقة النرجس؟ (تفاصيل المعادلة)</span>
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-[#130F08]/50" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[#130F08]/75" />
                 </button>
               </div>
             </motion.div>
@@ -279,7 +279,7 @@ export default function ReassessPage() {
               شقة حي النرجس (المركز الأول الجديد)
             </span>
             <p className="text-xs text-[#130F08]/85 leading-relaxed">
-              خالية من أي ملاحظات إنشائية مرصودة، وتوفر مبلغ 80,000 ر.س يكفي لتغطية فارق تكلفة التنقل لعدة سنوات قادمة بأريحية وأمان.
+              خالية من أي ملاحظات إنشائية مرصودة، وتوفر مبلغ <bdi dir="ltr">80,000 ر.س</bdi> يكفي لتغطية فارق تكلفة التنقل لعدة سنوات قادمة بأريحية وأمان.
             </p>
           </div>
 
@@ -288,7 +288,7 @@ export default function ReassessPage() {
               شقة حي الياسمين (المركز الثاني)
             </span>
             <p className="text-xs text-[#130F08]/85 leading-relaxed">
-              رغم ميزتها الكبرى في القرب من مقر العمل (15 دقيقة)، فإن رصد تسرب مائي في السقف يفرض فحصاً هندسياً دقيقاً واشتراط ضمانات إصلاح رسمية من البائع قبل التعاقد.
+              رغم ميزتها الكبرى في القرب من مقر العمل (<bdi dir="ltr">15 دقيقة</bdi>)، فإن رصد تسرب مائي في السقف يفرض فحصاً هندسياً دقيقاً واشتراط ضمانات إصلاح رسمية من البائع قبل التعاقد.
             </p>
           </div>
         </div>
