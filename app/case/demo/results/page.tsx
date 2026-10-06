@@ -136,7 +136,7 @@ export default function ResultsPage() {
         </div>
 
         {/* 1 Supporting Line: Thin 5-Segment Progress Bar, "3 من 5", and "لماذا هذا الترتيب؟" trigger */}
-        <div className="flex items-center justify-between text-xs text-[#130F08]/65 font-medium">
+        <div className="flex items-center justify-between text-xs text-[#130F08]/75 font-medium">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 w-20" dir="rtl">
               {[1, 2, 3, 4, 5].map((step) => {
@@ -159,7 +159,7 @@ export default function ResultsPage() {
           <button
             type="button"
             onClick={() => setIsWhyOrderOpen(true)}
-            className="inline-flex items-center gap-1 text-[11px] text-[#14756E] hover:underline cursor-pointer font-medium"
+            className="inline-flex items-center gap-1 text-[11px] text-[#14756E] hover:underline cursor-pointer font-semibold"
           >
             <Sparkles className="w-3 h-3 text-[#14756E]" />
             <span>لماذا هذا الترتيب؟</span>
@@ -363,7 +363,7 @@ export default function ResultsPage() {
               <span className="text-xs font-semibold text-[#130F08] block leading-tight">
                 ما ينقص؟
               </span>
-              <span className="text-[11px] text-[#130F08]/65 font-normal">
+              <span className="text-[11px] text-[#130F08]/75 font-normal">
                 <bdi dir="ltr">{activeMissingFacts.length}</bdi> نقاط غير مؤكدة بانتظار المعاينة
               </span>
             </div>
@@ -434,7 +434,7 @@ export default function ResultsPage() {
               activeMissingFacts.map((fact) => (
                 <div
                   key={fact.id}
-                  className="p-3 rounded-xl bg-white border border-[#E9DFD0] space-y-1 shadow-2xs"
+                  className="p-3.5 rounded-2xl bg-white border border-[#E9DFD0] space-y-1 shadow-2xs"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-[#130F08]">
@@ -444,13 +444,13 @@ export default function ResultsPage() {
                       className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         fact.certainty === "conflicting"
                           ? "bg-[#C2643A]/10 text-[#C2643A] border border-[#C2643A]/25"
-                          : "bg-[#130F08]/8 text-[#130F08]/75 border border-[#130F08]/15"
+                          : "bg-[#130F08]/8 text-[#130F08]/80 border border-[#130F08]/15"
                       }`}
                     >
                       {fact.certainty === "conflicting" ? "تعارض مصادر" : "غير معروف"}
                     </span>
                   </div>
-                  <p className="text-xs text-[#130F08]/75 leading-relaxed">
+                  <p className="text-xs text-[#130F08]/80 leading-relaxed">
                     {fact.value}
                   </p>
                   {fact.impactExplanation && (
@@ -461,7 +461,7 @@ export default function ResultsPage() {
                 </div>
               ))
             ) : (
-              <p className="text-xs text-[#130F08]/65 text-center py-4">
+              <p className="text-xs text-[#130F08]/75 text-center py-4">
                 لا توجد نواقص جوهرية مسجلة لهذا العقار حالياً.
               </p>
             )}
@@ -498,7 +498,7 @@ export default function ResultsPage() {
           <div className="p-4 rounded-2xl bg-[#FAF6EF] border border-[#E9DFD0] space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-medium text-[#130F08]/65 block mb-0.5">
+                <span className="text-[11px] font-medium text-[#130F08]/75 block mb-0.5">
                   الخطوة <bdi dir="ltr">04</bdi> // الترتيب والمفاضلة
                 </span>
                 <h2 className="text-lg font-semibold text-[#130F08]">
@@ -514,7 +514,7 @@ export default function ResultsPage() {
               </div>
             </div>
 
-            <p className="text-xs text-[#130F08]/75 leading-relaxed font-normal">
+            <p className="text-xs text-[#130F08]/80 leading-relaxed font-normal">
               {isReassessed
                 ? "تم تحديث الترتيب ومستويات الاطمئنان بعد تسجيل ملاحظات المعاينة الميدانية."
                 : COPY.results.subtitle}
@@ -529,7 +529,7 @@ export default function ResultsPage() {
                 <Columns className="w-3.5 h-3.5 text-[#14756E]" />
                 <span>مقارنة تفصيلية جنباً إلى جنب</span>
               </Link>
-              <span className="text-[#130F08]/65 font-medium">
+              <span className="text-[#130F08]/75 font-medium">
                 <bdi dir="ltr">3</bdi> عقارات
               </span>
             </div>
@@ -545,7 +545,7 @@ export default function ResultsPage() {
                 <p className="text-xs font-semibold text-[#130F08]">
                   {COPY.results.closeOptionsNotice}
                 </p>
-                <p className="text-xs text-[#130F08]/65 leading-relaxed mt-0.5">
+                <p className="text-xs text-[#130F08]/75 leading-relaxed mt-0.5">
                   الفارق الإجمالي بين الخيارين طفيف، وتحسمه المعاينة الميدانية للهيكل.
                 </p>
               </div>
@@ -557,7 +557,7 @@ export default function ResultsPage() {
             <span className="text-xs font-semibold text-[#130F08] block">
               المحددات الحاكمة للفرز:
             </span>
-            <ul className="text-xs text-[#130F08]/75 space-y-1.5 list-disc list-inside">
+            <ul className="text-xs text-[#130F08]/80 space-y-1.5 list-disc list-inside">
               <li>
                 سقف الميزانية الصارم: لا يتجاوز <bdi dir="ltr">900,000 ر.س</bdi>
               </li>
