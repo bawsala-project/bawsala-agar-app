@@ -174,7 +174,7 @@ export default function ComparePage() {
             <h1 className="text-xl font-bold text-[#130F08]">
               {COPY.compare.title}
             </h1>
-            <p className="text-xs text-[#130F08]/70">
+            <p className="text-xs text-[#130F08]/80">
               {COPY.compare.subtitle}
             </p>
           </div>
@@ -207,7 +207,7 @@ export default function ComparePage() {
                   <div className="text-[11px] font-semibold text-[#14756E]">
                     <BdiNumber value={formatNumber(prop.price)} unit="ر.س" />
                   </div>
-                  <span className="text-[10px] text-[#130F08]/60 block truncate">
+                  <span className="text-[10px] text-[#130F08]/75 block truncate">
                     {prop.district}
                   </span>
                 </div>
@@ -221,7 +221,7 @@ export default function ComparePage() {
               <span className="text-xs font-bold text-[#130F08]">
                 الفروقات الجوهرية (5 معايير)
               </span>
-              <span className="text-[11px] text-[#130F08]/60">
+              <span className="text-[11px] text-[#130F08]/75">
                 الخط الأخضر يوضح الأفضل
               </span>
             </div>
@@ -242,14 +242,14 @@ export default function ComparePage() {
                     return (
                       <div
                         key={prop.id}
-                        className={`text-center py-1 px-1 rounded-lg text-[11px] truncate ${
+                        className={`text-center py-1 px-1 rounded-xl text-[11px] truncate ${
                           isStrongest
                             ? "bg-[#14756E]/10 text-[#14756E] font-bold border border-[#14756E]/20"
                             : "text-[#130F08]/85"
                         }`}
                         title={val}
                       >
-                        {val}
+                        <bdi dir="ltr">{val}</bdi>
                       </div>
                     );
                   })}
@@ -262,11 +262,11 @@ export default function ComparePage() {
               <button
                 type="button"
                 onClick={() => setIsSheetOpen(true)}
-                className="w-full h-11 px-4 rounded-xl glass-light border border-[#130F08]/15 text-xs font-semibold text-[#130F08] hover:bg-[#E9DFD0]/60 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                className="w-full h-11 px-4 rounded-full glass-light border border-[#130F08]/15 text-xs font-semibold text-[#130F08] hover:bg-[#E9DFD0]/60 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <Layers className="w-3.5 h-3.5 text-[#14756E]" />
                 <span>عرض الكل (10 معايير تفصيلية)</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#130F08]/60" />
+                <ChevronDown className="w-3.5 h-3.5 text-[#130F08]/75" />
               </button>
             </div>
           </div>
@@ -286,7 +286,7 @@ export default function ComparePage() {
                 تفاوض لتخفيض سعر شقة الملقا
               </span>
               <span className="text-[11px] px-2.5 py-1 rounded-full bg-white border border-[#E9DFD0] text-[#130F08] font-medium shadow-2xs">
-                تأكيد صك المساحة على 160 م²
+                تأكيد صك المساحة على <bdi dir="ltr">160 م²</bdi>
               </span>
             </div>
           </div>
@@ -335,7 +335,7 @@ export default function ComparePage() {
                   <span className="font-semibold text-[#130F08] block text-[11px]">
                     {item.label}
                   </span>
-                  <span className="text-[10px] text-[#130F08]/50 block">
+                  <span className="text-[10px] text-[#130F08]/75 block">
                     {item.category}
                   </span>
                 </div>
@@ -346,14 +346,14 @@ export default function ComparePage() {
                   return (
                     <div
                       key={prop.id}
-                      className={`text-center py-1 px-1 rounded-lg text-[11px] truncate ${
+                      className={`text-center py-1 px-1 rounded-xl text-[11px] truncate ${
                         isStrongest
                           ? "bg-[#14756E]/10 text-[#14756E] font-bold border border-[#14756E]/20"
                           : "text-[#130F08]/85"
                       }`}
                       title={val}
                     >
-                      {val}
+                      <bdi dir="ltr">{val}</bdi>
                     </div>
                   );
                 })}
