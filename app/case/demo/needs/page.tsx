@@ -51,7 +51,7 @@ export default function NeedsPage() {
         </div>
 
         {/* 1 Supporting Line: 5-Segment Progress Bar */}
-        <div className="flex items-center justify-between text-xs text-[#130F08]/65 font-medium">
+        <div className="flex items-center justify-between text-xs text-[#130F08]/75 font-medium">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 w-20" dir="rtl">
               {[1, 2, 3, 4, 5].map((step) => (
@@ -68,7 +68,7 @@ export default function NeedsPage() {
             </span>
           </div>
 
-          <span className="text-[11px] text-[#130F08]/60">
+          <span className="text-[11px] text-[#130F08]/75">
             {COPY.needs.subtitle}
           </span>
         </div>
@@ -87,7 +87,7 @@ export default function NeedsPage() {
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#130F08]/70 font-medium">
+                  <span className="text-xs text-[#130F08]/80 font-medium">
                     {userNeed.hardConstraint.title}
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#14756E]/12 text-[#14756E] border border-[#14756E]/30">
@@ -97,7 +97,7 @@ export default function NeedsPage() {
 
                 <div className="pt-0.5">
                   <bdi dir="ltr" className="text-3xl sm:text-4xl text-[#130F08] font-bold tabular-nums block leading-none">
-                    {formatNumber(userNeed.hardConstraint.numericBudget)} <span className="text-sm font-medium text-[#130F08]/70">ر.س</span>
+                    {formatNumber(userNeed.hardConstraint.numericBudget)} <span className="text-sm font-medium text-[#130F08]/80">ر.س</span>
                   </bdi>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function NeedsPage() {
             </div>
 
             <div className="mt-3 pt-3 border-t border-[#130F08]/10 flex items-center justify-between text-xs">
-              <span className="text-[#130F08]/75">
+              <span className="text-[#130F08]/80">
                 {COPY.needs.hardConstraintTip}
               </span>
               <button
@@ -126,7 +126,7 @@ export default function NeedsPage() {
           {userNeed.preferences[0] && (
             <div className="p-4 rounded-2xl glass-light border border-[#E9DFD0] flex items-center justify-between shadow-2xs">
               <div className="text-right space-y-0.5">
-                <span className="text-xs text-[#130F08]/65 block font-medium">
+                <span className="text-xs text-[#130F08]/75 block font-medium">
                   {userNeed.preferences[0].title}
                 </span>
                 <span className="text-sm font-semibold text-[#130F08] block">
@@ -149,7 +149,7 @@ export default function NeedsPage() {
           {userNeed.preferences[1] && (
             <div className="p-4 rounded-2xl glass-light border border-[#E9DFD0] flex items-center justify-between shadow-2xs">
               <div className="text-right space-y-0.5">
-                <span className="text-xs text-[#130F08]/65 block font-medium">
+                <span className="text-xs text-[#130F08]/75 block font-medium">
                   {userNeed.preferences[1].title}
                 </span>
                 <span className="text-sm font-semibold text-[#130F08] block">
@@ -203,9 +203,9 @@ export default function NeedsPage() {
                   max="5000000"
                   value={tempBudget}
                   onChange={(e) => setTempBudget(Number(e.target.value))}
-                  className="flex-1 min-h-[48px] px-4 rounded-xl border border-[#E9DFD0] bg-white text-base font-semibold text-[#130F08] tabular-nums focus:outline-none"
+                  className="flex-1 min-h-[48px] px-4 rounded-2xl border border-[#E9DFD0] bg-white text-base font-semibold text-[#130F08] tabular-nums focus:outline-none"
                 />
-                <span className="text-xs font-semibold text-[#130F08]/70">ر.س</span>
+                <span className="text-xs font-semibold text-[#130F08]/80">ر.س</span>
               </div>
 
               <div className="pt-2">
@@ -232,10 +232,16 @@ export default function NeedsPage() {
                     updatePreferencePriority("proximity", lvl);
                     setIsEditingSheetOpen(false);
                   }}
-                  className="w-full min-h-[48px] p-3 rounded-xl border border-[#E9DFD0] bg-white hover:bg-[#FAF6EF] flex items-center justify-between text-xs font-semibold text-[#130F08] cursor-pointer"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-[#E9DFD0] bg-white hover:bg-[#FAF6EF] flex items-center justify-between text-xs font-semibold text-[#130F08] cursor-pointer"
                 >
                   <span>
-                    {lvl === "high" ? "أولوية قصوى (حتى 15 دقيقة)" : lvl === "medium" ? "أولوية متوسطة (حتى 25 دقيقة)" : "أولوية عادية (حتى 35 دقيقة)"}
+                    {lvl === "high" ? (
+                      <>أولوية قصوى (حتى <bdi dir="ltr">15</bdi> دقيقة)</>
+                    ) : lvl === "medium" ? (
+                      <>أولوية متوسطة (حتى <bdi dir="ltr">25</bdi> دقيقة)</>
+                    ) : (
+                      <>أولوية عادية (حتى <bdi dir="ltr">35</bdi> دقيقة)</>
+                    )}
                   </span>
                   <span className="text-[11px] text-[#14756E]">
                     {lvl === "high" ? "مرتفعة" : lvl === "medium" ? "متوسطة" : "منخفضة"}
@@ -258,10 +264,16 @@ export default function NeedsPage() {
                     updatePreferencePriority("bedrooms", lvl);
                     setIsEditingSheetOpen(false);
                   }}
-                  className="w-full min-h-[48px] p-3 rounded-xl border border-[#E9DFD0] bg-white hover:bg-[#FAF6EF] flex items-center justify-between text-xs font-semibold text-[#130F08] cursor-pointer"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-[#E9DFD0] bg-white hover:bg-[#FAF6EF] flex items-center justify-between text-xs font-semibold text-[#130F08] cursor-pointer"
                 >
                   <span>
-                    {lvl === "high" ? "3 غرف نوم مؤكدة (شرط أساسي)" : lvl === "medium" ? "3 غرف نوم مفضلة" : "غرفتان أو أكثر"}
+                    {lvl === "high" ? (
+                      <><bdi dir="ltr">3</bdi> غرف نوم مؤكدة (شرط أساسي)</>
+                    ) : lvl === "medium" ? (
+                      <><bdi dir="ltr">3</bdi> غرف نوم مفضلة</>
+                    ) : (
+                      <><bdi dir="ltr">2</bdi> غرف أو أكثر</>
+                    )}
                   </span>
                   <span className="text-[11px] text-[#14756E]">
                     {lvl === "high" ? "مرتفعة" : lvl === "medium" ? "متوسطة" : "منخفضة"}
