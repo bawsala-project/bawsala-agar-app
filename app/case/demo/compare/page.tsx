@@ -297,7 +297,7 @@ export default function ComparePage() {
           <div className="pointer-events-auto">
             <PrimaryButton
               label="الانتقال إلى قائمة الفحص"
-              icon={ArrowRight}
+              icon={<ArrowRight className="w-4 h-4" />}
               onClick={() => router.push("/case/demo/inspection")}
               className="w-full h-14 rounded-full text-base font-semibold shadow-lg"
             />

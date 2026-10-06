@@ -315,7 +315,13 @@ export default function InspectionPage() {
                   ? "إعادة الترتيب بناءً على الفحص"
                   : "السؤال التالي"
               }
-              icon={isLastQuestion ? ArrowRight : ChevronLeft}
+              icon={
+                isLastQuestion ? (
+                  <ArrowRight className="w-4 h-4" />
+                ) : (
+                  <ChevronLeft className="w-4 h-4" />
+                )
+              }
               onClick={handleNext}
               className="w-full h-14 rounded-full text-base font-semibold shadow-lg"
             />

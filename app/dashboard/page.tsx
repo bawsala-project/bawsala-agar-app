@@ -93,7 +93,7 @@ export default function DashboardPage() {
               <div className="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-[#E9DFD0] bg-[#FAF6EF]">
                 <PropertyImage
                   image={getCoverImageForProperty("p1")}
-                  shape="rect"
+                  shape="inherit"
                   tone="sandstone"
                   alt="شقة عائلية في شمال الرياض"
                   containerClassName="w-full h-full"
@@ -128,7 +128,7 @@ export default function DashboardPage() {
             <div className="pt-1">
               <PrimaryButton
                 label="استكمال ومراجعة النتيجة"
-                icon={ArrowLeft}
+                icon={<ArrowLeft className="w-4 h-4" />}
                 onClick={() =>
                   router.push(isReassessed ? "/case/demo/reassess" : "/case/demo/results")
                 }
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                     <div className="w-18 h-20 rounded-xl overflow-hidden shrink-0 border border-[#E9DFD0] bg-[#FAF6EF]">
                       <PropertyImage
                         image={c.id === "demo" ? getCoverImageForProperty("p1") : getCoverImageForProperty("p2")}
-                        shape="rect"
+                        shape="inherit"
                         tone={c.id === "demo" ? "sandstone" : "cocoa"}
                         alt={c.title}
                         priority={idx === 0}

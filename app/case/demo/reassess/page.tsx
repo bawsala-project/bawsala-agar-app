@@ -248,7 +248,7 @@ export default function ReassessPage() {
             <div className="pointer-events-auto flex items-center gap-2.5">
               <PrimaryButton
                 label={COPY.reassess.saveCaseCta}
-                icon={ArrowRight}
+                icon={<ArrowRight className="w-4 h-4" />}
                 onClick={() => setLoginSheetOpen(true)}
                 className="flex-1 h-14 rounded-full text-base font-semibold shadow-lg"
               />

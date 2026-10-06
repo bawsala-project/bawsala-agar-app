@@ -472,7 +472,7 @@ export default function PropertyDetailPage() {
           <div className="p-4 pt-2 border-t border-[#E9DFD0] bg-[#FAF6EF]/90 backdrop-blur-md">
             <PrimaryButton
               label={isSelected ? "محدد للمعاينة الميدانية ✓" : "اختر للمعاينة الميدانية"}
-              icon={isSelected ? Check : undefined}
+              icon={isSelected ? <Check className="w-4 h-4" /> : undefined}
               onClick={handleToggleVisit}
               className={`w-full h-14 rounded-full text-base font-semibold shadow-lg ${
                 isSelected ? "bg-[#14756E] text-[#FAF6EF]" : ""
