@@ -41,9 +41,9 @@ export async function loadPreflightData(
           label = "رابط إلكتروني";
         }
       } else if (p.input_mode === "image") {
-        label = p.notes || `صور العقار (${p.image_paths?.length || 0})`;
+        label = `صور العقار (${p.image_paths?.length || 0})`;
       } else {
-        label = p.notes || "عقار بدون عنوان";
+        label = "عقار بدون عنوان";
       }
     }
 

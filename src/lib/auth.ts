@@ -3,16 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/types/database";
 
-export const ALLOWED_CITIES = [
-  "الرياض",
-  "جدة",
-  "الدمام",
-  "الخبر",
-  "مكة المكرمة",
-  "المدينة المنورة",
-] as const;
-
-export type AllowedCity = (typeof ALLOWED_CITIES)[number];
+export { ALLOWED_CITIES, type AllowedCity } from "@/lib/constants/cities";
 
 export async function ensureSession(): Promise<User> {
   const supabase = createClient();
@@ -30,6 +21,14 @@ export async function ensureSession(): Promise<User> {
   }
 
   return data.user;
+}
+
+export async function getSessionUser(): Promise<User | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
 }
 
 export async function requireCase(

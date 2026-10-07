@@ -29,6 +29,9 @@ export default defineConfig({
   test: {
     environment: "node",
     testTimeout: 30000,
+    // Suites share one hosted Supabase project and some reuse listUsers()[0] (the newest user),
+    // so files must not create/delete users concurrently.
+    fileParallelism: false,
   },
   resolve: {
     alias: {

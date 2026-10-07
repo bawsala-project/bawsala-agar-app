@@ -9,10 +9,14 @@ import { admitPropertyAssessment, AdmittedPropertyAssessment } from "@/lib/analy
 import { analyzeProperty } from "@/lib/ai/analyze";
 import { PROMPT_VERSION, ModelPropertyAssessment } from "@/lib/ai/prompts/analysis";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { ANALYSIS_RUNTIME_VERSION } from "@/lib/ai/version";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { FIELD_REGISTRY, FieldKey } from "@/lib/evidence/fields";
 
 export interface AnalysisActionState {
+  success?: boolean;
   error?: string;
+  redirectTo?: string;
 }
 
 export async function startAnalysis(
@@ -24,6 +28,27 @@ export async function startAnalysis(
   void formData;
   // 1. Guard access via RLS
   const currentCase = await requireCase(caseId);
+
+  // Gate: analysis requires a paid payment for this case
+  const { data: paidPayment } = await adminSupabase
+    .from("payments")
+    .select("id")
+    .eq("case_id", caseId)
+    .eq("status", "paid")
+    .maybeSingle();
+
+  if (!paidPayment) {
+    return {
+      success: false,
+      error: "يلزم سداد رسوم الاستشارة (10 ر.س) قبل بدء التحليل.",
+      redirectTo: `/case/${caseId}/checkout`,
+    };
+  }
+
+  const limit = await enforceRateLimit("analyze");
+  if (!limit.allowed) {
+    return { success: false, error: limit.message };
+  }
 
   // 2. Load preflight data and re-run preflight evaluation on server
   const preflightData = await loadPreflightData(caseId);
@@ -95,6 +120,7 @@ export async function startAnalysis(
       status: "running",
       model: modelName,
       prompt_version: PROMPT_VERSION,
+      analysis_runtime_version: ANALYSIS_RUNTIME_VERSION,
     })
     .select("id")
     .single();
@@ -402,6 +428,7 @@ export async function reassessPropertyAction(
       p_base_state_version: baseVersion,
       p_new_assessment: newAssessment as unknown as import("@/types/database").Json,
       p_diff: diff as unknown as import("@/types/database").Json,
+      p_runtime_version: ANALYSIS_RUNTIME_VERSION,
     }
   );
 

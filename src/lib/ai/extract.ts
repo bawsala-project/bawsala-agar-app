@@ -1,6 +1,8 @@
 import "server-only";
 import { generateObject, LanguageModel } from "ai";
 import { extractionModel } from "./client";
+import { buildAIExtractionPayload } from "@/lib/security/allowlists";
+import { sanitizeExtractionOutput } from "@/lib/security/authority-firewall";
 import {
   buildExtractionPrompt,
   buildImageExtractionPrompt,
@@ -19,17 +21,24 @@ export async function extractFactsFromText(
   text: string,
   modelOverride?: LanguageModel
 ): Promise<ExtractionOutput> {
-  const { system, prompt } = buildExtractionPrompt(text);
+  // Outbound allowlist: only the listing text reaches the model prompt.
+  const payload = buildAIExtractionPayload(text);
+  const { system, prompt } = buildExtractionPrompt(payload.text);
+
+  let rawText: string | undefined;
 
   const result = await generateObject({
     model: modelOverride ?? extractionModel,
     schema: extractionOutputSchema,
     system,
     prompt,
+    onStepEnd: (event) => {
+      rawText = event.objectText;
+    },
     abortSignal: AbortSignal.timeout(TIMEOUT_MS),
   });
 
-  return result.object;
+  return sanitizeExtractionOutput(result.object, rawText);
 }
 
 export async function extractFactsFromImages(
@@ -50,6 +59,8 @@ export async function extractFactsFromImages(
     })),
   ];
 
+  let rawText: string | undefined;
+
   const result = await generateObject({
     model: modelOverride ?? extractionModel,
     schema: extractionOutputSchema,
@@ -60,8 +71,11 @@ export async function extractFactsFromImages(
         content: userContent,
       },
     ],
+    onStepEnd: (event) => {
+      rawText = event.objectText;
+    },
     abortSignal: AbortSignal.timeout(TIMEOUT_MS),
   });
 
-  return result.object;
+  return sanitizeExtractionOutput(result.object, rawText);
 }

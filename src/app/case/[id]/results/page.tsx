@@ -1,10 +1,15 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireCase } from "@/lib/auth";
+import { getSessionUser, requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
 import type { ConstraintResult } from "@/lib/analysis/constraints";
+import { AccountLinkBanner } from "@/components/account-link-banner";
 import { PropertyCard, type PropertyCardAssessment, type PropertyCardProperty } from "./property-card";
+import { AnalysisStatus, type AnalysisStatusMode } from "./analysis-status";
+
+// Mirrors the 5-minute stale threshold used by startAnalysis for running runs.
+const STALE_RUN_MS = 300 * 1000;
 
 interface ResultsPageProps {
   params: { id: string };
@@ -14,6 +19,11 @@ interface ResultsPageProps {
 export default async function ResultsPage({ params, searchParams }: ResultsPageProps) {
   // 1. Guard with RLS
   await requireCase(params.id);
+
+  const user = await getSessionUser();
+  const banner = user?.is_anonymous ? (
+    <AccountLinkBanner nextPath={`/case/${params.id}/results`} />
+  ) : null;
 
   // 2. Fetch latest committed run
   const supabase = createClient();
@@ -26,7 +36,43 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
     .limit(1);
 
   if (!runs || runs.length === 0) {
-    redirect(`/case/${params.id}/preflight`);
+    const { data: paidPayments } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("case_id", params.id)
+      .eq("status", "paid")
+      .limit(1);
+
+    if (!paidPayments || paidPayments.length === 0) {
+      redirect(`/case/${params.id}/preflight`);
+    }
+
+    // Paid but not analyzed yet: never send the buyer back to preflight.
+    const { data: latestRuns } = await supabase
+      .from("analysis_runs")
+      .select("status, created_at")
+      .eq("case_id", params.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const latestRun = latestRuns?.[0];
+
+    const runIsStale =
+      latestRun?.status === "running" &&
+      Date.now() - new Date(latestRun.created_at).getTime() >= STALE_RUN_MS;
+
+    let mode: AnalysisStatusMode = "start";
+    if (latestRun?.status === "failed" || runIsStale) {
+      mode = "failed";
+    } else if (latestRun?.status === "running") {
+      mode = "wait";
+    }
+
+    return (
+      <>
+        {banner}
+        <AnalysisStatus caseId={params.id} mode={mode} />
+      </>
+    );
   }
 
   const latestRunId = runs[0].id;
@@ -60,6 +106,7 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      {banner}
       {/* Insufficient compare notice */}
       {searchParams?.notice === "insufficient_compare" && (
         <div

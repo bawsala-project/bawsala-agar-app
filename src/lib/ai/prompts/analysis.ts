@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { ConstraintResult, RequirementsRow } from "@/lib/analysis/constraints";
+import type { CleanFact, CleanRequirements } from "@/lib/security/allowlists";
 
-export const PROMPT_VERSION = "2026-10-06.1";
+export const PROMPT_VERSION = "2026-10-08.1";
 
 export const propertyAssessmentSchema = z.object({
   fit_rating: z
@@ -58,7 +59,13 @@ export interface PropertyAnalysisPromptInput {
   }>;
 }
 
-export function buildAnalysisPrompt(input: PropertyAnalysisPromptInput): {
+/** Prompt content after the outbound allowlist: only clean requirements and facts remain. */
+export type AnalysisPromptContent = Omit<PropertyAnalysisPromptInput, "requirements" | "knownFacts"> & {
+  requirements: CleanRequirements;
+  knownFacts: CleanFact[];
+};
+
+export function buildAnalysisPrompt(input: AnalysisPromptContent): {
   system: string;
   prompt: string;
 } {
@@ -82,23 +89,21 @@ export function buildAnalysisPrompt(input: PropertyAnalysisPromptInput): {
 
   let prompt = `=== احتياجات المشتري وميزانيته ===
 ${input.city ? `- المدينة: ${input.city}\n` : ""}- الميزانية القصوى: ${req.max_budget_sar.toLocaleString()} ر.س
-- طريقة الشراء: ${req.purchase_method === "cash" ? "كاش" : req.purchase_method === "finance" ? "تمويل عقاري" : "غير محددة"}
-- عدد أفراد الأسرة: ${req.household_size}
 - الحد الأدنى لغرف النوم: ${req.min_bedrooms}
 ${req.min_area_sqm ? `- الحد الأدنى للمساحة: ${req.min_area_sqm} م²` : ""}
 `;
 
-  if (req.preferences && Array.isArray(req.preferences) && req.preferences.length > 0) {
-    prompt += `\nالتفضيلات الشخصية:\n`;
-    for (const p of req.preferences as Array<{ label: string; weight: string }>) {
-      prompt += `- ${p.label} (الأهمية: ${p.weight})\n`;
+  if (req.hard_constraints.length > 0) {
+    prompt += `\nالشروط الأساسية:\n`;
+    for (const c of req.hard_constraints) {
+      prompt += `- ${c.label}${c.value !== undefined ? ` (${c.value})` : ""}\n`;
     }
   }
 
-  if (req.important_locations && Array.isArray(req.important_locations) && req.important_locations.length > 0) {
-    prompt += `\nالمواقع المهمة للمشتري:\n`;
-    for (const loc of req.important_locations as Array<{ label: string; address_text: string }>) {
-      prompt += `- ${loc.label}: ${loc.address_text}\n`;
+  if (req.preferences.length > 0) {
+    prompt += `\nالتفضيلات الشخصية:\n`;
+    for (const p of req.preferences) {
+      prompt += `- ${p.label} (الأهمية: ${p.weight})\n`;
     }
   }
 

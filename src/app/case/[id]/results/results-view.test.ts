@@ -203,6 +203,7 @@ describe("Results View & PropertyCard - Acceptance & Invariants", () => {
     const auth = await import("@/lib/auth");
     const serverSupabase = await import("@/lib/supabase/server");
 
+    vi.spyOn(auth, "getSessionUser").mockResolvedValue(null);
     vi.spyOn(auth, "requireCase").mockResolvedValue({
       id: caseId,
       owner_id: "user-1",
@@ -290,6 +291,7 @@ describe("Results View & PropertyCard - Acceptance & Invariants", () => {
     const auth = await import("@/lib/auth");
     const serverSupabase = await import("@/lib/supabase/server");
 
+    vi.spyOn(auth, "getSessionUser").mockResolvedValue(null);
     vi.spyOn(auth, "requireCase").mockResolvedValue({
       id: caseId,
       owner_id: "user-1",

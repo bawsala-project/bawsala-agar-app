@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -41,6 +41,7 @@ export type Database = {
     Tables: {
       analysis_runs: {
         Row: {
+          analysis_runtime_version: string | null
           base_state_version: number
           case_id: string
           created_at: string
@@ -52,6 +53,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          analysis_runtime_version?: string | null
           base_state_version: number
           case_id: string
           created_at?: string
@@ -63,6 +65,7 @@ export type Database = {
           status: string
         }
         Update: {
+          analysis_runtime_version?: string | null
           base_state_version?: number
           case_id?: string
           created_at?: string
@@ -76,6 +79,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "analysis_runs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "decision_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_operations: {
+        Row: {
+          actual_effect: Json | null
+          case_id: string
+          completed_at: string | null
+          created_at: string
+          effect_status: string
+          expected_effect: Json
+          id: string
+          idempotency_key: string
+          operation_type: string
+        }
+        Insert: {
+          actual_effect?: Json | null
+          case_id: string
+          completed_at?: string | null
+          created_at?: string
+          effect_status?: string
+          expected_effect: Json
+          id?: string
+          idempotency_key: string
+          operation_type: string
+        }
+        Update: {
+          actual_effect?: Json | null
+          case_id?: string
+          completed_at?: string | null
+          created_at?: string
+          effect_status?: string
+          expected_effect?: Json
+          id?: string
+          idempotency_key?: string
+          operation_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_operations_case_id_fkey"
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "decision_cases"
@@ -248,6 +295,56 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_sar: number
+          case_id: string
+          created_at: string
+          currency: string
+          external_ref: string | null
+          id: string
+          idempotency_key: string
+          provider: string
+          provider_event_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_sar: number
+          case_id: string
+          created_at?: string
+          currency?: string
+          external_ref?: string | null
+          id?: string
+          idempotency_key: string
+          provider: string
+          provider_event_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_sar?: number
+          case_id?: string
+          created_at?: string
+          currency?: string
+          external_ref?: string | null
+          id?: string
+          idempotency_key?: string
+          provider?: string
+          provider_event_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "decision_cases"
             referencedColumns: ["id"]
           },
         ]
@@ -433,6 +530,7 @@ export type Database = {
       }
       reassessment_logs: {
         Row: {
+          analysis_runtime_version: string | null
           assessment_id: string | null
           base_state_version: number
           case_id: string
@@ -446,6 +544,7 @@ export type Database = {
           property_id: string
         }
         Insert: {
+          analysis_runtime_version?: string | null
           assessment_id?: string | null
           base_state_version: number
           case_id: string
@@ -459,6 +558,7 @@ export type Database = {
           property_id: string
         }
         Update: {
+          analysis_runtime_version?: string | null
           assessment_id?: string | null
           base_state_version?: number
           case_id?: string
@@ -558,10 +658,15 @@ export type Database = {
           p_diff: Json
           p_new_assessment: Json
           p_property_id: string
+          p_runtime_version?: string
         }
         Returns: string
       }
       delete_case: { Args: { case_id: string }; Returns: undefined }
+      link_guest_cases_to_user: {
+        Args: { target_user_id: string }
+        Returns: number
+      }
       replace_extracted_facts: {
         Args: { p_facts: Json; p_run_id: string }
         Returns: undefined

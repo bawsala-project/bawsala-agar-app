@@ -1,22 +1,14 @@
-"use client";
-
-import React from "react";
-import { useFormState as useActionState } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { PreflightResult } from "@/lib/preflight/evaluate";
-import { startAnalysis, AnalysisActionState } from "@/actions/analysis";
 
 interface PreflightViewProps {
   caseId: string;
   evaluation: PreflightResult;
+  isPaid: boolean;
 }
 
-export function PreflightView({ caseId, evaluation }: PreflightViewProps) {
-  const initialActionState: AnalysisActionState = {};
-  const actionWithId = startAnalysis.bind(null, caseId);
-  const [state, formAction, isPending] = useActionState(actionWithId, initialActionState);
-
+export function PreflightView({ caseId, evaluation, isPaid }: PreflightViewProps) {
   const blockersCount = evaluation.blockers.length;
   const warningsCount = evaluation.warnings.length;
 
@@ -47,13 +39,6 @@ export function PreflightView({ caseId, evaluation }: PreflightViewProps) {
           </div>
         </div>
       </div>
-
-      {/* Global Form Error Message if any */}
-      {state.error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-medium">
-          {state.error}
-        </div>
-      )}
 
       {/* Blockers Section */}
       {blockersCount > 0 && (
@@ -183,17 +168,23 @@ export function PreflightView({ caseId, evaluation }: PreflightViewProps) {
           ← العودة إلى قائمة العقارات
         </Link>
 
-        <form action={formAction} className="w-full sm:w-auto order-1 sm:order-2">
-          <Button
-            type="submit"
-            variant="primary"
-            pending={isPending}
-            disabled={!evaluation.ready || isPending}
-            className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold shadow-sm"
+        {evaluation.ready ? (
+          <Link
+            href={isPaid ? `/case/${caseId}/results` : `/case/${caseId}/checkout`}
+            className="w-full sm:w-auto order-1 sm:order-2 inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700"
           >
-            ابدأ التحليل
+            {isPaid ? "بدء التحليل ←" : "المتابعة إلى الدفع (10 ر.س) ←"}
+          </Link>
+        ) : (
+          <Button
+            type="button"
+            variant="primary"
+            disabled
+            className="w-full sm:w-auto order-1 sm:order-2 px-6 py-2.5 text-sm font-bold shadow-sm"
+          >
+            المتابعة إلى الدفع (10 ر.س) ←
           </Button>
-        </form>
+        )}
       </div>
     </div>
   );

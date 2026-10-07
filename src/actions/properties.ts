@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { propertySchema } from "@/lib/schemas/property";
 import { deletePropertyImages } from "@/lib/storage";
 import { runExtraction } from "@/lib/extraction/run-extraction";
+import { enforceRateLimit } from "@/lib/security/rate-limit";
 
 export interface PropertyActionState {
   errors?: Record<string, string[] | undefined>;
@@ -65,6 +66,11 @@ export async function addProperty(
     return {
       errors: fieldErrors,
     };
+  }
+
+  const limit = await enforceRateLimit("extract");
+  if (!limit.allowed) {
+    return { errors: { form: [limit.message] } };
   }
 
   const supabase = createClient();
@@ -141,6 +147,11 @@ export async function retryExtraction(
   caseId: string,
   propertyId: string
 ): Promise<{ success: boolean; error?: string }> {
+  const limit = await enforceRateLimit("extract");
+  if (!limit.allowed) {
+    return { success: false, error: limit.message };
+  }
+
   const result = await runExtraction(propertyId);
   revalidatePath(`/case/${caseId}/properties`);
 

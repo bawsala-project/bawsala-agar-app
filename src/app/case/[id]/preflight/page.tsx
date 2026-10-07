@@ -1,4 +1,5 @@
 import { requireCase } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { loadPreflightData } from "@/lib/preflight/load";
 import { evaluatePreflight } from "@/lib/preflight/evaluate";
 import { PreflightView } from "./preflight-view";
@@ -19,5 +20,14 @@ export default async function PreflightPage({ params }: PreflightPageProps) {
   // 3. Evaluate dynamically
   const evaluation = evaluatePreflight(preflightData);
 
-  return <PreflightView caseId={params.id} evaluation={evaluation} />;
+  // 4. Paid state decides whether the primary action leads to checkout or results
+  const { data: paidPayments } = await createClient()
+    .from("payments")
+    .select("id")
+    .eq("case_id", params.id)
+    .eq("status", "paid")
+    .limit(1);
+  const isPaid = !!paidPayments && paidPayments.length > 0;
+
+  return <PreflightView caseId={params.id} evaluation={evaluation} isPaid={isPaid} />;
 }
