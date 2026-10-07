@@ -2,6 +2,7 @@ import "server-only";
 import dns from "node:dns";
 import net from "node:net";
 import { parse } from "node-html-parser";
+import { fetchViaHeadlessBrowser } from "./browser-fetch";
 
 export type FetchListingErrorCode =
   | "blocked_host"
@@ -219,6 +220,30 @@ export async function fetchViaUnblockGateway(targetUrl: string): Promise<FetchLi
   return { ok: false, code: "http_error" };
 }
 
+export async function fetchViaResilientStrategies(targetUrl: string): Promise<FetchListingResult> {
+  // Strategy 1: Headless browser on host system (Edge / Chrome via CDP)
+  try {
+    const browserRes = await fetchViaHeadlessBrowser(targetUrl);
+    if (browserRes.ok && browserRes.text && browserRes.text.length > 50) {
+      return { ok: true, text: browserRes.text.slice(0, MAX_TEXT_CHARS) };
+    }
+  } catch {
+    // fallback to next strategy
+  }
+
+  // Strategy 2: Reader Gateway (Jina)
+  try {
+    const gatewayRes = await fetchViaUnblockGateway(targetUrl);
+    if (gatewayRes.ok && gatewayRes.text && gatewayRes.text.length > 50) {
+      return gatewayRes;
+    }
+  } catch {
+    // fallback
+  }
+
+  return { ok: false, code: "http_error" };
+}
+
 export async function fetchListing(
   initialUrl: string,
   options?: {
@@ -274,9 +299,9 @@ export async function fetchListing(
 
       if (res.status < 200 || res.status >= 300) {
         if (!options?.fetchImpl) {
-          const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
-          if (unblocked.ok) {
-            return unblocked;
+          const resilient = await fetchViaResilientStrategies(urlValidation.url.toString());
+          if (resilient.ok) {
+            return resilient;
           }
         }
         return { ok: false, code: "http_error" };
@@ -320,8 +345,8 @@ export async function fetchListing(
 
       if (!plainText || plainText.trim().length === 0) {
         if (!options?.fetchImpl) {
-          const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
-          if (unblocked.ok) return unblocked;
+          const resilient = await fetchViaResilientStrategies(urlValidation.url.toString());
+          if (resilient.ok) return resilient;
         }
         return { ok: false, code: "empty" };
       }
@@ -333,15 +358,15 @@ export async function fetchListing(
           plainText.includes("تم حظرك") ||
           plainText.includes("Attention Required! | Cloudflare"))
       ) {
-        const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
-        if (unblocked.ok) return unblocked;
+        const resilient = await fetchViaResilientStrategies(urlValidation.url.toString());
+        if (resilient.ok) return resilient;
       }
 
       return { ok: true, text: plainText };
     } catch (err: unknown) {
       if (!options?.fetchImpl) {
-        const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
-        if (unblocked.ok) return unblocked;
+        const resilient = await fetchViaResilientStrategies(urlValidation.url.toString());
+        if (resilient.ok) return resilient;
       }
       if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
         return { ok: false, code: "timeout" };
