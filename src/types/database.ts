@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -153,6 +153,98 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "extraction_runs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_findings: {
+        Row: {
+          created_at: string
+          id: string
+          inspection_item_id: string
+          note: string | null
+          property_id: string
+          result: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inspection_item_id: string
+          note?: string | null
+          property_id: string
+          result: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inspection_item_id?: string
+          note?: string | null
+          property_id?: string
+          result?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_findings_inspection_item_id_fkey"
+            columns: ["inspection_item_id"]
+            isOneToOne: true
+            referencedRelation: "inspection_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_findings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_items: {
+        Row: {
+          affected_assessment_types: string[]
+          category: string
+          created_at: string
+          how_to_check_ar: string
+          id: string
+          priority: string
+          property_id: string
+          question_ar: string
+          trigger_reason: string
+          why_it_matters_ar: string
+        }
+        Insert: {
+          affected_assessment_types: string[]
+          category: string
+          created_at?: string
+          how_to_check_ar: string
+          id?: string
+          priority: string
+          property_id: string
+          question_ar: string
+          trigger_reason: string
+          why_it_matters_ar: string
+        }
+        Update: {
+          affected_assessment_types?: string[]
+          category?: string
+          created_at?: string
+          how_to_check_ar?: string
+          id?: string
+          priority?: string
+          property_id?: string
+          question_ar?: string
+          trigger_reason?: string
+          why_it_matters_ar?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_items_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -339,6 +431,70 @@ export type Database = {
           },
         ]
       }
+      reassessment_logs: {
+        Row: {
+          assessment_id: string | null
+          base_state_version: number
+          case_id: string
+          created_at: string
+          diff: Json
+          id: string
+          new_fit_rating: string
+          new_visit_priority: string
+          previous_fit_rating: string
+          previous_visit_priority: string
+          property_id: string
+        }
+        Insert: {
+          assessment_id?: string | null
+          base_state_version: number
+          case_id: string
+          created_at?: string
+          diff: Json
+          id?: string
+          new_fit_rating: string
+          new_visit_priority: string
+          previous_fit_rating: string
+          previous_visit_priority: string
+          property_id: string
+        }
+        Update: {
+          assessment_id?: string | null
+          base_state_version?: number
+          case_id?: string
+          created_at?: string
+          diff?: Json
+          id?: string
+          new_fit_rating?: string
+          new_visit_priority?: string
+          previous_fit_rating?: string
+          previous_visit_priority?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reassessment_logs_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "property_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reassessment_logs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "decision_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reassessment_logs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requirements: {
         Row: {
           case_id: string
@@ -393,6 +549,16 @@ export type Database = {
     Functions: {
       commit_analysis: {
         Args: { p_assessments: Json; p_run_id: string }
+        Returns: string
+      }
+      commit_reassessment: {
+        Args: {
+          p_base_state_version: number
+          p_case_id: string
+          p_diff: Json
+          p_new_assessment: Json
+          p_property_id: string
+        }
         Returns: string
       }
       delete_case: { Args: { case_id: string }; Returns: undefined }

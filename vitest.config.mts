@@ -21,8 +21,14 @@ if (fs.existsSync(envLocalPath)) {
 }
 
 export default defineConfig({
+  oxc: {
+    jsx: {
+      runtime: "automatic",
+    },
+  },
   test: {
     environment: "node",
+    testTimeout: 30000,
   },
   resolve: {
     alias: {
