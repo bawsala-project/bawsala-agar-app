@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { startAnalysis } from "@/actions/analysis";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ const POLL_INTERVAL_MS = 3000;
 
 export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const started = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,9 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
       setError(result.error);
     }
     setBusy(false);
-    router.refresh();
+    startTransition(() => {
+      router.refresh();
+    });
   }, [caseId, router]);
 
   useEffect(() => {
@@ -41,7 +44,11 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
 
   useEffect(() => {
     if (mode === "failed") return;
-    const timer = setInterval(() => router.refresh(), POLL_INTERVAL_MS);
+    const timer = setInterval(() => {
+      startTransition(() => {
+        router.refresh();
+      });
+    }, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [mode, router]);
 
