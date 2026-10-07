@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field-error";
 import { formatSAR } from "@/lib/utils";
-import { addProperty, removeProperty, retryExtraction, PropertyActionState } from "@/actions/properties";
+import { addProperty, removeProperty, retryExtraction, importClippedProperty, PropertyActionState } from "@/actions/properties";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, uploadPropertyImage } from "@/lib/storage";
 import { resolveFacts, PropertyFact } from "@/lib/evidence/resolve";
@@ -108,6 +108,171 @@ function RetryExtractionButton({
   );
 }
 
+function QuickPasteModal({
+  caseId,
+  propertyId,
+  sourceUrl,
+  isOpen,
+  onClose,
+}: {
+  caseId: string;
+  propertyId: string;
+  sourceUrl: string;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [text, setText] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) {
+      setError("يرجى لصق نص أو محتوى الإعلان");
+      return;
+    }
+
+    setPending(true);
+    setError(null);
+    try {
+      const res = await importClippedProperty(caseId, {
+        source_url: sourceUrl,
+        propertyId,
+        text: text.trim(),
+      });
+      if (res.success) {
+        onClose();
+      } else {
+        setError(res.error || "فشل استخراج البيانات من النص الملصق.");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "حدث خطأ غير متوقع");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-xl max-w-lg w-full p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📋</span>
+            <h3 className="font-bold text-gray-900 text-base">استيراد نص الإعلان (تجاوز الحظر)</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="text-xs text-gray-600 leading-relaxed">
+          افتح صفحة الإعلان في متصفحك، اضغط <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[11px]">Ctrl+A</kbd> ثم <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[11px]">Ctrl+C</kbd> والصق النص هنا. سيقوم الذكاء الاصطناعي باستخراج كافة المواصفات والأسعار وتدقيقها فوراً.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <textarea
+            rows={7}
+            required
+            placeholder="الصق نص صفحة الإعلان هنا..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={pending}
+            className="w-full text-xs p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+          />
+
+          {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={pending}
+              onClick={onClose}
+              className="text-xs px-3"
+            >
+              إلغاء
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              pending={pending}
+              disabled={pending}
+              className="text-xs px-4"
+            >
+              {pending ? "جارٍ تحليل المواصفات..." : "استخراج المواصفات فوراً"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function BookmarkletBanner({ caseId }: { caseId: string }) {
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("http://localhost:3000");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
+  const bookmarkletCode = `javascript:(function(){try{var u=window.location.href,t=document.title,nd='';if(window.__NEXT_DATA__?.props?.pageProps){try{nd='[بيانات المنصة]: '+JSON.stringify(window.__NEXT_DATA__.props.pageProps)+'\\n\\n';}catch(e){}}var b=(document.body.innerText||'').slice(0,35000);var w=window.open('${origin}/case/${caseId}/clip','bawsala_clipper','width=520,height=650');var h=function(e){if(e.data==='bawsala-ready'){w.postMessage({type:'bawsala-clip-data',url:u,title:t,text:nd+b},'*');window.removeEventListener('message',h);}};window.addEventListener('message',h);}catch(err){alert('خطأ: '+err.message);}})();`;
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(bookmarkletCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-blue-50 via-indigo-50/40 to-blue-50 border border-blue-200/70 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="space-y-1">
+        <div className="flex items-center gap-1.5 font-bold text-blue-900 text-sm">
+          <span>📌</span>
+          <span>كليبر المتصفح لتجاوز حظر المنصات (عقار / وصلت)</span>
+        </div>
+        <p className="text-xs text-blue-800/80 leading-relaxed max-w-xl">
+          لتجاوز حظر Cloudflare: اسحب الزر أدناه إلى <strong>شريط الإشارات (Bookmarks Bar)</strong> في متصفحك. عند تصفح أي إعلان، اضغط الزر ليتم استيراد كافة المواصفات فوراً!
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <a
+          href={bookmarkletCode}
+          draggable="true"
+          onClick={(e) => {
+            if (e.isTrusted && !e.defaultPrevented) {
+              window.open(`${origin}/case/${caseId}/clip`, "bawsala_clipper", "width=520,height=650");
+              e.preventDefault();
+            }
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm cursor-grab active:cursor-grabbing transition-colors"
+          title="اسحب هذا الزر إلى شريط إشارات المتصفح"
+        >
+          <span>📌</span>
+          <span>اسحب لإشارات المتصفح</span>
+        </a>
+
+        <button
+          type="button"
+          onClick={copyCode}
+          className="px-2.5 py-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 rounded-lg text-xs font-medium transition-colors"
+        >
+          {copied ? "✓ تم نسخ الكود" : "نسخ الكود"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PropertiesView({
   caseId,
   userId,
@@ -116,6 +281,7 @@ export function PropertiesView({
 }: PropertiesViewProps) {
   const [activeTab, setActiveTab] = useState<"url" | "image" | "manual">("url");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [quickPasteProp, setQuickPasteProp] = useState<{ id: string; url: string } | null>(null);
 
   // Forms actions
   const addActionWithId = addProperty.bind(null, caseId);
@@ -227,6 +393,9 @@ export function PropertiesView({
         </div>
       </div>
 
+      {/* Bookmarklet Clipper Banner */}
+      <BookmarkletBanner caseId={caseId} />
+
       {/* Properties List */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-gray-900">قائمة العقارات المضافة</h2>
@@ -294,18 +463,44 @@ export function PropertiesView({
                         </Link>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs text-gray-600">
-                        {p.listing_price_sar && (
-                          <span className="font-semibold text-blue-600">
-                            {formatSAR(Number(p.listing_price_sar))}
-                          </span>
-                        )}
-                        {p.area_sqm && <span>{p.area_sqm} م²</span>}
-                        {p.bedrooms && <span>{p.bedrooms} غرف</span>}
-                        {p.floor_no !== null && p.floor_no !== undefined && (
-                          <span>الدور {p.floor_no}</span>
-                        )}
-                      </div>
+                      {(() => {
+                        const resolved = resolveFacts(p.property_facts || []);
+                        const displayPrice =
+                          p.listing_price_sar ||
+                          (resolved.fields.listing_price_sar?.status === "known"
+                            ? Number(resolved.fields.listing_price_sar.value)
+                            : null);
+                        const displayArea =
+                          p.area_sqm ||
+                          (resolved.fields.area_sqm?.status === "known"
+                            ? Number(resolved.fields.area_sqm.value)
+                            : null);
+                        const displayBedrooms =
+                          p.bedrooms ||
+                          (resolved.fields.bedrooms?.status === "known"
+                            ? Number(resolved.fields.bedrooms.value)
+                            : null);
+                        const displayFloor =
+                          p.floor_no ??
+                          (resolved.fields.floor_no?.status === "known"
+                            ? Number(resolved.fields.floor_no.value)
+                            : null);
+
+                        return (
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs text-gray-600">
+                            {displayPrice && (
+                              <span className="font-semibold text-blue-600">
+                                {formatSAR(Number(displayPrice))}
+                              </span>
+                            )}
+                            {displayArea && <span>{displayArea} م²</span>}
+                            {displayBedrooms && <span>{displayBedrooms} غرف</span>}
+                            {displayFloor !== null && displayFloor !== undefined && (
+                              <span>الدور {displayFloor}</span>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {p.notes && p.input_mode !== "image" && (
                         <p className="text-xs text-gray-500 mt-1 truncate">{p.notes}</p>
@@ -370,9 +565,21 @@ export function PropertiesView({
                             </div>
 
                             {latestRun?.status === "failed" && p.input_mode === "url" && (
-                              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
-                                تعذر قراءة الرابط. أضف صورًا للإعلان أو أدخل البيانات يدويًا.
-                              </p>
+                              <div className="space-y-2 mt-1">
+                                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 leading-relaxed">
+                                  منصة العقار تفرض حظر Cloudflare على القراءة التلقائية للرابط.
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="primary"
+                                    onClick={() => setQuickPasteProp({ id: p.id, url: p.source_url || "" })}
+                                    className="text-xs px-3 py-1.5 h-auto bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                                  >
+                                    📋 استيراد سريع (لصق بيانات الصفحة)
+                                  </Button>
+                                </div>
+                              </div>
                             )}
                           </div>
                         );
@@ -664,6 +871,17 @@ export function PropertiesView({
           </Button>
         )}
       </div>
+
+      {/* Quick Paste Modal */}
+      {quickPasteProp && (
+        <QuickPasteModal
+          caseId={caseId}
+          propertyId={quickPasteProp.id}
+          sourceUrl={quickPasteProp.url}
+          isOpen={true}
+          onClose={() => setQuickPasteProp(null)}
+        />
+      )}
     </div>
   );
 }

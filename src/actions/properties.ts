@@ -207,3 +207,100 @@ export async function removeProperty(
 
   return { success: true };
 }
+
+export interface ClipPropertyPayload {
+  source_url: string;
+  text: string;
+  title?: string;
+  notes?: string;
+  propertyId?: string;
+}
+
+export async function importClippedProperty(
+  caseId: string,
+  payload: ClipPropertyPayload
+): Promise<{ success: boolean; propertyId?: string; error?: string }> {
+  if (!caseId || !payload?.source_url || !payload?.text) {
+    return { success: false, error: "البيانات المستلمة غير مكتملة" };
+  }
+
+  const limit = await enforceRateLimit("extract");
+  if (!limit.allowed) {
+    return { success: false, error: limit.message };
+  }
+
+  const supabase = createClient();
+
+  // If a propertyId is explicitly passed, or if a property with this source_url already exists in the case
+  let targetPropId = payload.propertyId;
+
+  if (!targetPropId) {
+    const { data: existing } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("case_id", caseId)
+      .eq("source_url", payload.source_url)
+      .maybeSingle();
+
+    if (existing) {
+      targetPropId = existing.id;
+    }
+  }
+
+  if (targetPropId) {
+    // Update existing property if title/notes given
+    if (payload.title || payload.notes) {
+      await supabase
+        .from("properties")
+        .update({
+          ...(payload.title ? { title: payload.title.slice(0, 120) } : {}),
+          ...(payload.notes ? { notes: payload.notes.slice(0, 1000) } : {}),
+        })
+        .eq("id", targetPropId)
+        .eq("case_id", caseId);
+    }
+
+    const res = await runExtraction(targetPropId, { initialSourceText: payload.text });
+    revalidatePath(`/case/${caseId}/properties`);
+    revalidatePath(`/case/${caseId}/preflight`);
+    if (!res.ok) {
+      return { success: false, error: res.errorCode };
+    }
+    return { success: true, propertyId: targetPropId };
+  }
+
+  // Otherwise, insert new property
+  const insertPayload = {
+    case_id: caseId,
+    input_mode: "url" as const,
+    source_url: payload.source_url,
+    title: payload.title?.slice(0, 120) || null,
+    notes: payload.notes?.slice(0, 1000) || null,
+  };
+
+  const { data: insertedProp, error: insertError } = await supabase
+    .from("properties")
+    .insert(insertPayload)
+    .select("id")
+    .single();
+
+  if (insertError || !insertedProp) {
+    return { success: false, error: insertError?.message || "فشل حفظ العقار" };
+  }
+
+  await supabase
+    .from("decision_cases")
+    .update({ status: "properties_complete" })
+    .eq("id", caseId);
+
+  const res = await runExtraction(insertedProp.id, { initialSourceText: payload.text });
+  revalidatePath(`/case/${caseId}/properties`);
+  revalidatePath(`/case/${caseId}/preflight`);
+
+  if (!res.ok) {
+    return { success: false, error: res.errorCode, propertyId: insertedProp.id };
+  }
+
+  return { success: true, propertyId: insertedProp.id };
+}
+

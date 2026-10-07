@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "كليبر بوصلة العقار",
+  "version": "1.0.0",
+  "description": "استيراد مباشر لمواصفات العقارات من منصات عقار ووصلت إلى بوصلة وتجاوز حظر Cloudflare.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "إرسال إلى بوصلة العقار"
+  }
+}

@@ -20,6 +20,7 @@ export async function runExtraction(
   propertyId: string,
   options?: {
     modelOverride?: LanguageModel;
+    initialSourceText?: string;
   }
 ): Promise<RunExtractionResult> {
   // 1. Check attempt limit: at most 5 extraction runs per property
@@ -133,7 +134,15 @@ export async function runExtraction(
         return await markRunFailed("missing_url");
       }
 
-      const fetchResult = await fetchListing(property.source_url);
+      let fetchResult: FetchListingResult;
+      const initialText = options?.initialSourceText?.trim();
+
+      if (initialText) {
+        fetchResult = { ok: true, text: initialText };
+      } else {
+        fetchResult = await fetchListing(property.source_url);
+      }
+
       if (!fetchResult.ok) {
         return await markRunFailed(fetchResult.code);
       }
