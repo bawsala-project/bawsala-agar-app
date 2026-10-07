@@ -1,12 +1,12 @@
 import "server-only";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-const extractionModelName = process.env.AI_EXTRACTION_MODEL;
-const analysisModelName = process.env.AI_ANALYSIS_MODEL;
+const apiKey = process.env.AI_GATEWAY_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+const extractionModelName = process.env.AI_EXTRACTION_MODEL || "gemini-flash-lite-latest";
+const analysisModelName = process.env.AI_ANALYSIS_MODEL || "gemini-flash-lite-latest";
 
 if (!apiKey) {
-  throw new Error("Missing required environment variable: GOOGLE_GENERATIVE_AI_API_KEY");
+  throw new Error("Missing required environment variable: AI_GATEWAY_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY");
 }
 if (!extractionModelName) {
   throw new Error("Missing required environment variable: AI_EXTRACTION_MODEL");
