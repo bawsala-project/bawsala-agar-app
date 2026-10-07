@@ -191,6 +191,34 @@ export function htmlToPlainText(html: string): string {
   return collapsed.slice(0, MAX_TEXT_CHARS);
 }
 
+export async function fetchViaUnblockGateway(targetUrl: string): Promise<FetchListingResult> {
+  try {
+    const gatewayUrl = `https://r.jina.ai/${targetUrl}`;
+    const signal = AbortSignal.timeout(TIMEOUT_MS);
+    const res = await fetch(gatewayUrl, {
+      method: "GET",
+      headers: {
+        Accept: "text/plain",
+        "X-No-Cache": "true",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      signal,
+    });
+
+    if (res.status >= 200 && res.status < 300) {
+      const text = await res.text();
+      const collapsed = text.replace(/\s+/g, " ").trim();
+      if (collapsed.length > 50) {
+        return { ok: true, text: collapsed.slice(0, MAX_TEXT_CHARS) };
+      }
+    }
+  } catch {
+    // Gateway fallback failure
+  }
+  return { ok: false, code: "http_error" };
+}
+
 export async function fetchListing(
   initialUrl: string,
   options?: {
@@ -245,6 +273,12 @@ export async function fetchListing(
       }
 
       if (res.status < 200 || res.status >= 300) {
+        if (!options?.fetchImpl) {
+          const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
+          if (unblocked.ok) {
+            return unblocked;
+          }
+        }
         return { ok: false, code: "http_error" };
       }
 
@@ -285,11 +319,30 @@ export async function fetchListing(
       const plainText = htmlToPlainText(html);
 
       if (!plainText || plainText.trim().length === 0) {
+        if (!options?.fetchImpl) {
+          const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
+          if (unblocked.ok) return unblocked;
+        }
         return { ok: false, code: "empty" };
+      }
+
+      // Check if Cloudflare blocked interstitial was returned
+      if (
+        !options?.fetchImpl &&
+        (plainText.includes("You have been blocked") ||
+          plainText.includes("تم حظرك") ||
+          plainText.includes("Attention Required! | Cloudflare"))
+      ) {
+        const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
+        if (unblocked.ok) return unblocked;
       }
 
       return { ok: true, text: plainText };
     } catch (err: unknown) {
+      if (!options?.fetchImpl) {
+        const unblocked = await fetchViaUnblockGateway(urlValidation.url.toString());
+        if (unblocked.ok) return unblocked;
+      }
       if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
         return { ok: false, code: "timeout" };
       }

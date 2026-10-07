@@ -1,6 +1,6 @@
 import "server-only";
 import { adminSupabase } from "@/lib/supabase/admin";
-import { fetchListing } from "./fetch-listing";
+import { fetchListing, type FetchListingResult } from "./fetch-listing";
 import { extractFactsFromText, extractFactsFromImages, ImageAttachment } from "@/lib/ai/extract";
 import { PROMPT_VERSION, ExtractionFact } from "@/lib/ai/prompts/extraction";
 import { normalizeDigits, normalizeField } from "@/lib/evidence/normalize";
