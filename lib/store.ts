@@ -16,6 +16,12 @@ export type RankingViewMode = "ranked" | "provisional" | "insufficient";
 
 interface AppState {
   // Need & Constraints
+  selectedCity: string;
+  selectedCityId: string;
+  selectedDistrict: string;
+  selectedDistrictId: string;
+  setSelectedCity: (city: string, cityId?: string) => void;
+  setSelectedDistrict: (district: string, districtId?: string) => void;
   userNeed: UserNeed;
   updateBudget: (budget: number, formatted: string) => void;
   updateHardBudget: (budget: number, formatted?: string) => void;
@@ -81,6 +87,20 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
+      selectedCity: "الرياض",
+      selectedCityId: "riyadh",
+      selectedDistrict: "الياسمين",
+      selectedDistrictId: "riyadh-alyasmin",
+      setSelectedCity: (city, cityId) =>
+        set({
+          selectedCity: city,
+          selectedCityId: cityId || "riyadh",
+        }),
+      setSelectedDistrict: (district, districtId) =>
+        set({
+          selectedDistrict: district,
+          selectedDistrictId: districtId || "riyadh-alyasmin",
+        }),
       userNeed: INITIAL_USER_NEED,
       updateBudget: (budget, formatted) =>
         set((state) => ({
@@ -112,7 +132,7 @@ export const useAppStore = create<AppState>()(
             : [...state.bookmarkedIds, id],
         })),
       isAuthenticated: true,
-      setAuthenticated: (auth, phone) => set({ isAuthenticated: auth }),
+      setAuthenticated: (auth) => set({ isAuthenticated: auth }),
       updatePreferencePriority: (id, priority) =>
         set((state) => ({
           userNeed: {
@@ -337,6 +357,10 @@ export const useAppStore = create<AppState>()(
           sessionStorage.clear();
         }
         set({
+          selectedCity: "الرياض",
+          selectedCityId: "riyadh",
+          selectedDistrict: "الياسمين",
+          selectedDistrictId: "riyadh-alyasmin",
           userNeed: INITIAL_USER_NEED,
           properties: INITIAL_PROPERTIES,
           p1AreaResolved: false,

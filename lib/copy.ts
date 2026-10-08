@@ -35,7 +35,7 @@ export const COPY = {
     ],
     liveExtractionTitle: "فهمنا من كلامك",
     liveExtractionSubtitle: "المحددات التي استخرجناها:",
-    cta: "متابعة وتأكيد الطلب",
+    cta: "متابعة الطلب",
   },
 
   needs: {
@@ -47,7 +47,7 @@ export const COPY = {
     preferencesTip: "نستخدمها للمفاضلة وترتيب الأنسب لك.",
     editButton: "تعديل",
     footerNotice: "يمكنك التعديل في أي وقت خلال رحلة القرار.",
-    cta: "تأكيد وإضافة العقارات",
+    cta: "إضافة العقارات",
     sheetTitle: "تعديل الطلب",
     sheetSubtitle: "حدّد أولوياتك بدقة لتحصل على أفضل مقارنة.",
   },
@@ -64,7 +64,7 @@ export const COPY = {
     emptySlot: "أضف عقاراً آخر للمقارنة",
     statusReading: "جارٍ قراءة البيانات...",
     statusIdentified: "تمت القراءة بنجاح",
-    cta: "فحص جاهزية البيانات",
+    cta: "فحص الجاهزية",
     sheetAddTitle: "إضافة عقار جديد",
     sheetAddSubtitle: "اختر الطريقة الأنسب لإدخال تفاصيل العقار.",
   },
@@ -102,7 +102,7 @@ export const COPY = {
     paymentNote: "وضع تجريبي معتمد (Demo) • لا يتم خصم مبالغ حقيقية",
     trustNote: "بياناتك مشفرة ومحمية بالكامل.",
     guarantee: "تحليل موضوعي يضع مصلحتك أولاً.",
-    cta: "ادفع 10 ر.س وابدأ التحليل",
+    cta: "بدء التحليل الآن",
     successMsg: "تم الدفع بنجاح، جاري إعداد الترتيب...",
     failedMsg: "تعذر إتمام الدفع التجريبي. اضغط للمحاولة مجدداً.",
   },
@@ -130,7 +130,7 @@ export const COPY = {
     keyTradeoff: "أبرز مقايضة:",
     visitPriorityLabel: "أولوية الزيارة:",
     nonBindingNote: "تحليل إرشادي لمساعدتك في اتخاذ قرارك بثقة وراحة بال.",
-    compareCta: "قارن العقارات جنباً إلى جنب",
+    compareCta: "مقارنة العقارات",
     viewDetails: "التفاصيل",
   },
 
@@ -146,8 +146,8 @@ export const COPY = {
     fairPriceBand: "النطاق السعري العادل",
     travelTimesTitle: "أوقات التنقل التقديرية",
     selectForVisit: "اختر هذا العقار للمعاينة الميدانية",
-    selectForVisitCta: "اختر للمعاينة الميدانية",
-    selectedForVisitLabel: "مُحدد للمعاينة الميدانية",
+    selectForVisitCta: "اختر للمعاينة",
+    selectedForVisitLabel: "مُحدد للمعاينة",
   },
 
   compare: {
@@ -157,7 +157,7 @@ export const COPY = {
     showDiffOnly: "أهم الفروق فقط",
     pivotQuestion: "ما الذي قد يغيّر هذا الترتيب؟",
     whatCouldChangeRank: "ما الذي قد يغيّر هذا الترتيب؟",
-    selectVisitCta: "اختر عقاراً للبدء في المعاينة",
+    selectVisitCta: "بدء المعاينة",
   },
 
   inspection: {
@@ -171,8 +171,8 @@ export const COPY = {
       unchecked: "لم أتحقق بعد",
     },
     notePlaceholder: "أضف ملاحظتك أو صورك من الموقع هنا...",
-    reassessCta: "تحديث الترتيب بعد الزيارة",
-    cta: "تحديث الترتيب بعد الزيارة",
+    reassessCta: "تحديث الترتيب",
+    cta: "تحديث الترتيب",
   },
 
   reassess: {

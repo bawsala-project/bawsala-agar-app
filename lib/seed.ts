@@ -1,6 +1,6 @@
-import { CertaintyLevel } from "@/components/ui/CertaintyChip";
-import { ScopeType } from "@/components/ui/ScopeTag";
-import { PriorityLevel } from "@/components/ui/VisitPriorityBadge";
+export type CertaintyLevel = "confirmed" | "conflicting" | "derived" | "reported" | "unknown" | "user_observed";
+export type ScopeType = "property" | "neighborhood" | "macro" | "market" | "micro_location";
+export type PriorityLevel = "high" | "medium" | "low" | "insufficient" | "insufficient_data";
 import { PropertyImageManifestItem, getImagesForProperty } from "@/lib/images";
 
 export interface PropertyFact {
@@ -427,3 +427,113 @@ export const INITIAL_SAVED_CASES = [
 ];
 
 export const INITIAL_INSPECTION_QUESTIONS = INITIAL_INSPECTION_ITEMS;
+
+export interface CityItem {
+  id: string;
+  label: string;
+}
+
+export interface DistrictItem {
+  id: string;
+  label: string;
+}
+
+export const CITIES: CityItem[] = [
+  { id: "riyadh", label: "الرياض" },
+  { id: "jeddah", label: "جدة" },
+  { id: "makkah", label: "مكة" },
+  { id: "madinah", label: "المدينة" },
+  { id: "dammam", label: "الدمام" },
+  { id: "khobar", label: "الخبر" },
+  { id: "taif", label: "الطائف" },
+  { id: "abha", label: "أبها" },
+  { id: "tabuk", label: "تبوك" },
+  { id: "buraidah", label: "بريدة" },
+];
+
+export const DISTRICTS_BY_CITY: Record<string, DistrictItem[]> = {
+  riyadh: [
+    { id: "riyadh-all", label: "كل الأحياء" },
+    { id: "riyadh-alyasmin", label: "الياسمين" },
+    { id: "riyadh-almalqa", label: "الملقا" },
+    { id: "riyadh-alnarjis", label: "النرجس" },
+    { id: "riyadh-olaya", label: "العليا" },
+    { id: "riyadh-hittin", label: "حطين" },
+    { id: "riyadh-alsahafa", label: "الصحافة" },
+    { id: "riyadh-alrabie", label: "الربيع" },
+    { id: "riyadh-alqayrawan", label: "القيروان" },
+    { id: "riyadh-alnada", label: "الندى" },
+  ],
+  jeddah: [
+    { id: "jeddah-all", label: "كل الأحياء" },
+    { id: "jeddah-shati", label: "الشاطئ" },
+    { id: "jeddah-hamra", label: "الحمراء" },
+    { id: "jeddah-rawdah", label: "الروضة" },
+    { id: "jeddah-salamah", label: "السلامة" },
+    { id: "jeddah-murjan", label: "المرجان" },
+  ],
+  makkah: [
+    { id: "makkah-all", label: "كل الأحياء" },
+    { id: "makkah-awali", label: "العوالي" },
+    { id: "makkah-shawqiyyah", label: "الشوقية" },
+    { id: "makkah-aziziyyah", label: "العزيزية" },
+    { id: "makkah-batha", label: "بطحاء قريش" },
+    { id: "makkah-nawwariyyah", label: "النوارية" },
+  ],
+  madinah: [
+    { id: "madinah-all", label: "كل الأحياء" },
+    { id: "madinah-sultanah", label: "سلطانة" },
+    { id: "madinah-khalidiyyah", label: "الخالدية" },
+    { id: "madinah-ranuna", label: "الرانوناء" },
+    { id: "madinah-hijrah", label: "الهجرة" },
+    { id: "madinah-baqdo", label: "باقدو" },
+  ],
+  dammam: [
+    { id: "dammam-all", label: "كل الأحياء" },
+    { id: "dammam-shati", label: "الشاطئ الغربي" },
+    { id: "dammam-faisaliyyah", label: "الفيصلية" },
+    { id: "dammam-mazruiyyah", label: "المزروعية" },
+    { id: "dammam-fardaws", label: "الفردوس" },
+    { id: "dammam-taybah", label: "طيبة" },
+  ],
+  khobar: [
+    { id: "khobar-all", label: "كل الأحياء" },
+    { id: "khobar-green-belt", label: "الحزام الأخضر" },
+    { id: "khobar-golden-belt", label: "الحزام الذهبي" },
+    { id: "khobar-aqrabiyyah", label: "العقربية" },
+    { id: "khobar-olaya", label: "العليا" },
+    { id: "khobar-rakah", label: "الراكة الجنوبية" },
+  ],
+  taif: [
+    { id: "taif-all", label: "كل الأحياء" },
+    { id: "taif-shehar", label: "شهار" },
+    { id: "taif-jubrah", label: "جبرة" },
+    { id: "taif-wesam", label: "الوسام" },
+    { id: "taif-qarwa", label: "قروى" },
+    { id: "taif-bayah", label: "البيعة" },
+  ],
+  abha: [
+    { id: "abha-all", label: "كل الأحياء" },
+    { id: "abha-mansak", label: "المنسك" },
+    { id: "abha-muftaha", label: "المفتاحة" },
+    { id: "abha-sadd", label: "السد" },
+    { id: "abha-sharaf", label: "الشرف" },
+    { id: "abha-muwazzafeen", label: "الموظفين" },
+  ],
+  tabuk: [
+    { id: "tabuk-all", label: "كل الأحياء" },
+    { id: "tabuk-murooj", label: "المروج" },
+    { id: "tabuk-olaya", label: "العليا" },
+    { id: "tabuk-wurood", label: "الورود" },
+    { id: "tabuk-rajhi", label: "الراجحي" },
+    { id: "tabuk-maseef", label: "المصيف" },
+  ],
+  buraidah: [
+    { id: "buraidah-all", label: "كل الأحياء" },
+    { id: "buraidah-muntazah", label: "المنتزه" },
+    { id: "buraidah-fayziyyah", label: "الفايزية" },
+    { id: "buraidah-nahdah", label: "النهضة" },
+    { id: "buraidah-rayyan", label: "الريان" },
+    { id: "buraidah-iskan", label: "الإسكان" },
+  ],
+};

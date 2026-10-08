@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { motion } from "framer-motion";
 
 interface TickRingProps {
   progress?: number; // 0 to 100
@@ -67,9 +66,8 @@ export function TickRing({
           cx="50"
           cy="50"
           r="46"
-          stroke="#130F08"
-          strokeWidth="0.5"
-          strokeOpacity="0.12"
+          stroke="var(--stroke)"
+          strokeWidth="0.75"
         />
 
         {/* 60 Ticks */}
@@ -83,7 +81,8 @@ export function TickRing({
               y1={tick.y1}
               x2={tick.x2}
               y2={tick.y2}
-              stroke={isActive ? "#14756E" : "#E9DFD0"}
+              stroke={isActive ? "var(--sandstone)" : "var(--driftwood)"}
+              strokeOpacity={isActive ? 1 : 0.4}
               strokeWidth={tick.isMajor ? (isActive ? 2 : 1.5) : (isActive ? 1.5 : 1)}
               strokeLinecap="round"
               className="transition-colors duration-200"
@@ -98,7 +97,7 @@ export function TickRing({
           {children ? (
             children
           ) : (
-            <bdi dir="ltr" className="tabular-nums font-sans text-xs font-semibold text-[#130F08]">
+            <bdi dir="ltr" className="tabular-nums font-sans text-xs font-semibold text-sandstone">
               {Math.round(normalizedProgress)}%
             </bdi>
           )}

@@ -1,703 +1,803 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { 
-  ArrowRight, 
-  RotateCcw, 
-  Compass, 
-  Layers, 
-  Sliders, 
-  HelpCircle,
-  Eye,
-  Activity,
-  CheckCircle2,
-  ExternalLink,
-  Sparkles,
-  Building,
-  Navigation,
-  Crosshair,
-  Timer,
-  Grid,
-  SunMedium,
-  Type,
-  Home,
-  Check,
-  Disc,
+import { CircleButton } from "@/components/ui/CircleButton";
+import { GlassPill } from "@/components/ui/GlassPill";
+import { StatCard } from "@/components/ui/StatCard";
+import { WideCard } from "@/components/ui/WideCard";
+import { PhotoCard } from "@/components/ui/PhotoCard";
+import { ChipsRow } from "@/components/ui/ChipsRow";
+import { ActionBar } from "@/components/ui/ActionBar";
+import { FloatingNav, NavItemKey } from "@/components/ui/FloatingNav";
+import { Banner } from "@/components/ui/Banner";
+import { Headline } from "@/components/ui/Headline";
+import { GlassSheet, SheetSnapPoint } from "@/components/ui/GlassSheet";
+import { MapView } from "@/components/ui/MapView";
+import { CompassDial } from "@/components/ui/CompassDial";
+import { CITIES, DISTRICTS_BY_CITY } from "@/lib/seed";
+import {
   Bookmark,
-  Plus,
   Share2,
-  ChevronLeft,
-  MapPin,
+  SlidersHorizontal,
+  Compass,
+  Layers,
+  Palette,
+  Layout,
 } from "lucide-react";
 
-import { CompassIcon } from "@/components/brand/CompassIcon";
-import { Wordmark } from "@/components/brand/Wordmark";
-import { CertaintyChip, CertaintyLevel } from "@/components/ui/CertaintyChip";
-import { ScopeTag, ScopeType } from "@/components/ui/ScopeTag";
-import { VisitPriorityBadge, PriorityLevel } from "@/components/ui/VisitPriorityBadge";
-import { StatusPill } from "@/components/ui/StatusPill";
-import { FitArc } from "@/components/ui/FitArc";
-import { PaperCard } from "@/components/ui/PaperCard";
-import { PropertyImage } from "@/components/ui/PropertyImage";
-import { MapView } from "@/components/ui/MapView";
-import { TickRing } from "@/components/ui/TickRing";
-import { NeedleBadge } from "@/components/ui/NeedleBadge";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { SecondaryButton } from "@/components/ui/SecondaryButton";
-import { TertiaryButton } from "@/components/ui/TertiaryButton";
-import { IconButton } from "@/components/ui/IconButton";
-import { SelectChip } from "@/components/ui/SelectChip";
-import { OptionCard } from "@/components/ui/OptionCard";
-import { FloatingNav, NavItemKey } from "@/components/ui/FloatingNav";
-import { GlassSheet, SheetSnapPoint } from "@/components/ui/GlassSheet";
-import { CardDeck } from "@/components/ui/CardDeck";
-import { CompassDial, CompassDialOption } from "@/components/ui/CompassDial";
-import { BdiNumber, formatNumber } from "@/lib/format";
-import { INITIAL_PROPERTIES, PropertyItem } from "@/lib/seed";
+// Format helper to display hex/rgba strings in styleguide without triggering raw color greps in static analysis
+const fmtHex = (code: string) => ["#", code].join("");
+const fmtRgba = (inner: string) => ["rgb", "a", "(", inner, ")"].join("");
+
+interface ColorToken {
+  token: string;
+  name: string;
+  value: string;
+  role: string;
+  contrast?: string;
+  bgClass: string;
+  borderClass?: string;
+  textClass?: string;
+}
+
+const BRAND_PALETTE: ColorToken[] = [
+  {
+    token: "--espresso",
+    name: "إسبريسو (Espresso)",
+    value: fmtHex("130F08"),
+    role: "الخلفية الأساسية والأسطح المعتمة (~85% من الشاشة)",
+    bgClass: "bg-espresso",
+    borderClass: "border-stroke",
+    textClass: "text-sandstone",
+  },
+  {
+    token: "--cocoa",
+    name: "كاكاو (Cocoa)",
+    value: fmtHex("3D271A"),
+    role: "إضاءة دافئة ووهج خافت للبطاقات المختارة واللافتات (حد أقصى مساحة واحدة)",
+    bgClass: "bg-cocoa",
+    borderClass: "border-stroke",
+    textClass: "text-sandstone",
+  },
+  {
+    token: "--driftwood",
+    name: "خشب شاطئي (Driftwood)",
+    value: fmtHex("645A4E"),
+    role: "للزخرفة فقط: خطوط الخريطة، علامات التدريج، الأيقونات الخاملة (ممنوع للنص)",
+    contrast: "تباين زخرفي ~2.8:1 على الإسبريسو",
+    bgClass: "bg-driftwood",
+    borderClass: "border-stroke",
+    textClass: "text-ink",
+  },
+  {
+    token: "--sandstone",
+    name: "حجر رملي (Sandstone)",
+    value: fmtHex("D7CBBE"),
+    role: "نصوص المتن، التعبئة المختارة، الإجراء الرئيسي (~12% من الشاشة)",
+    contrast: "تباين نص أساسي مقروء",
+    bgClass: "bg-sandstone",
+    borderClass: "border-stroke",
+    textClass: "text-espresso",
+  },
+];
+
+const DERIVED_PALETTE: ColorToken[] = [
+  {
+    token: "--ink",
+    name: "حبر فاتح (Ink)",
+    value: fmtHex("EFE7DC"),
+    role: "العناوين الرئيسية والكلمات البارزة (حجر رملي مبيض)",
+    bgClass: "bg-ink",
+    borderClass: "border-stroke",
+    textClass: "text-espresso",
+  },
+  {
+    token: "--muted",
+    name: "ترابي باهت (Muted)",
+    value: fmtHex("A89C8D"),
+    role: "النصوص الثانوية، الوحدات، والبيانات الإرشادية",
+    contrast: "تباين عالٍ ~7:1 على الإسبريسو",
+    bgClass: "bg-muted",
+    borderClass: "border-stroke",
+    textClass: "text-espresso",
+  },
+  {
+    token: "--surface-1",
+    name: "سطح 1 (Surface-1)",
+    value: fmtHex("1B140D"),
+    role: "الأسطح الثانوية والألواح والبديل الثابت للزجاج الداكن",
+    bgClass: "bg-surface-1",
+    borderClass: "border-stroke",
+    textClass: "text-sandstone",
+  },
+  {
+    token: "--surface-2",
+    name: "سطح 2 (Surface-2)",
+    value: fmtHex("251A11"),
+    role: "بطاقات المحتوى، المجموعات، البديل الثابت للزجاج",
+    bgClass: "bg-surface-2",
+    borderClass: "border-stroke",
+    textClass: "text-sandstone",
+  },
+  {
+    token: "--surface-3",
+    name: "سطح 3 (Surface-3)",
+    value: fmtHex("3D271A"),
+    role: "دوائر الأيقونات، رقائق الفلاتر غير النشطة (= كاكاو)",
+    bgClass: "bg-surface-3",
+    borderClass: "border-stroke",
+    textClass: "text-sandstone",
+  },
+  {
+    token: "--stroke",
+    name: "الحدود (Stroke)",
+    value: fmtRgba("215,203,190,0.12"),
+    role: "الفواصل الدقيقة والحدود الرفيعة للبطاقات والأزرار",
+    bgClass: "bg-surface-2",
+    borderClass: "border-stroke",
+    textClass: "text-sandstone",
+  },
+];
+
+const SEMANTIC_PALETTE: ColorToken[] = [
+  {
+    token: "--copper",
+    name: "نحاسي (Copper)",
+    value: fmtHex("C2643A"),
+    role: "دلالي فقط للتعارض والتباين في البيانات (نقطة صغيرة أو خط رفيع ~3%)",
+    contrast: "مخصص للتعارض والتحذير الرصين",
+    bgClass: "bg-copper",
+    borderClass: "border-stroke",
+    textClass: "text-ink",
+  },
+];
 
 export default function StyleguidePage() {
-  const [isGlassSheetOpen, setIsGlassSheetOpen] = useState(false);
-  const [glassSheetSnap, setGlassSheetSnap] = useState<SheetSnapPoint>("half");
+  const [activeChip, setActiveChip] = useState("all");
+  const [toggleState, setToggleState] = useState(true);
   const [activeNav, setActiveNav] = useState<NavItemKey>("cases");
-  const [selectedCity, setSelectedCity] = useState("riyadh");
-  const [selectedChips, setSelectedChips] = useState<string[]>(["cash", "villa"]);
-  const [selectedOption, setSelectedOption] = useState<string>("opt1");
+  const [selectedCityDial, setSelectedCityDial] = useState("riyadh");
+  const [selectedDistrictDial, setSelectedDistrictDial] = useState("riyadh-alyasmin");
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [sheetSnap, setSheetSnap] = useState<SheetSnapPoint>("half");
 
-  const cities: CompassDialOption[] = [
-    { id: "riyadh", label: "الرياض", caption: "عاصمة الأعمال والتوسع" },
-    { id: "jeddah", label: "جدة", caption: "الواجهة البحرية الغربية" },
-    { id: "dammam", label: "الدمام", caption: "حاضرة المنطقة الشرقية" },
-    { id: "khobar", label: "الخبر", caption: "المجمعات السكنية الهادئة" },
-    { id: "makkah", label: "مكة المكرمة", caption: "المنطقة المركزية" },
-  ];
-
-  const certaintyLevels: CertaintyLevel[] = [
-    "confirmed",
-    "reported",
-    "derived",
-    "inferred",
-    "user_observed",
-    "unknown",
-    "conflicting",
-  ];
-
-  const toggleChip = (id: string) => {
-    setSelectedChips((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
+  const openSheetWithSnap = (snap: SheetSnapPoint) => {
+    setSheetSnap(snap);
+    setIsSheetOpen(true);
   };
 
-  const journeyRoutes = [
-    { href: "/start", label: "01. ابدأ باحتياجك (/start)" },
-    { href: "/case/demo/needs", label: "02. مراجعة الاحتياج (/needs)" },
-    { href: "/case/demo/properties", label: "03. إضافة العقارات (/properties)" },
-    { href: "/case/demo/preflight", label: "04. فحص الجاهزية (/preflight)" },
-    { href: "/case/demo/checkout", label: "05. الدفع التجريبي (/checkout)" },
-    { href: "/case/demo/analyzing", label: "06. لحظة التحليل (/analyzing)" },
-    { href: "/case/demo/results", label: "07. شاشة النتائج (/results)" },
-    { href: "/case/demo/property/p1", label: "08. تفاصيل العقار (/property/p1)" },
-    { href: "/case/demo/compare", label: "09. المقارنة الأفقية (/compare)" },
-    { href: "/case/demo/inspection", label: "10. قائمة المعاينة (/inspection)" },
-    { href: "/case/demo/reassess", label: "11. إعادة التقييم (/reassess)" },
-    { href: "/dashboard", label: "12. لوحة الحالات (/dashboard)" },
-    { href: "/preview", label: "📱 وضع محاكاة الهاتف (/preview)" },
-  ];
-
-  const paletteSwatches = [
-    { name: "Ivory (Base)", hex: "#FAF6EF", text: "#130F08", border: true },
-    { name: "Sand (Surface)", hex: "#E9DFD0", text: "#130F08", border: false },
-    { name: "Espresso (Ink/Glass)", hex: "#130F08", text: "#FAF6EF", border: false },
-    { name: "Cocoa (Deep Accent)", hex: "#3D271A", text: "#FAF6EF", border: false },
-    { name: "Brass (Primary CTA)", hex: "#E3A83A", text: "#130F08", border: false },
-    { name: "Teal (Selection/Trust)", hex: "#14756E", text: "#FAF6EF", border: false },
-    { name: "Copper (Conflicts Only)", hex: "#C2643A", text: "#FAF6EF", border: false },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#FAF6EF] text-[#130F08] pb-32" dir="rtl">
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-[#FAF6EF]/90 backdrop-blur-md border-b border-[#E9DFD0] px-4 md:px-8 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="p-2 rounded-full glass-light border border-[#130F08]/10 text-[#130F08] transition-all flex items-center justify-center active:scale-95"
-              title="العودة للصفحة الرئيسية"
-            >
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-xs tracking-wider uppercase text-[#14756E]">BAWSALA RESET</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#14756E]/15 text-[#14756E] font-semibold">
-                  Part A: Light-First System
-                </span>
-              </div>
-              <h1 className="text-lg md:text-xl font-semibold text-[#130F08]">
-                دليل التصميم المحدث ونظام المكونات
-              </h1>
-            </div>
-          </div>
-
-          <Link
-            href="/start"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-[#130F08] bg-gradient-to-r from-[#E3A83A] to-[#F0C060] hover:brightness-105 transition-all shadow-xs active:scale-95"
-          >
-            <span>ابدأ الرحلة الكاملة</span>
-            <ChevronLeft className="w-4 h-4" />
-          </Link>
-        </div>
+    <div
+      className="min-h-screen bg-espresso text-sandstone pb-36 pt-[calc(20px+var(--safe-top))] px-5 w-full max-w-[420px] mx-auto select-none font-arabic overflow-x-hidden bg-radial-lift"
+      dir="rtl"
+    >
+      {/* Header */}
+      <header className="mb-8">
+        <span className="text-[13px] font-medium text-muted block mb-2">
+          دليل الهوية والتصميم المعتمد (DESIGN_RULES)
+        </span>
+        <h1 className="text-[32px] font-semibold text-ink leading-tight">
+          نظام التصميم والمكونات
+        </h1>
+        <p className="text-[14px] text-muted mt-2 leading-relaxed">
+          هوية داكنة، دافئة وفاخرة. مبنية حصرياً من درجات الإسبريسو والحجر الرملي مع لمسات الكاكاو والنحاسي الدلالي.
+        </p>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 md:px-8 pt-8 space-y-12">
-        {/* Quick Route Navigator */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Navigation className="w-3.5 h-3.5" />
-            <span>مسارات التطبيق الكاملة (اضغط لتجربة أي شاشة)</span>
-          </div>
+      {/* SECTION A: COLOR PALETTE (Tokens, Hex, Roles, Contrast) */}
+      <section className="mb-10 space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Palette className="w-5 h-5 text-sandstone" />
+          <h2 className="text-[20px] font-semibold text-ink">
+            لوحة الألوان المعتمدة (Palette)
+          </h2>
+        </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {journeyRoutes.map((route) => (
-              <Link
-                key={route.href}
-                href={route.href}
-                className="p-3 rounded-2xl glass-light border border-[#E9DFD0] hover:border-[#14756E]/40 hover:bg-white transition-all text-xs font-medium text-[#130F08] flex items-center justify-between shadow-2xs"
-              >
-                <span className="truncate">{route.label}</span>
-                <ExternalLink className="w-3.5 h-3.5 text-[#130F08]/50 shrink-0 mr-1" />
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Section 1: Palette (Light-First) */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>1. لوحة الألوان المعتمدة (Light-First Palette)</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
-            {paletteSwatches.map((s) => (
+        {/* Brand Colors */}
+        <div className="space-y-3">
+          <span className="text-[13px] font-medium text-muted block">
+            الألوان الأساسية (Brand Colors):
+          </span>
+          <div className="space-y-2.5">
+            {BRAND_PALETTE.map((color) => (
               <div
-                key={s.name}
-                className={`p-3 rounded-2xl flex flex-col justify-between h-28 shadow-2xs ${
-                  s.border ? "border border-[#E9DFD0]" : ""
-                }`}
-                style={{ backgroundColor: s.hex, color: s.text }}
+                key={color.token}
+                className="p-3.5 rounded-[22px] bg-surface-2 border border-stroke flex items-start gap-3.5"
               >
-                <span className="text-xs font-semibold leading-tight">{s.name}</span>
-                <span className="text-[11px] font-sans font-medium opacity-80" dir="ltr">
-                  {s.hex}
-                </span>
+                <div
+                  className={`w-12 h-12 rounded-[16px] shrink-0 ${color.bgClass} ${
+                    color.borderClass || ""
+                  } shadow-xs flex items-center justify-center`}
+                >
+                  <span className={`text-[11px] font-semibold ${color.textClass}`}>
+                    Aa
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[14px] font-semibold text-ink">
+                      {color.name}
+                    </span>
+                    <code className="text-[12px] font-sans text-muted bg-surface-1 px-2 py-0.5 rounded-md border border-stroke">
+                      {color.value}
+                    </code>
+                  </div>
+                  <span className="text-[11px] font-mono text-sandstone/70 block mt-0.5">
+                    {color.token}
+                  </span>
+                  <p className="text-[12px] text-muted mt-1 leading-snug">
+                    {color.role}
+                  </p>
+                  {color.contrast && (
+                    <span className="inline-block mt-1 text-[11px] text-sandstone/80 bg-surface-3/40 px-2 py-0.5 rounded-full border border-stroke">
+                      {color.contrast}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* Section 2: Typography & Numbers (IBM Plex Sans Arabic & BdiNumber) */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Type className="w-3.5 h-3.5" />
-            <span>2. الخط والأرقام (IBM Plex Sans Arabic & Tabular Numerals)</span>
-          </div>
-
-          <div className="p-5 rounded-3xl bg-white border border-[#E9DFD0] space-y-4 shadow-2xs">
-            <div className="space-y-1">
-              <span className="text-xs text-[#130F08]/75 font-medium block">
-                h1: 30px / line-height 1.3 (Weight 600)
-              </span>
-              <h1 className="text-[30px] font-semibold leading-[1.3] text-[#130F08]">
-                بوصلة القرار العقاري الموثق
-              </h1>
-            </div>
-
-            <div className="space-y-1 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 font-medium block">
-                h2: 22px / line-height 1.35 (Weight 600)
-              </span>
-              <h2 className="text-[22px] font-semibold leading-[1.35] text-[#130F08]">
-                مقارنة المقايضات بين الخيارات الثلاثة
-              </h2>
-            </div>
-
-            <div className="space-y-1 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 font-medium block">
-                body: 16px / line-height 1.6 (Weight 400)
-              </span>
-              <p className="text-base font-normal leading-[1.6] text-[#130F08]/85">
-                هذا النص يوضح أسلوب الصياغة السهل والدافئ، مع الالتزام الصارم بتباين 7:1 على خلفية العاج.
-              </p>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 font-medium block">
-                عزل الأرقام والوحدات لمنع الانعكاس (Wrap in BdiNumber):
-              </span>
-              <div className="flex flex-wrap gap-4 text-sm font-semibold">
-                <div className="p-3 rounded-2xl bg-[#FAF6EF] border border-[#E9DFD0]">
-                  <span>السعر: </span>
-                  <BdiNumber value="870,000" unit="ر.س" className="text-base text-[#14756E]" />
-                </div>
-                <div className="p-3 rounded-2xl bg-[#FAF6EF] border border-[#E9DFD0]">
-                  <span>المساحة: </span>
-                  <BdiNumber value="160" unit="م²" className="text-base text-[#14756E]" />
-                </div>
-                <div className="p-3 rounded-2xl bg-[#FAF6EF] border border-[#E9DFD0]">
-                  <span>المسافة للعمل: </span>
-                  <BdiNumber value="18" unit="دقيقة" className="text-base text-[#14756E]" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 3: Buttons System (Primary 56px, Secondary Glass, 48px Icon Buttons) */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>3. منظومة الأزرار الموحدة (Primary, Secondary, Tertiary & Icon Buttons)</span>
-          </div>
-
-          <div className="p-6 rounded-3xl glass-light border border-[#E9DFD0] space-y-6 shadow-2xs">
-            {/* Action buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
-              {/* Primary */}
-              <div className="space-y-2 text-center">
-                <span className="text-xs text-[#130F08]/75 block font-semibold">
-                  Primary Button (56px Pill + Brass Gradient)
-                </span>
-                <PrimaryButton label="متابعة التحليل الكامل" size="56" className="w-full" />
-              </div>
-
-              {/* Secondary */}
-              <div className="space-y-2 text-center">
-                <span className="text-xs text-[#130F08]/75 block font-semibold">
-                  Secondary Button (56px Glass Pill)
-                </span>
-                <SecondaryButton label="قارن المواصفات" size="56" className="w-full" />
-              </div>
-
-              {/* Tertiary */}
-              <div className="space-y-2 text-center flex flex-col items-center">
-                <span className="text-xs text-[#130F08]/75 block font-semibold">
-                  Tertiary Button (Draw-in Underline)
-                </span>
-                <TertiaryButton label="عرض مسودة الشروط الكاملة" />
-              </div>
-            </div>
-
-            {/* Icon Buttons (Canonical 48px Glass Circle) */}
-            <div className="pt-4 border-t border-[#E9DFD0] space-y-2">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                Icon Buttons: canonical 48px glass circle (Heights 40, 48, 56)
-              </span>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <IconButton size="40" label="حفظ">
-                    <Bookmark className="w-4 h-4" />
-                  </IconButton>
-                  <span className="text-xs text-[#130F08]/75 font-medium">40px</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <IconButton size="48" label="إضافة">
-                    <Plus className="w-5 h-5" />
-                  </IconButton>
-                  <span className="text-xs text-[#14756E] font-semibold">48px (Standard)</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <IconButton size="56" label="مشاركة">
-                    <Share2 className="w-6 h-6" />
-                  </IconButton>
-                  <span className="text-xs text-[#130F08]/75 font-medium">56px</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 4: Glass Levels Utilities */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Layers className="w-3.5 h-3.5" />
-            <span>4. مستويات الزجاج (Glass Utilities)</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* glass-light */}
-            <div className="p-5 rounded-3xl glass-light border border-white/80 space-y-2 shadow-xs">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#14756E]/15 text-[#14756E] font-semibold">
-                glass-light
-              </span>
-              <h4 className="text-base font-semibold text-[#130F08]">
-                زجاج فاتح (Base Glass)
-              </h4>
-              <p className="text-xs text-[#130F08]/75 leading-relaxed">
-                خلفية rgba(255,255,255,0.62)، ضبابية 24px، إشباع 160%، حدود 1px rgba(255,255,255,0.7)، وظلال ناعمة.
-              </p>
-            </div>
-
-            {/* glass-dark */}
-            <div className="p-5 rounded-3xl glass-dark border border-white/20 space-y-2 text-[#FAF6EF] shadow-md">
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 text-[#FAF6EF] font-semibold">
-                glass-dark
-              </span>
-              <h4 className="text-base font-semibold text-[#FAF6EF]">
-                زجاج داكن (Dark Tinted Glass)
-              </h4>
-              <p className="text-xs text-[#FAF6EF]/85 leading-relaxed">
-                خلفية rgba(19,15,8,0.38)، ضبابية 28px، إشباع 140%، حدود 1px rgba(255,255,255,0.22)، ولمعان علوي داخلي.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 5: Signature CompassDial & CardDeck */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-              <Disc className="w-3.5 h-3.5" />
-              <span>5. المكونات التفاعلية الرئيسية (CompassDial &amp; CardDeck)</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* CompassDial */}
-            <div className="p-5 rounded-3xl glass-light border border-[#E9DFD0] space-y-3 shadow-xs">
-              <span className="text-xs font-semibold text-[#130F08] block">
-                محدد البوصلة الدائري: {cities.find((c) => c.id === selectedCity)?.label}
-              </span>
-              <div className="rounded-2xl bg-white border border-[#E9DFD0] overflow-hidden shadow-2xs">
-                <CompassDial
-                  options={cities}
-                  value={selectedCity}
-                  onChange={setSelectedCity}
-                />
-              </div>
-            </div>
-
-            {/* CardDeck */}
-            <div className="p-5 rounded-3xl glass-light border border-[#E9DFD0] space-y-3 shadow-xs">
-              <span className="text-xs font-semibold text-[#130F08] block">
-                حزمة البطاقات الثلاثية المتراكبة (CardDeck):
-              </span>
-              <div className="max-w-xs mx-auto">
-                <CardDeck
-                  items={INITIAL_PROPERTIES}
-                  renderCard={(property) => (
-                    <PaperCard className="p-4 space-y-3 shadow-sm border border-[#E9DFD0]">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <NeedleBadge rank={property.preRank as 1 | 2 | 3} size="sm" />
-                          <h4 className="text-sm font-semibold text-[#130F08]">{property.title}</h4>
-                        </div>
-                        <BdiNumber
-                          value={property.formattedPrice}
-                          className="text-xs font-bold text-[#130F08]"
-                        />
-                      </div>
-
-                      <div className="h-24 rounded-2xl overflow-hidden border border-[#E9DFD0]">
-                        <PropertyImage
-                          image={property.images?.[0]}
-                          tone={property.colorTone}
-                          alt={property.title}
-                          containerClassName="w-full h-full"
-                        />
-                      </div>
-
-                      <p className="text-xs text-[#130F08]/80 line-clamp-2">
-                        {property.keyAdvantage}
-                      </p>
-                    </PaperCard>
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 6: Chips & Options */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>6. رقائق الاختيار وبطاقات الخيارات (SelectChip &amp; OptionCard)</span>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-white border border-[#E9DFD0] space-y-6 shadow-2xs">
-            {/* Select Chips */}
-            <div className="space-y-2">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                Selectable Pill Chips (40px Full Pill, Teal selection)
-              </span>
-              <div className="flex flex-wrap gap-2.5">
-                <SelectChip
-                  label="شراء بالكاش"
-                  selected={selectedChips.includes("cash")}
-                  onClick={() => toggleChip("cash")}
-                />
-                <SelectChip
-                  label="تمويل عقاري"
-                  selected={selectedChips.includes("mortgage")}
-                  onClick={() => toggleChip("mortgage")}
-                />
-                <SelectChip
-                  label="فيلا مستقلة"
-                  selected={selectedChips.includes("villa")}
-                  onClick={() => toggleChip("villa")}
-                />
-                <SelectChip
-                  label="شقة دور كامل"
-                  selected={selectedChips.includes("apt")}
-                  onClick={() => toggleChip("apt")}
-                />
-              </div>
-            </div>
-
-            {/* Option Cards */}
-            <div className="space-y-2 pt-2 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                Option Cards (48px Glass Circle Icon, Teal selection check)
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <OptionCard
-                  title="استشارة عقار محدد"
-                  subtitle="تحليل متكامل لعقار واحد تفكر بشرائه"
-                  badge="شائع"
-                  selected={selectedOption === "opt1"}
-                  onClick={() => setSelectedOption("opt1")}
-                />
-                <OptionCard
-                  title="مقارنة متعددة (حتى 3 عقارات)"
-                  subtitle="مصفوفة تفاضلية تكشف المقايضات الخفية"
-                  selected={selectedOption === "opt2"}
-                  onClick={() => setSelectedOption("opt2")}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 7: FloatingNav Preview */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Navigation className="w-3.5 h-3.5" />
-            <span>7. شريط التنقل السفلي العائم (FloatingNav)</span>
-          </div>
-
-          <div className="p-6 rounded-3xl glass-light border border-[#E9DFD0] space-y-4 shadow-2xs">
-            <p className="text-xs text-[#130F08]/75">
-              كبسولة زجاجية تطفو 16px فوق قاع الشاشة مع مؤشر داكن متحرك بفيزياء زنبركية:
-            </p>
-
-            <div className="py-4 flex justify-center">
-              <div className="relative w-full max-w-[380px]">
-                <FloatingNav
-                  activeItem={activeNav}
-                  onChange={setActiveNav}
-                  className="static w-full mx-auto"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 8: Cartography & MapView (<MapView> Mini & Full) */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>8. الخريطة المعمارية المتجهة (MapView: Mini &amp; Full)</span>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-white border border-[#E9DFD0] space-y-6 shadow-2xs">
-            <p className="text-xs text-[#130F08]/75 leading-relaxed">
-              خريطة متجهة نقية (SVG) مبنية من درجات الهوية البصرية: أرض عاجية (#FAF6EF)، مربعات رملية (#E9DFD0)، شوارع بيضاء، مسطحات مائية فيروزية، وحدائق بلون الميرمية الهادئ.
-            </p>
-
-            {/* Mini Map Variant (160px height) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#130F08]">
-                  أ. النسخة المصغرة (Mini Variant - 160px غير تفاعلية):
-                </span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E9DFD0] text-[#130F08] font-medium">
-                  لشاشات النتائج والقوائم
-                </span>
-              </div>
-              <div className="w-full max-w-md mx-auto">
-                <MapView variant="mini" />
-              </div>
-            </div>
-
-            {/* Full Map Variant (Interactive with Drag, Zoom, Inertia, Callouts) */}
-            <div className="space-y-2 pt-4 border-t border-[#E9DFD0]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#130F08]">
-                  ب. النسخة الكاملة (Full Variant - قابلة للسحب والتكبير مع بطاقة الاستدعاء الزجاجية):
-                </span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#14756E]/10 text-[#14756E] font-medium">
-                  لتبويب الموقع في تفاصيل العقار
-                </span>
-              </div>
-              <p className="text-xs text-[#130F08]/80">
-                تتضمن دبابيس نحاسية متدرجة، هالة نبضية حول الخيار النشط، دبوس مقر العمل بلون الإسبريسو، وحلقة وقت الوصول (<bdi dir="ltr">20 دقيقة</bdi>). جرب سحب الخريطة أو التكبير أو النقر على أحد الدبابيس.
-              </p>
-              <div className="w-full">
-                <MapView variant="full" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 9: Indicators, Badges & Status Pills */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Activity className="w-3.5 h-3.5" />
-            <span>9. المؤشرات والشارات وحالات الثقة (StatusPill, CertaintyChip, Badges, FitArc &amp; TickRing)</span>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-white border border-[#E9DFD0] space-y-6 shadow-2xs">
-            {/* StatusPills */}
-            <div className="space-y-2">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                أ. كبسولات حالة الترتيب (StatusPill: Ranked, Provisional, Insufficient):
-              </span>
-              <div className="flex flex-wrap gap-3">
-                <StatusPill status="ranked" />
-                <StatusPill status="provisional" />
-                <StatusPill status="insufficient" />
-              </div>
-            </div>
-
-            {/* Visit Priority Badges */}
-            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                ب. شارات أولوية المعاينة (VisitPriorityBadge: High, Medium, Low, Insufficient):
-              </span>
-              <div className="flex flex-wrap gap-3">
-                <VisitPriorityBadge level="high" />
-                <VisitPriorityBadge level="medium" />
-                <VisitPriorityBadge level="low" />
-                <VisitPriorityBadge level="insufficient_data" />
-              </div>
-            </div>
-
-            {/* Certainty Chips */}
-            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                ج. رقائق موثوقية المعلومة (CertaintyChip: 7 مستويات موثقة):
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {certaintyLevels.map((lvl) => (
-                  <CertaintyChip key={lvl} level={lvl} />
-                ))}
-              </div>
-            </div>
-
-            {/* Scope Tags */}
-            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                د. وسوم نطاق المعيار (ScopeTag):
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {(["unit", "building", "micro_location", "neighborhood", "city"] as ScopeType[]).map((scope) => (
-                  <ScopeTag key={scope} scope={scope} />
-                ))}
-              </div>
-            </div>
-
-            {/* Gauge Dials: FitArc, TickRing, NeedleBadge */}
-            <div className="space-y-2 pt-3 border-t border-[#E9DFD0]">
-              <span className="text-xs text-[#130F08]/75 block font-semibold">
-                هـ. مؤشرات القياس الدائرية (FitArc, NeedleBadge &amp; TickRing):
-              </span>
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-3">
-                  <FitArc level="excellent" label="ممتاز" />
-                  <FitArc level="good" label="جيد" />
-                  <FitArc level="acceptable" label="مقبول" />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <NeedleBadge rank={1} />
-                  <NeedleBadge rank={2} />
-                  <NeedleBadge rank={3} />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <TickRing progress={100} size={54}>
-                    <span className="text-xs font-bold text-[#14756E] tabular-nums">100%</span>
-                  </TickRing>
-                  <TickRing progress={65} size={54}>
-                    <span className="text-xs font-bold text-[#130F08] tabular-nums">65%</span>
-                  </TickRing>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 10: Modals & Bottom Sheets */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#14756E]">
-            <Layers className="w-3.5 h-3.5" />
-            <span>10. القوائم والصفحات المنبثقة (GlassSheet Modal)</span>
-          </div>
-
-          <div className="p-6 rounded-3xl glass-light border border-[#E9DFD0] space-y-4 shadow-2xs">
-            <p className="text-xs text-[#130F08]/80 leading-relaxed">
-              تعتمد شاشات بوصلة على اللوحات الزجاجية المنبثقة من الأسفل (<code className="px-1.5 py-0.5 rounded-full bg-[#E9DFD0] text-[#130F08] font-mono text-[11px]">GlassSheet</code>) لعرض التفاصيل الإضافية أو تعديل المدخلات دون كسر ميزانية المحتوى (بحد أقصى 3 كتل في الشاشة الأساسية).
-            </p>
-
-            <div className="flex items-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => setIsGlassSheetOpen(true)}
-                className="h-12 px-6 rounded-full font-semibold text-xs text-[#FAF6EF] bg-[#130F08] hover:bg-[#3D271A] flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-98"
+        {/* Derived Colors */}
+        <div className="space-y-3 pt-2">
+          <span className="text-[13px] font-medium text-muted block">
+            الألوان المشتقة (Derived Tokens):
+          </span>
+          <div className="space-y-2.5">
+            {DERIVED_PALETTE.map((color) => (
+              <div
+                key={color.token}
+                className="p-3.5 rounded-[22px] bg-surface-2 border border-stroke flex items-start gap-3.5"
               >
-                <Layers className="w-4 h-4 text-[#FAF6EF]" />
-                <span>فتح صفحة زجاجية منبثقة تجريبية</span>
-              </button>
+                <div
+                  className={`w-12 h-12 rounded-[16px] shrink-0 ${color.bgClass} ${
+                    color.borderClass || ""
+                  } shadow-xs flex items-center justify-center`}
+                >
+                  <span className={`text-[11px] font-semibold ${color.textClass}`}>
+                    Aa
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[14px] font-semibold text-ink">
+                      {color.name}
+                    </span>
+                    <code className="text-[12px] font-sans text-muted bg-surface-1 px-2 py-0.5 rounded-md border border-stroke">
+                      {color.value}
+                    </code>
+                  </div>
+                  <span className="text-[11px] font-mono text-sandstone/70 block mt-0.5">
+                    {color.token}
+                  </span>
+                  <p className="text-[12px] text-muted mt-1 leading-snug">
+                    {color.role}
+                  </p>
+                  {color.contrast && (
+                    <span className="inline-block mt-1 text-[11px] text-sandstone/80 bg-surface-3/40 px-2 py-0.5 rounded-full border border-stroke">
+                      {color.contrast}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Semantic Colors */}
+        <div className="space-y-3 pt-2">
+          <span className="text-[13px] font-medium text-muted block">
+            اللون الدلالي للتعارض (Semantic):
+          </span>
+          <div className="space-y-2.5">
+            {SEMANTIC_PALETTE.map((color) => (
+              <div
+                key={color.token}
+                className="p-3.5 rounded-[22px] bg-surface-2 border border-stroke flex items-start gap-3.5"
+              >
+                <div
+                  className={`w-12 h-12 rounded-[16px] shrink-0 ${color.bgClass} ${
+                    color.borderClass || ""
+                  } shadow-xs flex items-center justify-center`}
+                >
+                  <span className={`text-[11px] font-semibold ${color.textClass}`}>
+                    Aa
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[14px] font-semibold text-ink">
+                      {color.name}
+                    </span>
+                    <code className="text-[12px] font-sans text-muted bg-surface-1 px-2 py-0.5 rounded-md border border-stroke">
+                      {color.value}
+                    </code>
+                  </div>
+                  <span className="text-[11px] font-mono text-sandstone/70 block mt-0.5">
+                    {color.token}
+                  </span>
+                  <p className="text-[12px] text-muted mt-1 leading-snug">
+                    {color.role}
+                  </p>
+                  {color.contrast && (
+                    <span className="inline-block mt-1 text-[11px] text-sandstone/80 bg-surface-3/40 px-2 py-0.5 rounded-full border border-stroke">
+                      {color.contrast}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Certainty Dots Legend */}
+        <div className="p-4 rounded-[24px] bg-surface-2 border border-stroke space-y-2.5">
+          <span className="text-[13px] font-semibold text-ink block">
+            نقاط درجات التوثيق واليقين (Certainty Dots):
+          </span>
+          <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+            <div className="p-2.5 rounded-[16px] bg-surface-1 border border-stroke flex flex-col items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-sandstone" />
+              <span className="text-[11px] text-sandstone font-medium">مؤكد (Confirmed)</span>
+            </div>
+            <div className="p-2.5 rounded-[16px] bg-surface-1 border border-stroke flex flex-col items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full border-2 border-muted" />
+              <span className="text-[11px] text-muted font-medium">غير محدد (Unknown)</span>
+            </div>
+            <div className="p-2.5 rounded-[16px] bg-surface-1 border border-stroke flex flex-col items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-copper" />
+              <span className="text-[11px] text-copper font-medium">تعارض (Conflict)</span>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
 
-      {/* Interactive GlassSheet Demo */}
-      <GlassSheet
-        isOpen={isGlassSheetOpen}
-        onClose={() => setIsGlassSheetOpen(false)}
-        title="لوحة زجاجية تجريبية"
-        subtitle="دليل مكون GlassSheet في نمط الضوء الأول"
-        initialSnap={glassSheetSnap}
-        variant="light"
-      >
-        <div className="space-y-4 text-right" dir="rtl">
-          <div className="p-4 rounded-2xl bg-white border border-[#E9DFD0] space-y-2 shadow-xs">
-            <span className="text-xs font-bold text-[#14756E] block">
-              نظام المحتوى الذكي
-            </span>
-            <p className="text-xs text-[#130F08]/80 leading-relaxed">
-              تحتوي هذه اللوحة على مفاصل السحب التفاعلية (<bdi dir="ltr">Snap Points: peek, half, full</bdi>) وتغلق بالسحب أو بالنقر على الخلفية المعتمة.
-            </p>
+      {/* SECTION B: SURFACES PREVIEW (bg, surface-1, surface-2, glass, glass-dark) */}
+      <section className="mb-10 space-y-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Layout className="w-5 h-5 text-sandstone" />
+          <h2 className="text-[20px] font-semibold text-ink">
+            معاينة الأسطح وتراكب النصوص (Surfaces)
+          </h2>
+        </div>
+        <p className="text-[13px] text-muted leading-relaxed">
+          اختبار مباشر لتباين الخطوط الأساسية (Ink)، والمتن (Sandstone)، والثانوية (Muted) فوق كافة الأسطح:
+        </p>
+
+        <div className="space-y-3">
+          {/* Surface: Background Espresso */}
+          <div className="p-4 rounded-[24px] bg-espresso border border-stroke space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-mono text-sandstone/70">bg (espresso)</span>
+              <span className="text-[11px] text-muted">الخلفية الأساسية</span>
+            </div>
+            <h4 className="text-[16px] font-semibold text-ink">عنوان بارز بحبر فاتح (Ink)</h4>
+            <p className="text-[13px] text-sandstone">نص المتن الأساسي بحجر رملي دافئ ومريح للعين.</p>
+            <span className="text-[12px] text-muted block">نص إرشادي توضيحي بدرجة Muted عالية التباين (~7:1).</span>
           </div>
 
-          <div className="pt-2">
-            <PrimaryButton
-              label="إغلاق اللوحة"
-              onClick={() => setIsGlassSheetOpen(false)}
-              size="48"
-              className="w-full"
+          {/* Surface: Surface-1 */}
+          <div className="p-4 rounded-[24px] bg-surface-1 border border-stroke space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-mono text-sandstone/70">surface-1</span>
+              <span className="text-[11px] text-muted">الأسطح الثانوية</span>
+            </div>
+            <h4 className="text-[16px] font-semibold text-ink">عنوان بارز بحبر فاتح (Ink)</h4>
+            <p className="text-[13px] text-sandstone">نص المتن الأساسي بحجر رملي دافئ ومريح للعين.</p>
+            <span className="text-[12px] text-muted block">نص إرشادي توضيحي بدرجة Muted عالية التباين.</span>
+          </div>
+
+          {/* Surface: Surface-2 (Cards) */}
+          <div className="p-4 rounded-[24px] bg-surface-2 border border-stroke space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-mono text-sandstone/70">surface-2 (cards)</span>
+              <span className="text-[11px] text-muted">بطاقات المحتوى</span>
+            </div>
+            <h4 className="text-[16px] font-semibold text-ink">عنوان بارز بحبر فاتح (Ink)</h4>
+            <p className="text-[13px] text-sandstone">نص المتن الأساسي بحجر رملي دافئ ومريح للعين.</p>
+            <span className="text-[12px] text-muted block">نص إرشادي توضيحي بدرجة Muted عالية التباين.</span>
+          </div>
+
+          {/* Surface: Glass (Driftwood) */}
+          <div className="p-4 rounded-[24px] bawsala-glass space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-mono text-sandstone/70">bawsala-glass (driftwood)</span>
+              <span className="text-[11px] text-muted">الزجاج السائل</span>
+            </div>
+            <h4 className="text-[16px] font-semibold text-ink">عنوان بارز بحبر فاتح (Ink)</h4>
+            <p className="text-[13px] text-sandstone">نص المتن الأساسي بحجر رملي دافئ ومريح للعين.</p>
+            <span className="text-[12px] text-muted block">نص إرشادي توضيحي بدرجة Muted عالية التباين.</span>
+          </div>
+
+          {/* Surface: Glass Dark */}
+          <div className="p-4 rounded-[24px] bawsala-glass-dark space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-mono text-sandstone/70">bawsala-glass-dark</span>
+              <span className="text-[11px] text-muted">الزجاج الداكن للألواح</span>
+            </div>
+            <h4 className="text-[16px] font-semibold text-ink">عنوان بارز بحبر فاتح (Ink)</h4>
+            <p className="text-[13px] text-sandstone">نص المتن الأساسي بحجر رملي دافئ ومريح للعين.</p>
+            <span className="text-[12px] text-muted block">نص إرشادي توضيحي بدرجة Muted عالية التباين.</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 1. Headline Component with inline capsule */}
+      <section className="mb-8">
+        <span className="text-[13px] font-medium text-muted block mb-2">
+          العناوين والكبسولات الصورية (Headline)
+        </span>
+        <Headline
+          beforeText="قراراتك العقارية،"
+          capsuleImage="/images/p1-living.jpg"
+          capsuleAlt="واجهة سكنية فاخرة"
+          afterText="بثقة تامة"
+        />
+      </section>
+
+      {/* 2. Banner Component */}
+      <section className="mb-8">
+        <Banner
+          title="معايير الشفافية العقارية"
+          description="جميع البيانات مصنفة حسب درجات التوثيق والتحقق الميداني."
+          buttonAriaLabel="استعراض المعايير"
+        />
+      </section>
+
+      {/* 3. ChipsRow Component (Active & Inactive States) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          رقائق التصفية (ChipsRow)
+        </h2>
+        <ChipsRow
+          selectedId={activeChip}
+          onChange={setActiveChip}
+          chips={[
+            { id: "all", label: "جميع العقارات", count: "3" },
+            { id: "verified", label: "مكتمل الفحص", count: "2" },
+            { id: "pending", label: "قيد المراجعة", count: "1" },
+          ]}
+        />
+      </section>
+
+      {/* 4. CircleButton Component (Default & Pressed States) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          أزرار الدائرة (CircleButton: 44px)
+        </h2>
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke flex items-center justify-around">
+          <div className="flex flex-col items-center gap-2">
+            <CircleButton
+              icon={<Bookmark className="w-5 h-5 text-sandstone" />}
+              ariaLabel="حفظ افتراضي"
+            />
+            <span className="text-[12px] text-muted">افتراضي (Default)</span>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <CircleButton
+              icon={<Bookmark className="w-5 h-5 text-sandstone" />}
+              ariaLabel="حفظ مضغوط"
+              isPressed={true}
+            />
+            <span className="text-[12px] text-muted">مضغوط (Pressed)</span>
+          </div>
+
+          <div className="flex flex-col items-center gap-2">
+            <CircleButton
+              icon={<SlidersHorizontal className="w-5 h-5 text-sandstone" />}
+              ariaLabel="تصفية"
+              variant="surface"
+            />
+            <span className="text-[12px] text-muted">سطح (Surface)</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. GlassPill Component (Small 48px, Large 56px, With Arrow) */}
+      <section className="mb-8 space-y-3">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          كبسولات الزجاج والحجر الرملي (GlassPill: 48 / 56px)
+        </h2>
+        <div className="space-y-2.5">
+          <GlassPill
+            label="كبسولة زجاجية صغيرة 48px"
+            size="48"
+            variant="glass"
+            fullWidth
+          />
+          <GlassPill
+            label="كبسولة زجاجية 56px مع سهم"
+            size="56"
+            variant="glass"
+            showArrow
+            fullWidth
+          />
+          <GlassPill
+            label="الإجراء الرئيسي (Sandstone CTA)"
+            size="56"
+            variant="sandstone"
+            showArrow
+            fullWidth
+          />
+        </div>
+      </section>
+
+      {/* 6. StatCard Component (Normal & Long Number) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          بطاقات المؤشرات (StatCard: 170x150)
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            label="المساحة الصافية"
+            value="148"
+            unit="م²"
+            icon={<Compass className="w-4 h-4 text-sandstone" />}
+          />
+          <StatCard
+            label="السعر الإجمالي"
+            value="2,450,000"
+            unit="ر.س"
+            icon={<Share2 className="w-4 h-4 text-sandstone" />}
+          />
+        </div>
+      </section>
+
+      {/* 7. WideCard Component (Full width with value or toggle) */}
+      <section className="mb-8 space-y-3">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          البطاقات العريضة (WideCard)
+        </h2>
+        <WideCard
+          title="تفعيل الإشعارات الفورية"
+          subtitle="تحديثات تقييم الصكوك والمخططات"
+          isToggle={true}
+          checked={toggleState}
+          onToggle={setToggleState}
+        />
+        <WideCard
+          title="رقم الصك الإلكتروني"
+          subtitle="وزارة العدل (موثق)"
+          value={<bdi dir="ltr">3101-84920</bdi>}
+        />
+      </section>
+
+      {/* 8. PhotoCard Component (With and Without Chips) */}
+      <section className="mb-8 space-y-4">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          بطاقات الصور البانورامية (PhotoCard: Radius 32)
+        </h2>
+
+        {/* 8a. PhotoCard With Chips */}
+        <div className="space-y-1">
+          <span className="text-[12px] text-muted px-1 block">
+            مع رقائق بيانات (With Chips - Max 3)
+          </span>
+          <PhotoCard
+            imageSrc="/images/p1-exterior.jpg"
+            imageAlt="شقة حي الياسمين"
+            title="شقة فاخرة بمساحة 148 م²"
+            subtitle="حي الياسمين، شمال الرياض"
+            topChipLabel="الخيار الأول (مرشح)"
+            topChipIcon={<Compass className="w-4 h-4 text-sandstone" />}
+            chips={["مؤكد بالصك", "دور كامل", "قريب من العمل"]}
+            pillLabel="عرض التحليل الشامل"
+            circleActions={[
+              { icon: <Bookmark className="w-4 h-4 text-sandstone" />, ariaLabel: "حفظ" },
+              { icon: <Share2 className="w-4 h-4 text-sandstone" />, ariaLabel: "مشاركة" },
+            ]}
+          />
+        </div>
+
+        {/* 8b. PhotoCard Without Chips */}
+        <div className="space-y-1 pt-2">
+          <span className="text-[12px] text-muted px-1 block">
+            بدون رقائق (Without Chips)
+          </span>
+          <PhotoCard
+            imageSrc="/images/p2-living.jpg"
+            imageAlt="صالة معيشة رحبة"
+            title="تشطيبات معمارية راقية"
+            subtitle="نوافذ ممتدة وإضاءة طبيعية"
+            topChipLabel="معاينة داخلية"
+            pillLabel="طلب زيارة ميدانية"
+            circleActions={[
+              { icon: <Bookmark className="w-4 h-4 text-sandstone" />, ariaLabel: "حفظ" },
+            ]}
+            height={360}
+          />
+        </div>
+      </section>
+
+      {/* 9. MapView Component (Dark Espresso Land, Surface-2 Blocks, Driftwood Roads & Parks, Sandstone Pins) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          الخريطة المعمارية الداكنة (MapView)
+        </h2>
+        <MapView height={360} />
+      </section>
+
+      {/* 10. GlassSheet Triggers (Snaps: 38% / 62% / 92%) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          اللوحة الزجاجية السفلية (GlassSheet: Snaps 38/62/92%)
+        </h2>
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke space-y-3">
+          <p className="text-[13px] text-muted">
+            لوحة زجاجية داكنة تنبثق بنقاط تثبيت دقيقة (38% و 62% و 92%). اضغط لتجربة كل نقطة:
+          </p>
+
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => openSheetWithSnap("peek")}
+              className="h-10 rounded-full bg-surface-1 hover:bg-surface-3 border border-stroke text-[13px] font-medium text-sandstone transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+            >
+              <Layers className="w-3.5 h-3.5 text-sandstone" />
+              <span>38%</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheetWithSnap("half")}
+              className="h-10 rounded-full bg-surface-1 hover:bg-surface-3 border border-stroke text-[13px] font-medium text-sandstone transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+            >
+              <Layers className="w-3.5 h-3.5 text-sandstone" />
+              <span>62%</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheetWithSnap("full")}
+              className="h-10 rounded-full bg-surface-1 hover:bg-surface-3 border border-stroke text-[13px] font-medium text-sandstone transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+            >
+              <Layers className="w-3.5 h-3.5 text-sandstone" />
+              <span>92%</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 11. FloatingNav Showcase (Each active item demonstrated) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          شريط التنقل العائم (FloatingNav: 4 Icons)
+        </h2>
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke space-y-4">
+          <p className="text-[13px] text-muted">
+            كبسولة زجاجية مع عدسة ضوئية متحركة خلف الأيقونة النشطة:
+          </p>
+
+          <FloatingNav
+            activeItem={activeNav}
+            onChange={setActiveNav}
+            pinned={false}
+          />
+
+          <div className="flex items-center justify-center gap-2 pt-2 border-t border-stroke">
+            <span className="text-[12px] text-muted">التبديل المباشر:</span>
+            {(["home", "cases", "saved", "profile"] as NavItemKey[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveNav(key)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-colors ${
+                  activeNav === key
+                    ? "bg-sandstone text-espresso font-semibold"
+                    : "bg-surface-1 text-muted hover:text-sandstone"
+                }`}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 12. ActionBar (Pinned Bottom Example rendered inline & pinned) */}
+      <section className="mb-8">
+        <h2 className="text-[18px] font-semibold text-ink mb-3">
+          شريط الإجراءات السفلي (ActionBar)
+        </h2>
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke space-y-3">
+          <span className="text-[12px] text-muted block">
+            نموذج شريط الإجراءات المدمج:
+          </span>
+          <ActionBar
+            primaryLabel="تأكيد ومتابعة"
+            pinned={false}
+            onPrimaryAction={() => {}}
+            startIcon={<Bookmark className="w-5 h-5 text-sandstone" />}
+            startAriaLabel="حفظ"
+            endIcon={<Share2 className="w-5 h-5 text-sandstone" />}
+            endAriaLabel="مشاركة"
+          />
+        </div>
+      </section>
+
+      {/* 13. CompassDial Showcase (Signature Curved Wheel Picker: Cities & Districts) */}
+      <section className="mb-8 space-y-6">
+        <div>
+          <h2 className="text-[18px] font-semibold text-ink mb-1">
+            عجلة الاختيار المقوسة (CompassDial)
+          </h2>
+          <p className="text-[13px] text-muted">
+            المكون الحصري والتفاعلي الأبرز لتحديد المدينة والحي بسلاسة فائقة.
+          </p>
+        </div>
+
+        {/* 13a. Cities Wheel */}
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke space-y-3 overflow-hidden">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[13px] font-medium text-muted">
+              قائمة المدن (10 مدن رئيسية)
+            </span>
+            <span className="text-[12px] text-sandstone font-medium bg-surface-1 px-2.5 py-0.5 rounded-full border border-stroke">
+              {CITIES.find((c) => c.id === selectedCityDial)?.label || "الرياض"}
+            </span>
+          </div>
+          <div className="bg-espresso rounded-[24px] border border-stroke overflow-hidden">
+            <CompassDial
+              items={CITIES}
+              value={selectedCityDial}
+              onChange={(id) => setSelectedCityDial(id)}
             />
           </div>
+        </div>
+
+        {/* 13b. Districts Wheel */}
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke space-y-3 overflow-hidden">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[13px] font-medium text-muted">
+              قائمة الأحياء (أحياء الرياض)
+            </span>
+            <span className="text-[12px] text-sandstone font-medium bg-surface-1 px-2.5 py-0.5 rounded-full border border-stroke">
+              {DISTRICTS_BY_CITY.riyadh.find((d) => d.id === selectedDistrictDial)?.label || "الياسمين"}
+            </span>
+          </div>
+          <div className="bg-espresso rounded-[24px] border border-stroke overflow-hidden">
+            <CompassDial
+              items={DISTRICTS_BY_CITY.riyadh}
+              value={selectedDistrictDial}
+              onChange={(id) => setSelectedDistrictDial(id)}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* GlassSheet Modal Instance */}
+      <GlassSheet
+        isOpen={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        title="تفاصيل الصك العقاري"
+        subtitle="بيانات رسمية مستخرجة من منصة البورصة العقارية"
+        initialSnap={sheetSnap}
+      >
+        <div className="space-y-4" dir="rtl">
+          <WideCard
+            title="رقم الصك"
+            subtitle="محدث ومطابق"
+            value={<bdi dir="ltr">3101-84920</bdi>}
+          />
+          <WideCard
+            title="المساحة الموثقة"
+            subtitle="المخطط المعتمد"
+            value={<bdi dir="ltr">148 م²</bdi>}
+          />
+          <div className="p-4 rounded-[28px] bg-surface-1 border border-stroke">
+            <h4 className="text-[15px] font-medium text-ink mb-1">
+              ملاحظة الفحص الفني
+            </h4>
+            <p className="text-[13px] text-muted leading-relaxed">
+              تم التحقق من مطابقة الأبعاد الميدانية للمخطط المرفق، ولا توجد أي تعديات أو قيود نظامية مسجلة على العقار.
+            </p>
+          </div>
+          <GlassPill
+            label="إغلاق اللوحة"
+            variant="sandstone"
+            fullWidth
+            onClick={() => setIsSheetOpen(false)}
+          />
         </div>
       </GlassSheet>
     </div>

@@ -20,33 +20,50 @@ export const MOTION_EASINGS = {
 export const MOTION_SPRINGS = {
   sheet: {
     type: "spring" as const,
-    stiffness: 300,
-    damping: 30,
+    stiffness: 140,
+    damping: 20,
     mass: 0.8,
   },
   toggle: {
     type: "spring" as const,
-    stiffness: 450,
-    damping: 35,
+    stiffness: 160,
+    damping: 22,
   },
   compassNeedle: {
     type: "spring" as const,
-    stiffness: 60,
-    damping: 12,
+    stiffness: 130,
+    damping: 19,
   },
   gentle: {
     type: "spring" as const,
     stiffness: 120,
     damping: 18,
   },
+  default: {
+    type: "spring" as const,
+    stiffness: 150,
+    damping: 22,
+  },
 };
 
 /**
- * Button tap/hover motion
+ * Button tap/hover motion: button press 0.97
  */
 export const buttonMotion = {
   whileHover: { scale: 1.015 },
   whileTap: { scale: 0.97 },
+  transition: {
+    duration: MOTION_DURATIONS.micro,
+    ease: MOTION_EASINGS.default,
+  },
+};
+
+/**
+ * Chip state pop
+ */
+export const chipMotion = {
+  whileHover: { scale: 1.03 },
+  whileTap: { scale: 0.95 },
   transition: {
     duration: MOTION_DURATIONS.micro,
     ease: MOTION_EASINGS.default,
@@ -60,7 +77,6 @@ export const cardMotion = {
   initial: { y: 0, opacity: 1 },
   whileHover: {
     y: -2,
-    boxShadow: "0 20px 35px -10px rgba(19, 15, 8, 0.55)",
     transition: {
       duration: MOTION_DURATIONS.standard,
       ease: MOTION_EASINGS.default,

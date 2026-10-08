@@ -5,17 +5,17 @@ import React from "react";
 export function PhoneStatusBar() {
   return (
     <div
-      className="absolute top-0 inset-x-0 h-11 px-7 flex items-center justify-between text-[#F2EBE2] z-40 pointer-events-none select-none"
+      className="absolute top-0 inset-x-0 h-[54px] px-7 flex items-center justify-between text-sandstone z-40 pointer-events-none select-none"
       dir="ltr"
       aria-hidden="true"
     >
       {/* Time: 9:41 */}
-      <span className="text-[14px] font-semibold tracking-tight text-[#F2EBE2] font-sans">
+      <span className="text-[14px] font-semibold tracking-tight font-sans">
         9:41
       </span>
 
       {/* Cellular, WiFi, Battery Icons */}
-      <div className="flex items-center gap-1.5 text-[#F2EBE2]">
+      <div className="flex items-center gap-1.5">
         {/* Cellular Signal (4 bars) */}
         <svg viewBox="0 0 18 12" className="w-[17px] h-[11px] fill-current">
           <rect x="0" y="8" width="3" height="4" rx="0.5" />
@@ -31,10 +31,10 @@ export function PhoneStatusBar() {
 
         {/* Battery Icon */}
         <div className="flex items-center">
-          <div className="w-[22px] h-[11px] rounded-[3px] border border-[#F2EBE2] p-[1.5px] flex items-center">
-            <div className="h-full w-[80%] bg-[#F2EBE2] rounded-[1.5px]" />
+          <div className="w-[22px] h-[11px] rounded-[3px] border border-current p-[1.5px] flex items-center">
+            <div className="h-full w-[80%] bg-current rounded-[1.5px]" />
           </div>
-          <div className="w-[1.5px] h-[4px] bg-[#F2EBE2] rounded-r-[1px] ml-[1px]" />
+          <div className="w-[1.5px] h-[4px] bg-current rounded-r-[1px] ml-[1px]" />
         </div>
       </div>
     </div>

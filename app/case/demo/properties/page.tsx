@@ -2,219 +2,254 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowRight,
   Link2,
-  Image as ImageIcon,
+  Camera,
   PenLine,
   Trash2,
-  ArrowRight,
+  Bookmark,
+  Share2,
   CheckCircle2,
 } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
-import { PropertyImage } from "@/components/ui/PropertyImage";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
-import { MapView } from "@/components/ui/MapView";
+import { CircleButton } from "@/components/ui/CircleButton";
+import { PhotoCard } from "@/components/ui/PhotoCard";
+import { ChipsRow } from "@/components/ui/ChipsRow";
+import { ActionBar } from "@/components/ui/ActionBar";
+import { GlassSheet } from "@/components/ui/GlassSheet";
+import { GlassPill } from "@/components/ui/GlassPill";
 import { useAppStore } from "@/lib/store";
 import { COPY } from "@/lib/copy";
-import { formatNumber } from "@/lib/format";
-import { getCoverImageForProperty } from "@/lib/images";
+
+const PROPERTY_IMAGES: Record<string, string> = {
+  p1: "/images/p1-exterior.jpg",
+  p2: "/images/p2-exterior.jpg",
+  p3: "/images/p3-exterior.jpg",
+};
 
 export default function PropertiesPage() {
   const router = useRouter();
-  const {
-    properties,
-    setAddSheetOpen,
-    removeProperty,
-  } = useAppStore();
+  const { properties, addProperty, removeProperty } = useAppStore();
+
+  const [activeAddMethod, setActiveAddMethod] = useState<string | undefined>();
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualPrice, setManualPrice] = useState("850000");
+
+  const ADD_CHIPS = [
+    { id: "link", label: "رابط", icon: <Link2 className="w-4 h-4" /> },
+    { id: "photo", label: "صورة", icon: <Camera className="w-4 h-4" /> },
+    { id: "manual", label: "يدوي", icon: <PenLine className="w-4 h-4" /> },
+  ];
+
+  const handleSelectAddMethod = (id: string) => {
+    setActiveAddMethod(id);
+    setIsAddSheetOpen(true);
+  };
+
+  const handleAddSubmit = () => {
+    addProperty({
+      title: manualTitle || `شقة في حي المروج (${properties.length + 1})`,
+      price: Number(manualPrice) || 850000,
+      formattedPrice: `${Number(manualPrice || 850000).toLocaleString("ar-SA")} ر.س`,
+      areaM2: 145,
+      rooms: 3,
+      district: "المروج، شمال الرياض",
+      source: (activeAddMethod === "link" ? "link" : activeAddMethod === "photo" ? "screenshot" : "manual") as "link" | "screenshot" | "manual",
+      sourceLabel: activeAddMethod === "link" ? "رابط معلن" : activeAddMethod === "photo" ? "لقطة شاشة" : "إدخال يدوي",
+    });
+    setIsAddSheetOpen(false);
+    setManualTitle("");
+  };
 
   return (
-    <AppShell hideTopBar>
-      {/* Header: Back Arrow, Headline, 5-Segment Progress Bar */}
-      <header className="sticky top-0 z-40 w-full bg-[#FAF6EF]/92 backdrop-blur-md border-b border-[#E9DFD0]/70 px-4 sm:px-5 pt-3 pb-2.5 space-y-2" dir="rtl">
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 text-[#130F08] hover:bg-[#E9DFD0]/60 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
-            aria-label="الرجوع للخلف"
-          >
-            <ArrowRight className="w-5 h-5 text-[#130F08]" />
-          </button>
-
-          {/* 1 Headline: "أضف العقارات" */}
-          <h1 className="text-base font-semibold text-[#130F08]">
-            {COPY.properties.title}
-          </h1>
-
-          <div className="w-10 h-10" />
-        </div>
-
-        {/* 1 Supporting Line: 5-Segment Progress Bar */}
-        <div className="flex items-center justify-between text-xs text-[#130F08]/75 font-medium">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 w-20" dir="rtl">
-              {[1, 2, 3, 4, 5].map((step) => (
-                <div
-                  key={step}
-                  className={`h-1 flex-1 rounded-full ${
-                    step <= 2 ? "bg-[#130F08]" : "bg-[#E9DFD0]"
-                  }`}
-                />
-              ))}
-            </div>
-            <span>
-              <bdi dir="ltr">2 من 5</bdi>
+    <div
+      className="relative w-full min-h-screen bg-espresso text-sandstone flex flex-col justify-between select-none bg-radial-lift"
+      dir="rtl"
+    >
+      {/* Main Content Area (Max 1 title, 2 sections, 1 primary action) */}
+      <div className="w-full max-w-[420px] mx-auto px-5 pt-[calc(20px+var(--safe-top))] pb-[calc(100px+var(--safe-bottom))] flex-1 flex flex-col justify-between">
+        <div className="space-y-6">
+          {/* Header Row: CircleButton back + Step counter */}
+          <div className="flex items-center justify-between">
+            <CircleButton
+              icon={<ArrowRight className="w-5 h-5 text-sandstone" />}
+              ariaLabel="الرجوع للخلف"
+              onClick={() => router.back()}
+              variant="glass"
+            />
+            <span className="text-[13px] font-medium text-muted">
+              خطوة <bdi dir="ltr">2</bdi> من <bdi dir="ltr">5</bdi> • <bdi dir="ltr">{properties.length}</bdi> عقارات
             </span>
           </div>
 
-          <span className="text-[11px] text-[#130F08]/75">
-            <bdi dir="ltr">{properties.length} من 5</bdi> عقارات
-          </span>
-        </div>
-      </header>
+          {/* Huge Title: "عقاراتك" */}
+          <h1 className="text-[40px] md:text-[48px] font-light text-ink leading-[1.15] tracking-normal">
+            عقاراتك
+          </h1>
 
-      {/* Main Body (Strictly Max 3 Content Blocks) */}
-      <div className="px-4 sm:px-5 pt-4 pb-32 flex-1 flex flex-col justify-between max-w-md mx-auto w-full" dir="rtl">
-        <div className="space-y-4">
-          {/* Content Block 1: Add Options as Three Glass Tiles */}
-          <div className="grid grid-cols-3 gap-2.5">
-            <button
-              type="button"
-              onClick={() => setAddSheetOpen(true)}
-              className="p-3 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs min-h-[84px]"
-            >
-              <div className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shadow-2xs">
-                <Link2 className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-semibold text-[#130F08]">
-                رابط إعلان
-              </span>
-            </button>
+          {/* Section 1: PhotoCard carousel with peeking sides */}
+          <div className="space-y-2">
+            <span className="text-[13px] font-medium text-muted px-1 block">
+              العقارات المضافة للمقارنة
+            </span>
 
-            <button
-              type="button"
-              onClick={() => setAddSheetOpen(true)}
-              className="p-3 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs min-h-[84px]"
-            >
-              <div className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shadow-2xs">
-                <ImageIcon className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-semibold text-[#130F08]">
-                صورة / لقطة
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setAddSheetOpen(true)}
-              className="p-3 rounded-2xl glass-light border border-[#130F08]/10 hover:border-[#130F08]/25 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs min-h-[84px]"
-            >
-              <div className="w-10 h-10 rounded-full glass-light border border-[#130F08]/10 flex items-center justify-center text-[#14756E] shadow-2xs">
-                <PenLine className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-semibold text-[#130F08]">
-                إدخال يدوي
-              </span>
-            </button>
-          </div>
-
-          {/* Content Block 2: Property Cards as Photo Cards (PropertyImage) with small glass status chip */}
-          <div className="space-y-3">
-            <AnimatePresence mode="popLayout" initial={false}>
+            {/* Horizontal Snap Carousel with Peeking Sides */}
+            <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-none -mx-5 px-5 py-1">
               {properties.map((property) => {
-                const coverImage = property.images?.[0] || getCoverImageForProperty(property.id);
+                const imageSrc = PROPERTY_IMAGES[property.id] || "/images/hero-home.jpg";
+                const chips = [
+                  property.formattedPrice,
+                  `${property.areaM2} م²`,
+                  `${property.rooms} غرف`,
+                ];
 
                 return (
-                  <motion.div
+                  <div
                     key={property.id}
-                    layout
-                    initial={false}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="p-3 rounded-2xl glass-light border border-[#E9DFD0] flex items-center gap-3 shadow-2xs relative"
+                    className="w-[84vw] max-w-[340px] shrink-0 snap-center"
                   >
-                    {/* Thumbnail using PropertyImage */}
-                    <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-[#E9DFD0] relative">
-                      <PropertyImage
-                        image={coverImage}
-                        tone={property.colorTone || "sandstone"}
-                        alt={property.title}
-                        containerClassName="w-full h-full"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Details with max 3 chips */}
-                    <div className="flex-1 min-w-0 space-y-1 text-right">
-                      {/* Small glass status chip */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-full glass-dark text-[10px] font-semibold text-[#FAF6EF] shadow-2xs flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-[#14756E]" />
-                          <span>تمت القراءة</span>
-                        </span>
-                        <span className="text-[11px] text-[#130F08]/75 font-medium truncate">
-                          {property.sourceLabel}
-                        </span>
-                      </div>
-
-                      <h2 className="text-xs sm:text-sm font-semibold text-[#130F08] truncate">
-                        {property.title}
-                      </h2>
-
-                      {/* Max 3 Chips: Price, Area, District */}
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#130F08]/80">
-                        <span className="font-bold text-[#130F08]">
-                          <bdi dir="ltr">{formatNumber(property.price)} ر.س</bdi>
-                        </span>
-                        <span>•</span>
-                        <span>
-                          <bdi dir="ltr">{property.areaM2} م²</bdi>
-                        </span>
-                        <span>•</span>
-                        <span className="truncate">{property.district}</span>
-                      </div>
-                    </div>
-
-                    {/* Delete button (at least 48px tap target) */}
-                    {properties.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeProperty(property.id)}
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-[#130F08]/40 hover:text-[#C2643A] active:scale-95 transition-all cursor-pointer shrink-0"
-                        title="حذف هذا العقار"
-                        aria-label="حذف هذا العقار"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </motion.div>
+                    <PhotoCard
+                      imageSrc={imageSrc}
+                      imageAlt={property.title}
+                      title={property.title}
+                      subtitle={property.district}
+                      topChipLabel={property.sourceLabel}
+                      topChipIcon={<CheckCircle2 className="w-3.5 h-3.5 text-sandstone" />}
+                      chips={chips}
+                      pillLabel="عرض التفاصيل"
+                      onPillAction={() => router.push(`/case/demo/property/${property.id}`)}
+                      circleActions={
+                        properties.length > 1
+                          ? [
+                              {
+                                icon: <Trash2 className="w-4 h-4 text-copper" />,
+                                ariaLabel: "حذف العقار",
+                                onClick: () => removeProperty(property.id),
+                              },
+                            ]
+                          : []
+                      }
+                      height={400}
+                    />
+                  </div>
                 );
               })}
-            </AnimatePresence>
+            </div>
           </div>
 
-          {/* Content Block 3: Map Pins Mini Card */}
-          <div className="rounded-2xl border border-[#E9DFD0] overflow-hidden shadow-2xs bg-[#FAF6EF]">
-            <MapView
-              variant="mini"
-              properties={properties}
-              className="w-full h-36"
+          {/* Section 2: ChipsRow to add (رابط، صورة، يدوي) */}
+          <div className="space-y-2 pt-1">
+            <span className="text-[13px] font-medium text-muted px-1 block">
+              إضافة عقار جديد
+            </span>
+            <ChipsRow
+              chips={ADD_CHIPS}
+              selectedId={activeAddMethod}
+              onChange={handleSelectAddMethod}
             />
           </div>
         </div>
-
-        {/* 1 Primary Brass CTA (min 48px height) */}
-        <div className="pt-6">
-          <PrimaryButton
-            label={COPY.properties.cta}
-            onClick={() => router.push("/case/demo/preflight")}
-            size="56"
-            className="w-full shadow-lg"
-          />
-        </div>
       </div>
-    </AppShell>
+
+      {/* Pinned Bottom ActionBar */}
+      <ActionBar
+        primaryLabel={COPY.properties.cta || "فحص الجاهزية"}
+        onPrimaryAction={() => router.push("/case/demo/preflight")}
+        startIcon={<Bookmark className="w-5 h-5 text-sandstone" />}
+        startAriaLabel="حفظ"
+        endIcon={<Share2 className="w-5 h-5 text-sandstone" />}
+        endAriaLabel="مشاركة"
+        primaryVariant="sandstone"
+        pinned={true}
+      />
+
+      {/* GlassSheet for Adding Property */}
+      <GlassSheet
+        isOpen={isAddSheetOpen}
+        onClose={() => setIsAddSheetOpen(false)}
+        title="إضافة عقار للمقارنة"
+        subtitle={
+          activeAddMethod === "link"
+            ? "ألصق رابط الإعلان من تطبيق عقار أو غيره"
+            : activeAddMethod === "photo"
+            ? "ارفع لقطة شاشة لمواصفات العقار"
+            : "اكتب مواصفات العقار يدوياً"
+        }
+        initialSnap="half"
+        variant="dark"
+      >
+        <div className="space-y-4 pt-2">
+          {activeAddMethod === "link" && (
+            <div className="space-y-3">
+              <label className="text-[13px] text-muted block">
+                رابط العقار:
+              </label>
+              <input
+                type="url"
+                placeholder="https://sa.aqar.fm/ad/..."
+                className="w-full h-12 px-4 rounded-[18px] bg-surface-2 border border-stroke text-sandstone text-[15px] placeholder:text-muted/40 focus:outline-none focus:border-sandstone/30"
+              />
+              <p className="text-[12px] text-muted">
+                سيتم استخراج السعر والمساحة والحي وصور العقار تلقائياً.
+              </p>
+            </div>
+          )}
+
+          {activeAddMethod === "photo" && (
+            <div className="space-y-3">
+              <div className="border border-dashed border-stroke rounded-[20px] p-6 flex flex-col items-center justify-center gap-2 text-center bg-surface-2/50 hover:bg-surface-2 cursor-pointer transition-all">
+                <Camera className="w-8 h-8 text-muted" />
+                <span className="text-[14px] font-medium text-sandstone">
+                  انقر لرفع لقطة الشاشة
+                </span>
+                <span className="text-[12px] text-muted">
+                  يدعم صور JPG و PNG
+                </span>
+              </div>
+            </div>
+          )}
+
+          {activeAddMethod === "manual" && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-[13px] text-muted block mb-1">
+                  اسم العقار أو الوصف:
+                </label>
+                <input
+                  type="text"
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                  placeholder="مثال: شقة حي المروج"
+                  className="w-full h-12 px-4 rounded-[18px] bg-surface-2 border border-stroke text-sandstone text-[15px] placeholder:text-muted/40 focus:outline-none focus:border-sandstone/30"
+                />
+              </div>
+
+              <div>
+                <label className="text-[13px] text-muted block mb-1">
+                  السعر (ر.س):
+                </label>
+                <input
+                  type="number"
+                  value={manualPrice}
+                  onChange={(e) => setManualPrice(e.target.value)}
+                  className="w-full h-12 px-4 rounded-[18px] bg-surface-2 border border-stroke text-sandstone text-[15px] tabular-nums focus:outline-none focus:border-sandstone/30"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="pt-2">
+            <GlassPill
+              label="تأكيد وإضافة العقار"
+              size="48"
+              variant="sandstone"
+              fullWidth
+              onClick={handleAddSubmit}
+            />
+          </div>
+        </div>
+      </GlassSheet>
+    </div>
   );
 }

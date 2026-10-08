@@ -1,15 +1,13 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 
 export type NeedleContext = "rank" | "priority";
 
 interface NeedleBadgeProps {
-  // Context or direct angle
   angle?: number;
   rank?: 1 | 2 | 3;
-  priority?: "high" | "medium" | "low" | "insufficient";
+  priority?: "high" | "medium" | "low" | "insufficient" | "insufficient_data";
   size?: "sm" | "md" | "lg";
   className?: string;
   glow?: boolean;
@@ -23,7 +21,6 @@ export function NeedleBadge({
   size = "md",
   className = "",
   glow = false,
-  variant = "light",
 }: NeedleBadgeProps) {
   // Determine rotation angle
   let resolvedAngle = 0;
@@ -38,7 +35,7 @@ export function NeedleBadge({
     if (priority === "high") resolvedAngle = 30;
     else if (priority === "medium") resolvedAngle = 85;
     else if (priority === "low") resolvedAngle = 145;
-    else if (priority === "insufficient") {
+    else if (priority === "insufficient" || priority === "insufficient_data") {
       resolvedAngle = 0;
       isDashed = true;
     }
@@ -49,8 +46,6 @@ export function NeedleBadge({
     md: { box: 32, stroke: 1.5, r: 13 },
     lg: { box: 40, stroke: 1.5, r: 17 },
   }[size];
-
-  const isLight = variant === "light";
 
   return (
     <div
@@ -64,14 +59,14 @@ export function NeedleBadge({
         fill="none"
         className="w-full h-full"
       >
-        {/* Outer Thin Ring (1.5px stroke, rounded caps) */}
+        {/* Outer Thin Ring */}
         <circle
           cx="16"
           cy="16"
           r="13.5"
-          stroke={isLight ? "#130F08" : "#645A4E"}
+          stroke="var(--driftwood)"
           strokeWidth={dimensions.stroke}
-          strokeOpacity={isDashed ? "0.3" : isLight ? "0.2" : "0.75"}
+          strokeOpacity={isDashed ? "0.3" : "0.75"}
           strokeDasharray={isDashed ? "3 3" : undefined}
         />
 
@@ -81,7 +76,7 @@ export function NeedleBadge({
           y1="2.5"
           x2="16"
           y2="4.5"
-          stroke={isLight ? "#14756E" : "#F2EBE2"}
+          stroke="var(--sandstone)"
           strokeWidth="1.5"
           strokeLinecap="round"
         />
@@ -91,19 +86,19 @@ export function NeedleBadge({
           transform={`rotate(${resolvedAngle} 16 16)`}
           className="transition-transform duration-500 ease-out"
         >
-          {/* North Pointing Tip */}
+          {/* North Pointing Tip in Sandstone */}
           <polygon
             points="16 6 18.5 16 16 15 13.5 16"
-            fill={isLight ? "#14756E" : "#F2EBE2"}
-            stroke={isLight ? "#130F08" : "#130F08"}
+            fill="var(--sandstone)"
+            stroke="var(--espresso)"
             strokeWidth="0.5"
           />
 
-          {/* South Tail */}
+          {/* South Tail in Driftwood */}
           <polygon
             points="16 26 18.5 16 16 15 13.5 16"
-            fill={isLight ? "#E9DFD0" : "#645A4E"}
-            stroke="#130F08"
+            fill="var(--driftwood)"
+            stroke="var(--espresso)"
             strokeWidth="0.5"
           />
 
@@ -112,8 +107,8 @@ export function NeedleBadge({
             cx="16"
             cy="16"
             r="1.75"
-            fill={isLight ? "#130F08" : "#130F08"}
-            stroke={isLight ? "#FAF6EF" : "#F2EBE2"}
+            fill="var(--espresso)"
+            stroke="var(--sandstone)"
             strokeWidth="1"
           />
         </g>
@@ -121,9 +116,7 @@ export function NeedleBadge({
 
       {/* Subtle Glow if requested */}
       {glow && (
-        <div className={`absolute inset-0 rounded-full blur-sm pointer-events-none ${
-          isLight ? "bg-[#14756E]/15" : "bg-[#F2EBE2]/10"
-        }`} />
+        <div className="absolute inset-0 rounded-full blur-sm pointer-events-none bg-sandstone/15" />
       )}
     </div>
   );

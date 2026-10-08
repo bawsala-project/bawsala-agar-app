@@ -5,10 +5,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { AppShell } from "@/components/layout/AppShell";
 import { CompassIcon } from "@/components/brand/CompassIcon";
 import { TickRing } from "@/components/ui/TickRing";
-import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { COPY } from "@/lib/copy";
 
 export default function AnalyzingPage() {
@@ -28,14 +26,14 @@ export default function AnalyzingPage() {
         }
         return prev + 1;
       });
-    }, 40);
+    }, 38);
 
-    const t1 = setTimeout(() => setCurrentStep(1), 1400);
-    const t2 = setTimeout(() => setCurrentStep(2), 2800);
-    const tSettle = setTimeout(() => setIsSettled(true), 4200);
+    const t1 = setTimeout(() => setCurrentStep(1), 1300);
+    const t2 = setTimeout(() => setCurrentStep(2), 2600);
+    const tSettle = setTimeout(() => setIsSettled(true), 3800);
     const tDone = setTimeout(() => {
       router.push("/case/demo/results");
-    }, 4800);
+    }, 4500);
 
     return () => {
       clearInterval(interval);
@@ -47,127 +45,119 @@ export default function AnalyzingPage() {
   }, [router]);
 
   return (
-    <AppShell hideTopBar>
-      <div className="flex-1 flex flex-col justify-between px-5 py-8 text-center relative overflow-hidden min-h-screen bg-[#FAF6EF]">
-        {/* Soft Blurred Photo Background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30 z-0">
-          <Image
-            src="/images/hero-home.jpg"
-            alt="Interior architectural backdrop"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center blur-2xl scale-110"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#FAF6EF]/60 via-[#FAF6EF]/85 to-[#FAF6EF]" />
+    <div
+      className="relative w-full min-h-screen bg-espresso text-sandstone flex flex-col justify-between items-center px-5 py-8 select-none overflow-hidden bg-radial-lift"
+      dir="rtl"
+    >
+      {/* 1. Background with Photo Grade */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <Image
+          src="/images/hero-home.jpg"
+          alt="Architectural backdrop"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center blur-2xl opacity-20 scale-110 photo-grade"
+        />
+        <div className="absolute inset-0 bg-radial-lift opacity-80" />
+      </div>
+
+      {/* Top Header */}
+      <div className="relative z-10 w-full max-w-[420px] text-center pt-[calc(20px+var(--safe-top))] space-y-2">
+        <h1 className="text-[28px] md:text-[32px] font-light text-ink leading-tight">
+          {COPY.analyzing.title}
+        </h1>
+        <p className="text-[14px] text-muted font-normal">
+          {COPY.analyzing.subtitle}
+        </p>
+      </div>
+
+      {/* Center: Compass with TickRing in sandstone */}
+      <div className="relative z-10 my-auto flex flex-col items-center justify-center">
+        <div className="relative w-48 h-48 rounded-full bawsala-glass-dark border border-stroke flex items-center justify-center shadow-2xl">
+          {/* TickRing in sandstone around the compass */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <TickRing progress={progress} size={192} showCenterContent={false} />
+          </div>
+
+          {/* Compass Icon */}
+          <motion.div
+            animate={
+              isSettled
+                ? { rotate: 0, scale: [1, 1.05, 1] }
+                : {
+                    rotate: [-30, 40, -15, 55, -10, 20, 0],
+                  }
+            }
+            transition={
+              isSettled
+                ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+                : {
+                    duration: 4.2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+            }
+            className="text-sandstone drop-shadow-md relative z-10"
+          >
+            <CompassIcon size={68} needleAngle={isSettled ? 0 : 25} />
+          </motion.div>
         </div>
 
-        {/* Top Header & 1 Supporting Line */}
-        <div className="space-y-1.5 max-w-xs mx-auto relative z-10 pt-4" dir="rtl">
-          <span className="text-[11px] font-semibold text-[#14756E] block">
-            المرحلة الأخيرة قبل النتائج
+        {/* Progress percent display */}
+        <div className="mt-5">
+          <span className="text-[13px] font-medium text-muted tabular-nums">
+            اكتمال الفحص: <bdi dir="ltr">{progress}%</bdi>
           </span>
-          <h1 className="text-2xl font-semibold text-[#130F08]">
-            {COPY.analyzing.title}
-          </h1>
-          <p className="text-xs text-[#130F08]/80 leading-relaxed font-normal">
-            {COPY.analyzing.subtitle}
-          </p>
-        </div>
-
-        {/* Main Body (Max 3 Content Blocks) */}
-        <div className="space-y-6 relative z-10 max-w-sm mx-auto w-full py-4" dir="rtl">
-          {/* Content Block 1: Central Compass with Searching Animation & TickRing */}
-          <div className="flex justify-center">
-            <div className="relative w-48 h-48 rounded-full glass-light border border-white/80 flex items-center justify-center shadow-[0_16px_40px_rgba(19,15,8,0.08)]">
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <TickRing progress={progress} size={192} showCenterContent={false} />
-              </div>
-
-              <motion.div
-                animate={
-                  isSettled
-                    ? { rotate: 0, scale: [1, 1.06, 1] }
-                    : {
-                        rotate: [-35, 45, -20, 60, -10, 25, 0],
-                      }
-                }
-                transition={
-                  isSettled
-                    ? { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
-                    : {
-                        duration: 4.5,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }
-                }
-                className="text-[#130F08] drop-shadow-md relative z-10"
-              >
-                <CompassIcon size={68} needleAngle={isSettled ? 0 : 25} />
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Content Block 2: 3 Sequential Progress Steps */}
-          <div className="p-4 rounded-3xl glass-light border border-[#E9DFD0] space-y-2 text-right shadow-2xs">
-            {steps.map((step, idx) => {
-              const isPast = idx < currentStep;
-              const isCurrent = idx === currentStep;
-
-              return (
-                <div
-                  key={idx}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-2xl transition-all duration-300 ${
-                    isCurrent
-                      ? "bg-white/80 border border-[#14756E]/20"
-                      : "border border-transparent"
-                  }`}
-                >
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors ${
-                      isPast
-                        ? "bg-[#14756E] text-[#FAF6EF]"
-                        : isCurrent
-                        ? "bg-[#130F08] text-[#FAF6EF] animate-pulse"
-                        : "bg-[#E9DFD0] text-[#130F08]/75"
-                    }`}
-                  >
-                    {isPast ? <Check className="w-3.5 h-3.5" /> : <bdi dir="ltr">{idx + 1}</bdi>}
-                  </div>
-                  <span
-                    className={`text-xs ${
-                      isCurrent
-                        ? "font-semibold text-[#130F08]"
-                        : isPast
-                        ? "text-[#130F08]/80 font-medium"
-                        : "text-[#130F08]/65"
-                    }`}
-                  >
-                    {step}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Content Block 3: Progress percentage chip */}
-          <div className="flex items-center justify-center gap-2">
-            <span className="px-3 py-1 rounded-full glass-light border border-[#130F08]/10 text-xs font-semibold text-[#130F08] shadow-2xs">
-              اكتمال التحليل: <bdi dir="ltr">{progress}%</bdi>
-            </span>
-          </div>
-        </div>
-
-        {/* 1 Primary Brass CTA (Skip to Results) */}
-        <div className="relative z-10 max-w-sm mx-auto w-full pt-2">
-          <PrimaryButton
-            label="الانتقال للنتائج مباشرة"
-            onClick={() => router.push("/case/demo/results")}
-            size="56"
-            className="w-full shadow-lg"
-          />
         </div>
       </div>
-    </AppShell>
+
+      {/* Bottom: Three Status Lines */}
+      <div className="relative z-10 w-full max-w-[420px] pb-[calc(20px+var(--safe-bottom))] space-y-2.5">
+        <div className="p-4 rounded-[28px] bg-surface-2 border border-stroke space-y-2.5 shadow-lg">
+          {steps.map((step, idx) => {
+            const isDone = idx < currentStep;
+            const isCurrent = idx === currentStep;
+
+            return (
+              <div
+                key={idx}
+                className={`flex items-center gap-3 p-2 rounded-[18px] transition-all duration-300 ${
+                  isCurrent ? "bg-surface-3/50 text-sandstone" : "text-muted"
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-medium shrink-0 transition-colors ${
+                    isDone
+                      ? "bg-sandstone text-espresso"
+                      : isCurrent
+                      ? "border border-sandstone text-sandstone animate-pulse"
+                      : "border border-stroke text-muted"
+                  }`}
+                >
+                  {isDone ? (
+                    <Check className="w-3.5 h-3.5 stroke-[2]" />
+                  ) : (
+                    <bdi dir="ltr">{idx + 1}</bdi>
+                  )}
+                </div>
+
+                <span
+                  className={`text-[13px] leading-snug ${
+                    isCurrent
+                      ? "font-semibold text-sandstone"
+                      : isDone
+                      ? "text-sandstone"
+                      : "text-muted"
+                  }`}
+                >
+                  {step}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }

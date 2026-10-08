@@ -2,7 +2,6 @@
 
 import React, { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { MOTION_SPRINGS } from "@/lib/motion";
 
 interface CompassIconProps {
   size?: number;
@@ -36,10 +35,10 @@ export function CompassIcon({
       const isMajor = i % 5 === 0;
       const rInner = isMajor ? 35 : 40;
 
-      const x1 = cx + rInner * Math.sin(angleRad);
-      const y1 = cy - rInner * Math.cos(angleRad);
-      const x2 = cx + rOuter * Math.sin(angleRad);
-      const y2 = cy - rOuter * Math.cos(angleRad);
+      const x1 = Number((cx + rInner * Math.sin(angleRad)).toFixed(4));
+      const y1 = Number((cy - rInner * Math.cos(angleRad)).toFixed(4));
+      const x2 = Number((cx + rOuter * Math.sin(angleRad)).toFixed(4));
+      const y2 = Number((cy - rOuter * Math.cos(angleRad)).toFixed(4));
 
       list.push({
         id: i,
