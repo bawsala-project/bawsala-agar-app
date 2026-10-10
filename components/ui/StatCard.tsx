@@ -28,7 +28,7 @@ export function StatCard({
 
   return (
     <div
-      className={`relative flex flex-col justify-between p-4 sm:p-5 rounded-[28px] bg-surface-2 border border-stroke min-h-[150px] overflow-hidden select-none min-w-0 ${className}`}
+      className={`relative flex flex-col justify-between p-3.5 sm:p-5 rounded-[28px] bg-surface-2 border border-stroke min-h-[140px] sm:min-h-[150px] overflow-hidden select-none min-w-0 ${className}`}
       dir="rtl"
     >
       {/* Top Row: label top-start, circular icon button top-end */}
@@ -50,21 +50,21 @@ export function StatCard({
       </div>
 
       {/* Bottom: big number 40/500 with long-number adaptation + small unit 14 muted */}
-      <div className="flex items-baseline gap-1.5 mt-4 min-w-0 overflow-hidden">
+      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 mt-auto min-w-0">
         <bdi
           dir="ltr"
           className={`${
             isLong
-              ? "text-[24px] sm:text-[26px]"
+              ? "text-[20px] sm:text-[24px]"
               : isMedium
-              ? "text-[30px] sm:text-[32px]"
-              : "text-[36px] sm:text-[40px]"
-          } font-medium text-ink leading-none tabular-nums tracking-tight truncate`}
+              ? "text-[24px] sm:text-[28px]"
+              : "text-[28px] sm:text-[36px]"
+          } font-medium text-ink leading-none tabular-nums tracking-tight whitespace-nowrap`}
         >
           {value}
         </bdi>
         {unit && (
-          <span className="text-[13px] font-normal text-muted leading-none shrink-0">
+          <span className="text-[12px] sm:text-[13px] font-normal text-muted leading-none shrink-0">
             {unit}
           </span>
         )}
