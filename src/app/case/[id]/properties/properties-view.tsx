@@ -4,11 +4,36 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useFormState as useActionState, useFormStatus } from "react-dom";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {
+  ShieldCheck,
+  CheckCircle2,
+  ArrowLeft,
+  Building2,
+  Globe,
+  Camera,
+  FileEdit,
+  Plus,
+  Trash2,
+  Loader2,
+  Coins,
+  Bookmark,
+  Copy,
+  Check,
+  AlertCircle,
+  AlertTriangle,
+  RefreshCw,
+  X,
+  FileText,
+} from "lucide-react";
 import { FieldError } from "@/components/ui/field-error";
 import { formatSAR } from "@/lib/utils";
-import { addProperty, removeProperty, retryExtraction, importClippedProperty, PropertyActionState } from "@/actions/properties";
+import {
+  addProperty,
+  removeProperty,
+  retryExtraction,
+  importClippedProperty,
+  PropertyActionState,
+} from "@/actions/properties";
 import { createClient } from "@/lib/supabase/client";
 import { validateImageFile, uploadPropertyImage } from "@/lib/storage";
 import { resolveFacts, PropertyFact } from "@/lib/evidence/resolve";
@@ -30,6 +55,7 @@ export type PropertyWithExtraction = PropertyRow & {
 interface PropertiesViewProps {
   caseId: string;
   userId: string;
+  city?: string | null;
   properties: PropertyWithExtraction[];
   signedThumbnails: Record<string, string>;
 }
@@ -43,15 +69,23 @@ function FormSubmitButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <Button
+    <button
       type="submit"
-      variant="primary"
-      pending={pending}
       disabled={disabled || pending}
-      className="w-full sm:w-auto"
+      className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-slate-900 hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
     >
-      {children}
-    </Button>
+      {pending ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin text-white" />
+          <span>جاري الإضافة والتحليل...</span>
+        </>
+      ) : (
+        <>
+          <span>{children}</span>
+          <Plus className="w-4 h-4" />
+        </>
+      )}
+    </button>
   );
 }
 
@@ -93,17 +127,16 @@ function RetryExtractionButton({
 
   return (
     <div className="inline-flex items-center gap-1.5">
-      <Button
+      <button
         type="button"
-        variant="secondary"
-        pending={pending}
         disabled={pending}
         onClick={handleRetry}
-        className="text-xs px-2.5 py-1 h-auto"
+        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
       >
-        {label}
-      </Button>
-      {error && <span className="text-[11px] text-red-600 font-medium">{error}</span>}
+        <RefreshCw className={`w-3.5 h-3.5 ${pending ? "animate-spin" : ""}`} />
+        <span>{label}</span>
+      </button>
+      {error && <span className="text-[11px] text-rose-600 font-bold">{error}</span>}
     </div>
   );
 }
@@ -155,27 +188,42 @@ function QuickPasteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-xl max-w-lg w-full p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📋</span>
-            <h3 className="font-bold text-gray-900 text-base">استيراد نص الإعلان (تجاوز الحظر)</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-md">
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </span>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                استيراد نص الإعلان المباشر
+              </h3>
+              <p className="text-[11px] text-slate-400">تجاوز حظر Cloudflare لمنصات الإعلانات</p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-lg font-bold"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-xs text-gray-600 leading-relaxed">
-          افتح صفحة الإعلان في متصفحك، اضغط <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[11px]">Ctrl+A</kbd> ثم <kbd className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-300 font-mono text-[11px]">Ctrl+C</kbd> والصق النص هنا. سيقوم الذكاء الاصطناعي باستخراج كافة المواصفات والأسعار وتدقيقها فوراً.
+        <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 border border-slate-200/60 p-3.5 rounded-2xl">
+          افتح صفحة الإعلان في متصفحك، اضغط{" "}
+          <kbd className="bg-white px-2 py-0.5 rounded border border-slate-300 font-mono text-[11px] shadow-xs">
+            Ctrl + A
+          </kbd>{" "}
+          ثم{" "}
+          <kbd className="bg-white px-2 py-0.5 rounded border border-slate-300 font-mono text-[11px] shadow-xs">
+            Ctrl + C
+          </kbd>{" "}
+          والصق النص أدناه. سيقوم الذكاء الاصطناعي باستخراج كافة المواصفات والأسعار وتدقيقها فوراً.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <textarea
             rows={7}
             required
@@ -183,30 +231,39 @@ function QuickPasteModal({
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={pending}
-            className="w-full text-xs p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            className="w-full text-xs p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-mono"
           />
 
-          {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
+          <div className="flex justify-end gap-2.5 pt-2">
+            <button
               type="button"
-              variant="secondary"
               disabled={pending}
               onClick={onClose}
-              className="text-xs px-3"
+              className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
             >
               إلغاء
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
-              variant="primary"
-              pending={pending}
               disabled={pending}
-              className="text-xs px-4"
+              className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer"
             >
-              {pending ? "جارٍ تحليل المواصفات..." : "استخراج المواصفات فوراً"}
-            </Button>
+              {pending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>جارٍ تحليل المواصفات...</span>
+                </>
+              ) : (
+                <span>استخراج المواصفات فوراً</span>
+              )}
+            </button>
           </div>
         </form>
       </div>
@@ -233,40 +290,59 @@ function BookmarkletBanner({ caseId }: { caseId: string }) {
   };
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 via-indigo-50/40 to-blue-50 border border-blue-200/70 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="space-y-1">
-        <div className="flex items-center gap-1.5 font-bold text-blue-900 text-sm">
-          <span>📌</span>
-          <span>كليبر المتصفح لتجاوز حظر المنصات (عقار / وصلت)</span>
+    <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-7 relative overflow-hidden shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border border-slate-800">
+      {/* Ambient background glow */}
+      <div className="absolute -top-20 -left-20 w-52 h-52 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="space-y-1.5 max-w-xl">
+        <div className="flex items-center gap-2 font-bold text-white text-sm sm:text-base">
+          <Bookmark className="w-4 h-4 text-blue-400" />
+          <span>كليبر المتصفح المباشر (تجاوز حظر المنصات العقارية)</span>
         </div>
-        <p className="text-xs text-blue-800/80 leading-relaxed max-w-xl">
-          لتجاوز حظر Cloudflare: اسحب الزر أدناه إلى <strong>شريط الإشارات (Bookmarks Bar)</strong> في متصفحك. عند تصفح أي إعلان، اضغط الزر ليتم استيراد كافة المواصفات فوراً!
+        <p className="text-xs text-slate-300 leading-relaxed font-light">
+          لتجاوز حظر Cloudflare لمنصات (عقار / وصلت): اسحب الزر أدناه إلى{" "}
+          <strong className="text-white font-bold">شريط الإشارات (Bookmarks Bar)</strong> في متصفحك.
+          عند تصفح أي عقار، اضغطه فقط ليتم استيراد كافة المواصفات والأسعار تلقائياً إلى جلستك!
         </p>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
         <a
           href={bookmarkletCode}
           draggable="true"
           onClick={(e) => {
             if (e.isTrusted && !e.defaultPrevented) {
-              window.open(`${origin}/case/${caseId}/clip`, "bawsala_clipper", "width=520,height=650");
+              window.open(
+                `${origin}/case/${caseId}/clip`,
+                "bawsala_clipper",
+                "width=520,height=650"
+              );
               e.preventDefault();
             }
           }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm cursor-grab active:cursor-grabbing transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-500 shadow-sm cursor-grab active:cursor-grabbing transition-colors"
           title="اسحب هذا الزر إلى شريط إشارات المتصفح"
         >
-          <span>📌</span>
+          <Bookmark className="w-3.5 h-3.5" />
           <span>اسحب لإشارات المتصفح</span>
         </a>
 
         <button
           type="button"
           onClick={copyCode}
-          className="px-2.5 py-1.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 rounded-lg text-xs font-medium transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
         >
-          {copied ? "✓ تم نسخ الكود" : "نسخ الكود"}
+          {copied ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <span>تم النسخ</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3.5 h-3.5 text-slate-300" />
+              <span>نسخ الكود</span>
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -276,6 +352,7 @@ function BookmarkletBanner({ caseId }: { caseId: string }) {
 export function PropertiesView({
   caseId,
   userId,
+  city,
   properties,
   signedThumbnails,
 }: PropertiesViewProps) {
@@ -377,39 +454,62 @@ export function PropertiesView({
   const showPricePreview = !isNaN(parsedManualPrice) && parsedManualPrice > 0;
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 py-8 space-y-8">
-      {/* Header and counter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">العقارات المرشحة</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            أضف الشقق أو العقارات التي ترغب في المقارنة بينها (من 1 إلى 5 عقارات)
-          </p>
+    <div className="space-y-10">
+      {/* Hero / Page Intro */}
+      <section className="text-center max-w-3xl mx-auto space-y-4">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-slate-700 text-xs font-medium shadow-xs">
+          <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <span>المرحلة الثانية • حصر وتدقيق العقارات المرشحة</span>
+          {city && (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="font-bold text-blue-600">{city}</span>
+            </>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
-            {properties.length} من 5
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.3]">
+          حصر العقارات للمقارنة الهندسية <br className="hidden sm:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-l from-slate-900 via-slate-800 to-blue-600">
+            من 2 إلى 5 خيارات للمفاضلة
           </span>
-        </div>
-      </div>
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed max-w-2xl mx-auto">
+          أدخل العقارات عبر الروابط المباشرة أو الصور أو الإدخال اليدوي. نقوم باستخراج مواصفات كل عقار وتحويلها إلى بيانات قطعية دون أي تزييف إعلاني.
+        </p>
+      </section>
 
       {/* Bookmarklet Clipper Banner */}
       <BookmarkletBanner caseId={caseId} />
 
+      {/* ============================================================== */}
       {/* Properties List */}
+      {/* ============================================================== */}
       <div className="space-y-4">
-        <h2 className="text-lg font-bold text-gray-900">قائمة العقارات المضافة</h2>
+        <div className="flex items-center justify-between pb-2">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              العقارات المضافة قيد الدراسة
+            </h2>
+          </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200/50">
+            {properties.length} من 5 عقارات
+          </span>
+        </div>
 
         {properties.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-            <p className="text-sm text-gray-500">لم تتم إضافة أي عقار بعد</p>
-            <p className="text-xs text-gray-400 mt-1">
-              استخدم النموذج أدناه لإضافة أول عقار
+          <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-10 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 mx-auto flex items-center justify-center">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800">لم تقم بإضافة أي عقار حتى الآن</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              أضف أول عقار باستخدام النموذج أدناه عبر رابط الإعلان أو الصور أو المواصفات اليدوية.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {properties.map((p) => {
+          <div className="space-y-3.5">
+            {properties.map((p, index) => {
               const thumbnail =
                 p.image_paths && p.image_paths.length > 0
                   ? signedThumbnails[p.image_paths[0]]
@@ -417,9 +517,9 @@ export function PropertiesView({
 
               const modeLabel =
                 p.input_mode === "url"
-                  ? "رابط"
+                  ? "رابط إعلان"
                   : p.input_mode === "image"
-                  ? "صور"
+                  ? "صور مرفوعة"
                   : "إدخال يدوي";
 
               const displayName =
@@ -432,37 +532,48 @@ export function PropertiesView({
               return (
                 <div
                   key={p.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white rounded-lg border border-gray-200"
+                  className="bg-white rounded-3xl border border-slate-200/70 p-5 sm:p-6 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-4">
+                    {/* Thumbnail or Icon */}
                     {thumbnail ? (
-                      <Image
-                        src={thumbnail}
-                        alt="صورة العقار"
-                        width={64}
-                        height={64}
-                        unoptimized
-                        className="w-16 h-16 object-cover rounded-md border border-gray-200 flex-shrink-0"
-                      />
+                      <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-200 shrink-0">
+                        <Image
+                          src={thumbnail}
+                          alt="صورة العقار"
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
                     ) : (
-                      <div className="w-16 h-16 rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-500 font-medium flex-shrink-0 border border-gray-200">
-                        {modeLabel}
+                      <div className="w-20 h-20 rounded-2xl bg-slate-100 flex flex-col items-center justify-center text-slate-500 font-bold shrink-0 border border-slate-200/60 text-xs gap-1">
+                        {p.input_mode === "url" ? (
+                          <Globe className="w-5 h-5 text-blue-600" />
+                        ) : p.input_mode === "image" ? (
+                          <Camera className="w-5 h-5 text-slate-600" />
+                        ) : (
+                          <FileEdit className="w-5 h-5 text-slate-600" />
+                        )}
+                        <span className="text-[10px] text-slate-400">عقار #{index + 1}</span>
                       </div>
                     )}
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">
+                    {/* Content Details */}
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                           {modeLabel}
                         </span>
                         <Link
                           href={`/case/${caseId}/properties/${p.id}`}
-                          className="text-sm sm:text-base font-bold text-gray-900 hover:text-blue-600 truncate transition-colors inline-block"
+                          className="text-sm sm:text-base font-extrabold text-slate-900 hover:text-blue-600 truncate transition-colors inline-block"
                         >
                           {displayName}
                         </Link>
                       </div>
 
+                      {/* Fact Chips */}
                       {(() => {
                         const resolved = resolveFacts(p.property_facts || []);
                         const displayPrice =
@@ -487,26 +598,36 @@ export function PropertiesView({
                             : null);
 
                         return (
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs text-gray-600">
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
                             {displayPrice && (
-                              <span className="font-semibold text-blue-600">
+                              <span className="font-extrabold text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-xl">
                                 {formatSAR(Number(displayPrice))}
                               </span>
                             )}
-                            {displayArea && <span>{displayArea} م²</span>}
-                            {displayBedrooms && <span>{displayBedrooms} غرف</span>}
+                            {displayArea && (
+                              <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-xl">
+                                {displayArea} م²
+                              </span>
+                            )}
+                            {displayBedrooms && (
+                              <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-xl">
+                                {displayBedrooms} غرف
+                              </span>
+                            )}
                             {displayFloor !== null && displayFloor !== undefined && (
-                              <span>الدور {displayFloor}</span>
+                              <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-xl">
+                                الدور {displayFloor}
+                              </span>
                             )}
                           </div>
                         );
                       })()}
 
                       {p.notes && p.input_mode !== "image" && (
-                        <p className="text-xs text-gray-500 mt-1 truncate">{p.notes}</p>
+                        <p className="text-xs text-slate-400 truncate max-w-md">{p.notes}</p>
                       )}
 
-                      {/* Extraction Status & Summary */}
+                      {/* Extraction Status & Conflict Counts */}
                       {(() => {
                         const latestRun =
                           p.extraction_runs && p.extraction_runs.length > 0
@@ -526,25 +647,27 @@ export function PropertiesView({
                         ).length;
 
                         return (
-                          <div className="space-y-1.5 mt-2">
+                          <div className="space-y-2 pt-1">
                             <div className="flex flex-wrap items-center gap-2">
                               {latestRun?.status === "running" && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                   <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-                                  جارٍ التحليل
+                                  جارٍ الاستخراج والتدقيق...
                                 </span>
                               )}
 
                               {latestRun?.status === "succeeded" && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                                  تم استخراج {factsCount} معلومة
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  تم استخراج {factsCount} حقيقة مدققة
                                 </span>
                               )}
 
                               {latestRun?.status === "failed" && (
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200">
-                                    تعذر الاستخراج
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                                    تعذر الاستخراج الآلي
                                   </span>
                                   <RetryExtractionButton caseId={caseId} propertyId={p.id} />
                                 </div>
@@ -554,31 +677,30 @@ export function PropertiesView({
                                 <RetryExtractionButton
                                   caseId={caseId}
                                   propertyId={p.id}
-                                  label="استخراج البيانات"
+                                  label="بدء الاستخراج"
                                 />
                               )}
 
-                              {/* Per-property summary: N متعارضة · M ناقصة */}
-                              <span className="text-xs text-gray-700 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded font-medium">
-                                {conflictingCount} متعارضة · {unknownCount} ناقصة
+                              <span className="text-[11px] text-slate-600 bg-slate-100 border border-slate-200/60 px-2.5 py-0.5 rounded-full font-medium">
+                                {conflictingCount} متعارضة • {unknownCount} ناقصة
                               </span>
                             </div>
 
                             {latestRun?.status === "failed" && p.input_mode === "url" && (
-                              <div className="space-y-2 mt-1">
-                                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 leading-relaxed">
-                                  منصة العقار تفرض حظر Cloudflare على القراءة التلقائية للرابط.
+                              <div className="space-y-2 bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3">
+                                <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                                  منصة الإعلان تفرض حماية Cloudflare وتمنع الجلب الخارجي.
                                 </p>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="primary"
-                                    onClick={() => setQuickPasteProp({ id: p.id, url: p.source_url || "" })}
-                                    className="text-xs px-3 py-1.5 h-auto bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                                  >
-                                    📋 استيراد سريع (لصق بيانات الصفحة)
-                                  </Button>
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setQuickPasteProp({ id: p.id, url: p.source_url || "" })
+                                  }
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  <span>استيراد سريع (لصق بيانات الصفحة)</span>
+                                </button>
                               </div>
                             )}
                           </div>
@@ -587,26 +709,29 @@ export function PropertiesView({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 self-end sm:self-center">
-                    <Link href={`/case/${caseId}/properties/${p.id}`}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="text-xs px-2.5 py-1.5 h-auto text-blue-700 hover:bg-blue-50"
-                      >
-                        تدقيق وتفاصيل
-                      </Button>
+                  {/* Actions */}
+                  <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                    <Link
+                      href={`/case/${caseId}/properties/${p.id}`}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-blue-600 transition-colors cursor-pointer"
+                    >
+                      <span>تدقيق وتفاصيل</span>
+                      <ArrowLeft className="w-3.5 h-3.5" />
                     </Link>
-                    <Button
+
+                    <button
                       type="button"
-                      variant="ghost"
-                      pending={deletingId === p.id}
                       disabled={deletingId === p.id}
                       onClick={() => handleDelete(p.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-3 py-1.5 h-auto"
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                      title="حذف العقار"
                     >
-                      حذف
-                    </Button>
+                      {deletingId === p.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               );
@@ -615,47 +740,69 @@ export function PropertiesView({
         )}
       </div>
 
-      {/* Add panel: Hidden when n = 5 */}
+      {/* ============================================================== */}
+      {/* Add Property Panel: Hidden when n = 5 */}
+      {/* ============================================================== */}
       {!isMaxReached ? (
-        <section className="bg-white p-6 rounded-lg border border-gray-200 space-y-6">
-          <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">
-            إضافة عقار جديد
-          </h2>
+        <section className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-56 h-56 bg-blue-50/50 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 gap-4">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  إضافة عقار مرشح جديد
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  أدخل بيانات العقار للاستخراج الآلي والتدقيق الهندسي
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
+              {5 - properties.length} خانات متبقية
+            </span>
+          </div>
+
+          {/* Segmented Mode Selector */}
+          <div className="inline-flex p-1.5 rounded-2xl bg-slate-100/80 border border-slate-200/50 gap-1.5 text-xs font-bold">
             <button
               type="button"
               onClick={() => setActiveTab("url")}
-              className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === "url"
-                  ? "border-blue-600 text-blue-600 font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
-              رابط
+              <Globe className="w-3.5 h-3.5" />
+              <span>رابط الإعلان</span>
             </button>
+
             <button
               type="button"
               onClick={() => setActiveTab("image")}
-              className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === "image"
-                  ? "border-blue-600 text-blue-600 font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
-              صور
+              <Camera className="w-3.5 h-3.5" />
+              <span>لقطات شاشة / صور</span>
             </button>
+
             <button
               type="button"
               onClick={() => setActiveTab("manual")}
-              className={`pb-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                 activeTab === "manual"
-                  ? "border-blue-600 text-blue-600 font-bold"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
-              إدخال يدوي
+              <FileEdit className="w-3.5 h-3.5" />
+              <span>إدخال يدوي</span>
             </button>
           </div>
 
@@ -664,28 +811,48 @@ export function PropertiesView({
             <form ref={urlFormRef} action={urlAction} className="space-y-4">
               <input type="hidden" name="input_mode" value="url" />
 
-              <Input
-                id="source_url"
-                name="source_url"
-                label="رابط إعلان العقار (يبدأ بـ https://)"
-                placeholder="https://sa.aqar.fm/..."
-                error={urlState?.errors?.source_url?.[0]}
-              />
+              <div className="space-y-2">
+                <label htmlFor="source_url" className="block text-xs font-bold text-slate-700">
+                  رابط إعلان العقار (sa.aqar.fm أو wasalt.com)
+                </label>
+                <input
+                  id="source_url"
+                  name="source_url"
+                  type="url"
+                  required
+                  placeholder="https://sa.aqar.fm/شقق-للبيع/..."
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-mono"
+                />
+                {urlState?.errors?.source_url?.[0] && (
+                  <FieldError message={urlState.errors.source_url[0]} />
+                )}
+              </div>
 
-              <Input
-                id="url_notes"
-                name="notes"
-                label="ملاحظات (اختياري)"
-                placeholder="مثال: الواجهة ممتازة، الحي هادئ"
-                error={urlState?.errors?.notes?.[0]}
-              />
+              <div className="space-y-2">
+                <label htmlFor="url_notes" className="block text-xs font-bold text-slate-700">
+                  ملاحظات أولية (اختياري)
+                </label>
+                <input
+                  id="url_notes"
+                  name="notes"
+                  type="text"
+                  placeholder="مثال: الواجهة جنوبية، قريب من الخدمات"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                />
+                {urlState?.errors?.notes?.[0] && (
+                  <FieldError message={urlState.errors.notes[0]} />
+                )}
+              </div>
 
               {urlState?.errors?.form?.[0] && (
-                <FieldError message={urlState.errors.form[0]} />
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{urlState.errors.form[0]}</span>
+                </div>
               )}
 
               <div className="pt-2">
-                <FormSubmitButton>إضافة العقار</FormSubmitButton>
+                <FormSubmitButton>إضافة العقار والبدء بالاستخراج</FormSubmitButton>
               </div>
             </form>
           )}
@@ -700,31 +867,33 @@ export function PropertiesView({
                 value={JSON.stringify(uploadedPaths)}
               />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  رفع صور العقار أو لقطات الشاشة (1 إلى 4 صور)
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  رفع صور العقار أو لقطات شاشة الإعلان (1 إلى 4 صور)
                 </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFilesSelect}
-                  disabled={isUploading}
-                  className="w-full text-sm text-gray-500 file:me-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  الصيغ المدعومة: JPEG, PNG, WebP (بحد أقصى 8 ميجابايت للصورة)
-                </p>
+                <div className="p-6 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100/60 transition-colors text-center cursor-pointer">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFilesSelect}
+                    disabled={isUploading}
+                    className="w-full text-xs text-slate-500 file:me-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-blue-600 cursor-pointer"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-2">
+                    الصيغ المدعومة: JPEG, PNG, WebP (بحد أقصى 8 ميجابايت لكل صورة)
+                  </p>
+                </div>
 
                 {isUploading && (
-                  <p className="text-xs text-blue-600 mt-1 animate-pulse">
-                    جارٍ رفع الصور...
+                  <p className="text-xs text-blue-600 mt-1 animate-pulse font-medium">
+                    جارٍ رفع الصور وتأمين الروابط...
                   </p>
                 )}
 
                 {uploadSuccessCount > 0 && !isUploading && (
-                  <p className="text-xs text-green-600 mt-1">
-                    تم رفع {uploadSuccessCount} صور بنجاح
+                  <p className="text-xs text-emerald-600 mt-1 font-bold">
+                    ✓ تم رفع {uploadSuccessCount} صور بنجاح
                   </p>
                 )}
 
@@ -734,21 +903,32 @@ export function PropertiesView({
                 )}
               </div>
 
-              <Input
-                id="image_notes"
-                name="notes"
-                label="ملاحظات (اختياري)"
-                placeholder="مثال: لقطة شاشة للمواصفات والأسعار"
-                error={imageState?.errors?.notes?.[0]}
-              />
+              <div className="space-y-2">
+                <label htmlFor="image_notes" className="block text-xs font-bold text-slate-700">
+                  ملاحظات على الصور (اختياري)
+                </label>
+                <input
+                  id="image_notes"
+                  name="notes"
+                  type="text"
+                  placeholder="مثال: لقطة شاشة للمواصفات والأسعار والموقع"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                />
+                {imageState?.errors?.notes?.[0] && (
+                  <FieldError message={imageState.errors.notes[0]} />
+                )}
+              </div>
 
               {imageState?.errors?.form?.[0] && (
-                <FieldError message={imageState.errors.form[0]} />
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{imageState.errors.form[0]}</span>
+                </div>
               )}
 
               <div className="pt-2">
                 <FormSubmitButton disabled={isUploading || uploadedPaths.length === 0}>
-                  إضافة العقار
+                  إضافة العقار وبدء التعرف البصري (OCR)
                 </FormSubmitButton>
               </div>
             </form>
@@ -760,115 +940,183 @@ export function PropertiesView({
               <input type="hidden" name="input_mode" value="manual" />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  id="manual_title"
-                  name="title"
-                  label="عنوان العقار (مطلوب العنوان أو الحي)"
-                  placeholder="مثال: شقة مودرن للبيع"
-                  error={manualState?.errors?.title?.[0]}
-                />
-
-                <Input
-                  id="manual_district"
-                  name="district"
-                  label="الحي"
-                  placeholder="مثال: حي الياسمين"
-                  error={manualState?.errors?.district?.[0]}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Input
-                    id="manual_price"
-                    name="listing_price_sar"
-                    type="number"
-                    label="السعر (ريال)"
-                    placeholder="مثال: 750000"
-                    value={manualPrice}
-                    onChange={(e) => setManualPrice(e.target.value)}
-                    error={manualState?.errors?.listing_price_sar?.[0]}
+                <div className="space-y-2">
+                  <label htmlFor="manual_title" className="block text-xs font-bold text-slate-700">
+                    عنوان العقار
+                  </label>
+                  <input
+                    id="manual_title"
+                    name="title"
+                    type="text"
+                    placeholder="مثال: شقة مودرن فاخرة للبيع"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
                   />
-                  {showPricePreview && (
-                    <p className="text-xs font-medium text-blue-600 mt-1">
-                      المعاينة: {formatSAR(parsedManualPrice)}
-                    </p>
+                  {manualState?.errors?.title?.[0] && (
+                    <FieldError message={manualState.errors.title[0]} />
                   )}
                 </div>
 
-                <Input
-                  id="manual_area"
-                  name="area_sqm"
-                  type="number"
-                  step="any"
-                  label="المساحة (م²)"
-                  placeholder="مثال: 150"
-                  error={manualState?.errors?.area_sqm?.[0]}
-                />
+                <div className="space-y-2">
+                  <label htmlFor="manual_district" className="block text-xs font-bold text-slate-700">
+                    الحي السكني
+                  </label>
+                  <input
+                    id="manual_district"
+                    name="district"
+                    type="text"
+                    placeholder="مثال: حي النرجس"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  />
+                  {manualState?.errors?.district?.[0] && (
+                    <FieldError message={manualState.errors.district[0]} />
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  id="manual_bedrooms"
-                  name="bedrooms"
-                  type="number"
-                  label="عدد غرف النوم"
-                  placeholder="مثال: 3"
-                  error={manualState?.errors?.bedrooms?.[0]}
-                />
+                <div className="space-y-2">
+                  <label htmlFor="manual_price" className="block text-xs font-bold text-slate-700">
+                    السعر المطلوب (ريال)
+                  </label>
+                  <input
+                    id="manual_price"
+                    name="listing_price_sar"
+                    type="number"
+                    placeholder="مثال: 850000"
+                    value={manualPrice}
+                    onChange={(e) => setManualPrice(e.target.value)}
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  />
+                  {showPricePreview && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-bold mt-1">
+                      <Coins className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{formatSAR(parsedManualPrice)}</span>
+                    </div>
+                  )}
+                  {manualState?.errors?.listing_price_sar?.[0] && (
+                    <FieldError message={manualState.errors.listing_price_sar[0]} />
+                  )}
+                </div>
 
-                <Input
-                  id="manual_floor"
-                  name="floor_no"
-                  type="number"
-                  label="رقم الدور"
-                  placeholder="مثال: 2"
-                  error={manualState?.errors?.floor_no?.[0]}
-                />
+                <div className="space-y-2">
+                  <label htmlFor="manual_area" className="block text-xs font-bold text-slate-700">
+                    المساحة الصافية (م²)
+                  </label>
+                  <input
+                    id="manual_area"
+                    name="area_sqm"
+                    type="number"
+                    step="any"
+                    placeholder="مثال: 160"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  />
+                  {manualState?.errors?.area_sqm?.[0] && (
+                    <FieldError message={manualState.errors.area_sqm[0]} />
+                  )}
+                </div>
               </div>
 
-              <Input
-                id="manual_notes"
-                name="notes"
-                label="ملاحظات (اختياري)"
-                placeholder="أي تفاصيل أخرى ترغب في تدوينها"
-                error={manualState?.errors?.notes?.[0]}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="manual_bedrooms" className="block text-xs font-bold text-slate-700">
+                    عدد غرف النوم
+                  </label>
+                  <input
+                    id="manual_bedrooms"
+                    name="bedrooms"
+                    type="number"
+                    placeholder="مثال: 3"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  />
+                  {manualState?.errors?.bedrooms?.[0] && (
+                    <FieldError message={manualState.errors.bedrooms[0]} />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="manual_floor" className="block text-xs font-bold text-slate-700">
+                    رقم الدور
+                  </label>
+                  <input
+                    id="manual_floor"
+                    name="floor_no"
+                    type="number"
+                    placeholder="مثال: 2"
+                    className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  />
+                  {manualState?.errors?.floor_no?.[0] && (
+                    <FieldError message={manualState.errors.floor_no[0]} />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="manual_notes" className="block text-xs font-bold text-slate-700">
+                  ملاحظات ومميزات أخرى (اختياري)
+                </label>
+                <input
+                  id="manual_notes"
+                  name="notes"
+                  type="text"
+                  placeholder="أي تفاصيل أخرى (مثال: مطبخ راكب، مصعد، موقف خاص)"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                />
+                {manualState?.errors?.notes?.[0] && (
+                  <FieldError message={manualState.errors.notes[0]} />
+                )}
+              </div>
 
               {manualState?.errors?.form?.[0] && (
-                <FieldError message={manualState.errors.form[0]} />
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{manualState.errors.form[0]}</span>
+                </div>
               )}
 
               <div className="pt-2">
-                <FormSubmitButton>إضافة العقار</FormSubmitButton>
+                <FormSubmitButton>حفظ العقار وتدقيق البيانات</FormSubmitButton>
               </div>
             </form>
           )}
         </section>
       ) : (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center text-sm text-gray-700">
-          تم الوصول إلى الحد الأقصى للمقارنة (5 عقارات). يمكنك حذف عقار لإضافة غيره.
+        <div className="bg-slate-100/80 border border-slate-200/80 rounded-3xl p-6 text-center text-xs sm:text-sm font-bold text-slate-700">
+          تم الوصول إلى الحد الأقصى للمقارنة المعتمد (5 عقارات). يمكنك حذف أي عقار لإضافة خيار بديل.
         </div>
       )}
 
-      {/* Continue button */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
-        <span className="text-sm text-gray-500">
-          {properties.length === 0
-            ? "أضف عقاراً واحداً على الأقل للمتابعة إلى الفحص المبدئي"
-            : `جاهز للمتابعة (${properties.length} عقارات)`}
-        </span>
+      {/* ============================================================== */}
+      {/* Continue Action Bar */}
+      {/* ============================================================== */}
+      <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>
+            {properties.length === 0
+              ? "أضف عقاراً واحداً على الأقل للمتابعة إلى بوابة الفحص المبدئي"
+              : `جاهز للمتابعة (${properties.length} عقارات مضافة)`}
+          </span>
+        </div>
 
         {properties.length >= 1 ? (
           <Link href={`/case/${caseId}/preflight`} className="w-full sm:w-auto">
-            <Button variant="primary" className="w-full sm:w-auto">
-              متابعة إلى الفحص المبدئي
-            </Button>
+            <button
+              type="button"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+            >
+              <span>متابعة إلى بوابة الفحص المبدئي</span>
+              <ArrowLeft className="w-4 h-4" />
+            </button>
           </Link>
         ) : (
-          <Button variant="primary" disabled className="w-full sm:w-auto">
-            متابعة إلى الفحص المبدئي
-          </Button>
+          <button
+            type="button"
+            disabled
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-200 text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-not-allowed"
+          >
+            <span>متابعة إلى بوابة الفحص المبدئي</span>
+            <ArrowLeft className="w-4 h-4" />
+          </button>
         )}
       </div>
 

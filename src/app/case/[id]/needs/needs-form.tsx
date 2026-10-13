@@ -2,8 +2,21 @@
 
 import React, { useState } from "react";
 import { useFormState as useActionState, useFormStatus } from "react-dom";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {
+  ShieldCheck,
+  ArrowLeft,
+  Coins,
+  Users,
+  Layers,
+  Car,
+  Sparkles,
+  Plus,
+  Trash2,
+  AlertCircle,
+  Loader2,
+  Building2,
+  Check,
+} from "lucide-react";
 import { FieldError } from "@/components/ui/field-error";
 import { formatSAR } from "@/lib/utils";
 import { saveRequirements, RequirementsFormState } from "@/actions/requirements";
@@ -37,25 +50,34 @@ interface LocationItem {
 interface NeedsFormProps {
   caseId: string;
   initialData: RequirementsRow | null;
+  city?: string | null;
 }
 
 function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button
+    <button
       type="submit"
-      variant="primary"
-      pending={pending}
       disabled={pending}
-      className="w-full sm:w-auto"
+      className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
     >
-      حفظ ومتابعة إلى العقارات
-    </Button>
+      {pending ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin text-white" />
+          <span>جاري حفظ المعايير والانتقال...</span>
+        </>
+      ) : (
+        <>
+          <span>حفظ المعايير ومتابعة إلى حصر العقارات</span>
+          <ArrowLeft className="w-4 h-4" />
+        </>
+      )}
+    </button>
   );
 }
 
-export function NeedsForm({ caseId, initialData }: NeedsFormProps) {
+export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
   const saveActionWithId = saveRequirements.bind(null, caseId);
   const initialState: RequirementsFormState = { errors: {} };
   const [state, formAction] = useActionState(saveActionWithId, initialState);
@@ -258,36 +280,59 @@ export function NeedsForm({ caseId, initialData }: NeedsFormProps) {
     });
   }
   for (const item of customConstraints) {
-    serializedConstraints.push({
-      key: "custom",
-      label: item.text,
-      value: item.text,
-    });
+    if (item.text.trim()) {
+      serializedConstraints.push({
+        key: "custom",
+        label: item.text.trim(),
+        value: item.text.trim(),
+      });
+    }
   }
 
-  const serializedPreferences = preferences.map((p) => ({
-    label: p.label,
-    weight: p.weight,
-  }));
+  const serializedPreferences = preferences
+    .filter((p) => p.label.trim())
+    .map((p) => ({
+      label: p.label.trim(),
+      weight: p.weight,
+    }));
 
-  const serializedLocations = locations.map((l) => ({
-    label: l.label,
-    address_text: l.address_text,
-    frequency: l.frequency,
-  }));
+  const serializedLocations = locations
+    .filter((l) => l.label.trim() || l.address_text.trim())
+    .map((l) => ({
+      label: l.label.trim(),
+      address_text: l.address_text.trim(),
+      frequency: l.frequency,
+    }));
 
   const parsedBudget = Number(budget);
   const showBudgetPreview = !isNaN(parsedBudget) && parsedBudget > 0;
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">الاحتياجات والمحددات</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          حدد الميزانية واحتياجاتك وشروطك الأساسية للمقارنة بين العقارات
+    <div className="space-y-10">
+      {/* Hero / Page Intro */}
+      <section className="text-center max-w-3xl mx-auto space-y-4">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-slate-700 text-xs font-medium shadow-xs">
+          <ShieldCheck className="w-4 h-4 text-blue-600" />
+          <span>المرحلة الأولى • صياغة المعايير الهندسية والمالية</span>
+          {city && (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="font-bold text-blue-600">{city}</span>
+            </>
+          )}
+        </div>
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.3]">
+          محددات واحتياجات قرار الشراء <br className="hidden sm:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-l from-slate-900 via-slate-800 to-blue-600">
+            بدقة هندسية غير قابلة للمساومة
+          </span>
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed max-w-2xl mx-auto">
+          تحدد هذه المعايير خوارزمية الفرز والتقييم الحتمي. أي عقار يتجاوز ميزانيتك القصوى أو يخالف شروطك الحتمية سيتم استبعاده فوراً من المنافسة.
         </p>
-      </div>
+      </section>
 
+      {/* Main Form */}
       <form action={formAction} className="space-y-8">
         <input
           type="hidden"
@@ -305,358 +350,631 @@ export function NeedsForm({ caseId, initialData }: NeedsFormProps) {
           value={JSON.stringify(serializedLocations)}
         />
 
+        {/* ============================================================== */}
         {/* Section 1: الميزانية وطريقة الشراء */}
-        <section className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
-          <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">
-            الميزانية وطريقة الشراء
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Input
-                id="max_budget_sar"
-                name="max_budget_sar"
-                type="number"
-                label="الميزانية القصوى (ريال)"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-                error={state?.errors?.max_budget_sar?.[0]}
-                placeholder="مثال: 800000"
-              />
-              {showBudgetPreview && (
-                <p className="text-xs font-medium text-blue-600 mt-1">
-                  المعاينة: {formatSAR(parsedBudget)}
+        {/* ============================================================== */}
+        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-56 h-56 bg-blue-50/50 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  الميزانية والقدرة المالية
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  السقف المالي الأعلى وطريقة السداد المقترحة
                 </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
+              شرط حتمي
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Budget Input */}
+            <div className="space-y-2">
+              <label htmlFor="max_budget_sar" className="block text-xs font-bold text-slate-700">
+                الميزانية القصوى المتاحة (ريال سعودي)
+              </label>
+              <div className="relative">
+                <input
+                  id="max_budget_sar"
+                  name="max_budget_sar"
+                  type="number"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="مثال: 950000"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                />
+              </div>
+
+              {showBudgetPreview && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-bold mt-1">
+                  <Coins className="w-3.5 h-3.5 text-blue-600" />
+                  <span>المبلغ المعتمد: {formatSAR(parsedBudget)}</span>
+                </div>
+              )}
+
+              {state?.errors?.max_budget_sar?.[0] && (
+                <FieldError message={state.errors.max_budget_sar[0]} />
               )}
             </div>
 
-            <div>
-              <label
-                htmlFor="purchase_method"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                طريقة الشراء
+            {/* Purchase Method */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">
+                طريقة التمويل والشراء
               </label>
-              <select
-                id="purchase_method"
-                name="purchase_method"
-                value={purchaseMethod}
-                onChange={(e) => setPurchaseMethod(e.target.value)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="cash">نقداً</option>
-                <option value="finance">تمويل عقاري</option>
-                <option value="undecided">لم يتقرر بعد</option>
-              </select>
+              <input type="hidden" name="purchase_method" value={purchaseMethod} />
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPurchaseMethod("cash")}
+                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                    purchaseMethod === "cash"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs font-bold"
+                      : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                  }`}
+                >
+                  <span className="block text-xs">نقداً</span>
+                  <span className="block text-[10px] opacity-70 mt-0.5">سيولة جاهزة</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPurchaseMethod("finance")}
+                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                    purchaseMethod === "finance"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs font-bold"
+                      : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                  }`}
+                >
+                  <span className="block text-xs">تمويل عقاري</span>
+                  <span className="block text-[10px] opacity-70 mt-0.5">بنكي / دعم</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPurchaseMethod("undecided")}
+                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                    purchaseMethod === "undecided"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs font-bold"
+                      : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                  }`}
+                >
+                  <span className="block text-xs">لم يتقرر بعد</span>
+                  <span className="block text-[10px] opacity-70 mt-0.5">قيد الدراسة</span>
+                </button>
+              </div>
               {state?.errors?.purchase_method?.[0] && (
                 <FieldError message={state.errors.purchase_method[0]} />
               )}
             </div>
           </div>
-        </section>
+        </div>
 
+        {/* ============================================================== */}
         {/* Section 2: احتياج الأسرة */}
-        <section className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
-          <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">
-            احتياج الأسرة
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Input
-              id="household_size"
-              name="household_size"
-              type="number"
-              label="عدد أفراد الأسرة (1–20)"
-              value={householdSize}
-              onChange={(e) => setHouseholdSize(e.target.value)}
-              error={state?.errors?.household_size?.[0]}
-              placeholder="مثال: 4"
-            />
-            <Input
-              id="min_bedrooms"
-              name="min_bedrooms"
-              type="number"
-              label="الحد الأدنى لغرف النوم (1–10)"
-              value={minBedrooms}
-              onChange={(e) => setMinBedrooms(e.target.value)}
-              error={state?.errors?.min_bedrooms?.[0]}
-              placeholder="مثال: 3"
-            />
-            <Input
-              id="min_area_sqm"
-              name="min_area_sqm"
-              type="number"
-              step="any"
-              label="الحد الأدنى للمساحة (م²) (اختياري)"
-              value={minAreaSqm}
-              onChange={(e) => setMinAreaSqm(e.target.value)}
-              error={state?.errors?.min_area_sqm?.[0]}
-              placeholder="مثال: 140"
-            />
-          </div>
-        </section>
-
-        {/* Section 3: شروط لا تنازل عنها */}
-        <section className="bg-white p-6 rounded-lg border border-gray-200 space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-            <h2 className="text-lg font-bold text-gray-900">شروط لا تنازل عنها</h2>
-            <span className="text-xs text-gray-500">
-              ({totalHardConstraints}/10)
+        {/* ============================================================== */}
+        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  مواصفات المسكن واحتياج الأسرة
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  الحد الأدنى لعدد الغرف والمساحة الصافية المناسبة لأسرتك
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
+              معايير تشغيلية
             </span>
           </div>
 
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-800">
-              <input
-                type="checkbox"
-                checked={hasElevator}
-                onChange={(e) => setHasElevator(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-              />
-              <span>وجود مصعد</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-800">
-              <input
-                type="checkbox"
-                checked={hasParking}
-                onChange={(e) => setHasParking(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-              />
-              <span>موقف سيارة خاص</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-800">
-              <input
-                type="checkbox"
-                checked={hasNewBuilding}
-                onChange={(e) => setHasNewBuilding(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-              />
-              <span>مبنى جديد / أول ساكن</span>
-            </label>
-
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {/* Household Size */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-800">
-                <input
-                  type="checkbox"
-                  checked={hasMaxFloor}
-                  onChange={(e) => setHasMaxFloor(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
-                />
-                <span>أقصى دور</span>
+              <label htmlFor="household_size" className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-slate-400" />
+                <span>أفراد الأسرة المقيمين (1–20)</span>
               </label>
+              <input
+                id="household_size"
+                name="household_size"
+                type="number"
+                min={1}
+                max={20}
+                value={householdSize}
+                onChange={(e) => setHouseholdSize(e.target.value)}
+                placeholder="مثال: 4"
+                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+              />
+              {state?.errors?.household_size?.[0] && (
+                <FieldError message={state.errors.household_size[0]} />
+              )}
+            </div>
+
+            {/* Min Bedrooms */}
+            <div className="space-y-2">
+              <label htmlFor="min_bedrooms" className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                <span>الحد الأدنى لغرف النوم (1–10)</span>
+              </label>
+              <input
+                id="min_bedrooms"
+                name="min_bedrooms"
+                type="number"
+                min={1}
+                max={10}
+                value={minBedrooms}
+                onChange={(e) => setMinBedrooms(e.target.value)}
+                placeholder="مثال: 3"
+                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+              />
+              {state?.errors?.min_bedrooms?.[0] && (
+                <FieldError message={state.errors.min_bedrooms[0]} />
+              )}
+            </div>
+
+            {/* Min Area Sqm */}
+            <div className="space-y-2">
+              <label htmlFor="min_area_sqm" className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-slate-400" />
+                <span>الحد الأدنى للمساحة (م²) (اختياري)</span>
+              </label>
+              <input
+                id="min_area_sqm"
+                name="min_area_sqm"
+                type="number"
+                step="any"
+                value={minAreaSqm}
+                onChange={(e) => setMinAreaSqm(e.target.value)}
+                placeholder="مثال: 150"
+                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+              />
+              {state?.errors?.min_area_sqm?.[0] && (
+                <FieldError message={state.errors.min_area_sqm[0]} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* Section 3: شروط لا تنازل عنها (Hard Constraints) */}
+        {/* ============================================================== */}
+        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                    شروط حتمية لا تنازل عنها
+                  </h2>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100">
+                    استبعاد فوري
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  أي عقار يفتقر إلى أي شرط هنا سيتم استبعاده فوراً من المنافسة
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+              {totalHardConstraints} / 10
+            </span>
+          </div>
+
+          {/* Warning Notice */}
+          <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-900 leading-relaxed">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold">قاعدة التحليل الهندسي الحتمي:</span> السعر المنخفض لا يعوض أبداً عيباً جوهرياً مثل غياب المصعد في الأدوار العليا أو عدم وجود موقف خاص. هذه الشروط تحميك من الشراء العاطفي.
+            </div>
+          </div>
+
+          {/* Interactive Fixed Constraint Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* Elevator */}
+            <button
+              type="button"
+              onClick={() => setHasElevator(!hasElevator)}
+              className={`p-4 rounded-2xl border text-right transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                hasElevator
+                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    hasElevator ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  <Layers className="w-4 h-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-bold">وجود مصعد عامل</div>
+                  <div className={`text-[11px] ${hasElevator ? "text-slate-300" : "text-slate-400"}`}>
+                    إلزامي للأدوار العليا
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
+                  hasElevator ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+              </div>
+            </button>
+
+            {/* Parking */}
+            <button
+              type="button"
+              onClick={() => setHasParking(!hasParking)}
+              className={`p-4 rounded-2xl border text-right transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                hasParking
+                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    hasParking ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  <Car className="w-4 h-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-bold">موقف سيارة خاص</div>
+                  <div className={`text-[11px] ${hasParking ? "text-slate-300" : "text-slate-400"}`}>
+                    مسجل بالصك أو مخصص
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
+                  hasParking ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+              </div>
+            </button>
+
+            {/* New Building */}
+            <button
+              type="button"
+              onClick={() => setHasNewBuilding(!hasNewBuilding)}
+              className={`p-4 rounded-2xl border text-right transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                hasNewBuilding
+                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                  : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    hasNewBuilding ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                </span>
+                <div>
+                  <div className="text-xs font-bold">مبنى جديد / أول ساكن</div>
+                  <div className={`text-[11px] ${hasNewBuilding ? "text-slate-300" : "text-slate-400"}`}>
+                    عمر العقار صفر سنوات
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
+                  hasNewBuilding ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                }`}
+              >
+                <Check className="w-3.5 h-3.5" />
+              </div>
+            </button>
+
+            {/* Max Floor */}
+            <div
+              className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                hasMaxFloor
+                  ? "bg-slate-50 border-slate-300"
+                  : "border-slate-200/80 bg-white"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setHasMaxFloor(!hasMaxFloor)}
+                className="w-full text-right flex items-center justify-between gap-3 cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      hasMaxFloor ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-800">أقصى دور مسموح به</div>
+                    <div className="text-[11px] text-slate-400">تحديد أعلى دور ترغب بالسكن فيه</div>
+                  </div>
+                </div>
+                <div
+                  className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
+                    hasMaxFloor ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                  }`}
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </div>
+              </button>
 
               {hasMaxFloor && (
-                <div className="ps-6 max-w-xs">
-                  <Input
+                <div className="pt-2 border-t border-slate-200/60">
+                  <input
                     id="max_floor_val"
                     type="number"
-                    label="رقم الدور الأقصى"
+                    min={0}
+                    max={50}
                     value={maxFloorValue}
                     onChange={(e) => setMaxFloorValue(e.target.value)}
-                    placeholder="مثال: 4"
+                    placeholder="رقم الدور الأقصى (مثال: 3)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                   />
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Custom conditions */}
-            <div className="pt-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">شروط إضافية مخصصة</span>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={totalHardConstraints >= 10}
-                  onClick={handleAddCustomConstraint}
-                  className="text-xs py-1 px-3"
-                >
-                  + إضافة شرط مخصص
-                </Button>
+          {/* Custom Conditions */}
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-slate-700">شروط إضافية خاصة بك</span>
+                <p className="text-[11px] text-slate-400">
+                  شروط فنية أخرى ملزمة لك (مثال: غرفة سائق، مدخل مستقل، عزل صوتي)
+                </p>
               </div>
-
-              {customConstraints.map((item) => (
-                <div key={item.id} className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <Input
-                      value={item.text}
-                      maxLength={120}
-                      onChange={(e) => handleUpdateCustomConstraint(item.id, e.target.value)}
-                      placeholder="اكتب الشرط المخصص (مثال: مدخل خاص، غرفة سائق...)"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => handleRemoveCustomConstraint(item.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs px-2 py-2"
-                  >
-                    حذف
-                  </Button>
-                </div>
-              ))}
+              <button
+                type="button"
+                disabled={totalHardConstraints >= 10}
+                onClick={handleAddCustomConstraint}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>إضافة شرط مخصص</span>
+              </button>
             </div>
+
+            {customConstraints.map((item) => (
+              <div key={item.id} className="flex items-center gap-2">
+                <input
+                  value={item.text}
+                  maxLength={120}
+                  onChange={(e) => handleUpdateCustomConstraint(item.id, e.target.value)}
+                  placeholder="اكتب الشرط الحتمي (مثال: غرفة خادمة مستقلة، شرفة لا تطل على الجيران)"
+                  className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCustomConstraint(item.id)}
+                  className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                  title="حذف الشرط"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
           </div>
 
           {state?.errors?.hard_constraints?.[0] && (
             <FieldError message={state.errors.hard_constraints[0]} />
           )}
-        </section>
+        </div>
 
+        {/* ============================================================== */}
         {/* Section 4: التفضيلات والمواقع المهمة */}
-        <section className="bg-white p-6 rounded-lg border border-gray-200 space-y-6">
-          <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">
-            التفضيلات والمواقع المهمة
-          </h2>
+        {/* ============================================================== */}
+        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-8 relative overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  التفضيلات التنافسية والمواقع المهمة
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  معايير ترجيحية تُمنح درجات ونقاط للمقارنة والمفاضلة بين العقارات المتأهلة
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
+              أوزان تفضيلية
+            </span>
+          </div>
 
-          {/* Preferences */}
-          <div className="space-y-3">
+          {/* Preferences Sub-section */}
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-800">
-                التفضيلات (حتى 10 تفضيلات)
-              </span>
-              <span className="text-xs text-gray-500">
-                ({preferences.length}/10)
+              <div>
+                <span className="text-xs font-bold text-slate-800">
+                  قائمة التفضيلات التفضيلية (حتى 10 تفضيلات)
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  حدد درجة الأهمية النسبية لكل ميزة للمساعدة في وزن التقييم النهائي
+                </p>
+              </div>
+              <span className="text-xs font-bold text-slate-500">
+                {preferences.length} / 10
               </span>
             </div>
 
-            {preferences.map((pref) => (
-              <div
-                key={pref.id}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-gray-50 rounded-md border border-gray-200"
-              >
-                <div className="flex-1">
-                  <Input
+            <div className="space-y-3">
+              {preferences.map((pref) => (
+                <div
+                  key={pref.id}
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/70"
+                >
+                  <input
                     value={pref.label}
                     maxLength={80}
                     onChange={(e) => handleUpdatePreference(pref.id, "label", e.target.value)}
-                    placeholder="وصف التفضيل (مثال: واجهة جنوبية، شرفة واسعة)"
+                    placeholder="وصف الميزة المرغوبة (مثال: واجهة شمالية، مطبخ راكب، تشطيب مودرن)"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
                   />
-                </div>
-                <div className="w-full sm:w-40">
-                  <select
-                    value={pref.weight}
-                    onChange={(e) =>
-                      handleUpdatePreference(
-                        pref.id,
-                        "weight",
-                        e.target.value as PreferenceWeight
-                      )
-                    }
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  <div className="w-full sm:w-44">
+                    <select
+                      value={pref.weight}
+                      onChange={(e) =>
+                        handleUpdatePreference(
+                          pref.id,
+                          "weight",
+                          e.target.value as PreferenceWeight
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 shadow-xs focus:border-blue-600 focus:outline-none"
+                    >
+                      <option value="high">أهمية عالية (ترجيح قوي)</option>
+                      <option value="medium">أهمية متوسطة (عادية)</option>
+                      <option value="low">أهمية منخفضة (ثانوية)</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePreference(pref.id)}
+                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
+                    title="حذف التفضيل"
                   >
-                    <option value="high">أهمية عالية</option>
-                    <option value="medium">أهمية متوسطة</option>
-                    <option value="low">أهمية منخفضة</option>
-                  </select>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => handleRemovePreference(pref.id)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-end sm:self-center"
-                >
-                  حذف
-                </Button>
-              </div>
-            ))}
-
-            <div>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={preferences.length >= 10}
-                onClick={handleAddPreference}
-                className="text-xs"
-              >
-                + إضافة تفضيل
-              </Button>
+              ))}
             </div>
+
+            <button
+              type="button"
+              disabled={preferences.length >= 10}
+              onClick={handleAddPreference}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>إضافة تفضيل جديد</span>
+            </button>
+
             {state?.errors?.preferences?.[0] && (
               <FieldError message={state.errors.preferences[0]} />
             )}
           </div>
 
-          {/* Important locations */}
-          <div className="space-y-3 pt-4 border-t border-gray-100">
+          {/* Important Locations Sub-section */}
+          <div className="pt-6 border-t border-slate-100 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-800">
-                المواقع المهمة (حتى 5 مواقع)
-              </span>
-              <span className="text-xs text-gray-500">
-                ({locations.length}/5)
-              </span>
-            </div>
-
-            {locations.map((loc) => (
-              <div
-                key={loc.id}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 bg-gray-50 rounded-md border border-gray-200"
-              >
-                <div className="flex-1">
-                  <Input
-                    value={loc.label}
-                    maxLength={60}
-                    onChange={(e) => handleUpdateLocation(loc.id, "label", e.target.value)}
-                    placeholder="اسم الموقع (مثل: مقر العمل)"
-                  />
-                </div>
-                <div className="flex-1">
-                  <Input
-                    value={loc.address_text}
-                    maxLength={200}
-                    onChange={(e) => handleUpdateLocation(loc.id, "address_text", e.target.value)}
-                    placeholder="العنوان أو الحي (مثل: طريق الملك فهد)"
-                  />
-                </div>
-                <div className="w-full sm:w-32">
-                  <select
-                    value={loc.frequency}
-                    onChange={(e) =>
-                      handleUpdateLocation(
-                        loc.id,
-                        "frequency",
-                        e.target.value as LocationFrequency
-                      )
-                    }
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="daily">زيارة يومية</option>
-                    <option value="weekly">زيارة أسبوعية</option>
-                  </select>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => handleRemoveLocation(loc.id)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs self-end sm:self-center"
-                >
-                  حذف
-                </Button>
+              <div>
+                <span className="text-xs font-bold text-slate-800">
+                  المواقع الجغرافية المهمة للتنقل اليومي (حتى 5 مواقع)
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  نحسب أزمنة التنقل وعبء الزحام لكل عقار مرشح إلى هذه المقرات
+                </p>
               </div>
-            ))}
-
-            <div>
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={locations.length >= 5}
-                onClick={handleAddLocation}
-                className="text-xs"
-              >
-                + إضافة موقع مهم
-              </Button>
+              <span className="text-xs font-bold text-slate-500">
+                {locations.length} / 5
+              </span>
             </div>
+
+            <div className="space-y-3">
+              {locations.map((loc) => (
+                <div
+                  key={loc.id}
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/70"
+                >
+                  <div className="w-full sm:w-44">
+                    <input
+                      value={loc.label}
+                      maxLength={60}
+                      onChange={(e) => handleUpdateLocation(loc.id, "label", e.target.value)}
+                      placeholder="اسم المقر (مثل: عمل الزوج، مدرسة)"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      value={loc.address_text}
+                      maxLength={200}
+                      onChange={(e) => handleUpdateLocation(loc.id, "address_text", e.target.value)}
+                      placeholder="الحي أو الشارع (مثل: حي الملقا، طريق الملك فهد)"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+                    />
+                  </div>
+                  <div className="w-full sm:w-36">
+                    <select
+                      value={loc.frequency}
+                      onChange={(e) =>
+                        handleUpdateLocation(
+                          loc.id,
+                          "frequency",
+                          e.target.value as LocationFrequency
+                        )
+                      }
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 shadow-xs focus:border-blue-600 focus:outline-none"
+                    >
+                      <option value="daily">تردد يومي (عمل/مدرسة)</option>
+                      <option value="weekly">تردد أسبوعي (عائلة/ترفيه)</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLocation(loc.id)}
+                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
+                    title="حذف الموقع"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              disabled={locations.length >= 5}
+              onClick={handleAddLocation}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>إضافة مقر مهم</span>
+            </button>
+
             {state?.errors?.important_locations?.[0] && (
               <FieldError message={state.errors.important_locations[0]} />
             )}
           </div>
-        </section>
+        </div>
 
+        {/* Global Form Error */}
         {state?.errors?.form?.[0] && (
-          <FieldError message={state.errors.form[0]} />
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{state.errors.form[0]}</span>
+          </div>
         )}
 
-        <div className="flex justify-end pt-2">
+        {/* Submit Action Bar */}
+        <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>
+              يتم حفظ المحددات وتطبيقها حتمياً في مراحل المقارنة والتحليل اللاحقة.
+            </span>
+          </div>
           <SubmitButton />
         </div>
       </form>

@@ -34,7 +34,17 @@ export async function startCase(formData: FormData) {
     throw new Error(error?.message || "Failed to create case");
   }
 
-  redirect(`/case/${data.id}/needs`);
+  const typology = formData.get("typology")?.toString();
+  const intent = formData.get("purchase_intent")?.toString();
+  const title = formData.get("session_title")?.toString();
+
+  const searchParams = new URLSearchParams();
+  if (typology) searchParams.set("typology", typology);
+  if (intent) searchParams.set("intent", intent);
+  if (title) searchParams.set("title", title);
+
+  const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  redirect(`/case/${data.id}/needs${qs}`);
 }
 
 export async function deleteCase(caseId: string) {

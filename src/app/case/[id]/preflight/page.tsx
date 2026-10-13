@@ -29,5 +29,12 @@ export default async function PreflightPage({ params }: PreflightPageProps) {
     .limit(1);
   const isPaid = !!paidPayments && paidPayments.length > 0;
 
-  return <PreflightView caseId={params.id} evaluation={evaluation} isPaid={isPaid} />;
+  return (
+    <PreflightView
+      caseId={params.id}
+      evaluation={evaluation}
+      isPaid={isPaid}
+      propertyCount={preflightData.properties.length}
+    />
+  );
 }

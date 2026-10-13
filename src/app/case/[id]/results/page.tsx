@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { ArrowRight, Scale, Info } from "lucide-react";
 import { getSessionUser, requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
@@ -105,67 +106,81 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
   const comparisonLabel = `مقارنة الخيارات (${propertyCount} عقارات)`;
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-10">
       {banner}
+
       {/* Insufficient compare notice */}
       {searchParams?.notice === "insufficient_compare" && (
         <div
           role="status"
           aria-live="polite"
-          className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm flex items-start gap-3 shadow-sm animate-in fade-in duration-200"
+          className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-amber-900 text-xs sm:text-sm flex items-start gap-3.5 shadow-sm animate-in fade-in duration-200"
         >
-          <span className="text-base select-none mt-0.5" aria-hidden="true">
-            ℹ️
-          </span>
-          <div className="space-y-0.5">
-            <p className="font-bold">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+            <Info className="w-4 h-4" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-extrabold text-slate-900">
               تنبيه: تتطلب مقارنة الخيارات وجود عقارين مرشحين على الأقل.
             </p>
-            <p className="text-amber-800/90 text-xs">
+            <p className="text-amber-800 text-xs leading-relaxed">
               لديك عقار واحد محلل حالياً؛ يمكنك إضافة عقارات إضافية من صفحة العقارات لتحليلها ومقارنتها جنباً إلى جنب.
             </p>
           </div>
         </div>
       )}
 
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+      {/* Top Header Card */}
+      <div className="relative bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 overflow-hidden">
+        {/* Subtle Ambient Background Light */}
+        <div className="absolute -top-32 -left-32 w-80 h-80 bg-blue-50/60 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/70">
+                <span className="w-2 h-2 rounded-full bg-blue-600" />
+                المرحلة 4 من 4 • تقرير القرار النهائي
+              </span>
+
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-xs">
+                {propertyCount} {propertyCount === 1 ? "عقار محلل" : "عقارات محللة"}
+              </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
               تقرير تقييم العقارات
             </h1>
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-              {propertyCount} {propertyCount === 1 ? "عقار محلل" : "عقارات محللة"}
-            </span>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
+              نتائج تحليل مطابقة العقارات لمتطلباتك وشروطك المحددة، مع إرشادات المعاينة الميدانية الاستشارية.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-xl">
-            نتائج تحليل مطابقة العقارات لمتطلباتك وشروطك المحددة، مع إرشادات المعاينة الميدانية الاستشارية.
-          </p>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={`/case/${params.id}/preflight`}
-            className="text-xs font-bold text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg px-3 py-2 transition-colors"
-          >
-            ← الفحص المبدئي
-          </Link>
-
-          {showComparisonCTA && (
+          <div className="flex flex-wrap items-center gap-3 self-start sm:self-center shrink-0">
             <Link
-              href={`/case/${params.id}/compare`}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98]"
+              href={`/case/${params.id}/preflight`}
+              className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all shadow-xs"
             >
-              <span>{comparisonLabel}</span>
-              <span aria-hidden="true">←</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+              <span>← الفحص المبدئي</span>
             </Link>
-          )}
+
+            {showComparisonCTA && (
+              <Link
+                href={`/case/${params.id}/compare`}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-slate-900/10 transition-all active:scale-[0.98]"
+              >
+                <Scale className="w-4 h-4" />
+                <span>{comparisonLabel}</span>
+                <span aria-hidden="true">←</span>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Property Cards List */}
-      <section aria-label="قائمة تقييم العقارات" className="space-y-6">
+      <section aria-label="قائمة تقييم العقارات" className="space-y-8">
         {assessments.map((a, index) => {
           const p = a.properties as unknown as {
             id: string;
@@ -232,19 +247,26 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
 
       {/* Bottom Comparison CTA (if 2+ properties exist) */}
       {showComparisonCTA && (
-        <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/60 p-4 sm:p-6 rounded-2xl border">
-          <div className="space-y-1 text-center sm:text-right">
-            <h3 className="text-base font-bold text-gray-900">
+        <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
+          {/* Subtle Ambient Light */}
+          <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-600/30 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="space-y-1.5 text-center sm:text-right relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-bold mb-1">
+              <Scale className="w-3.5 h-3.5" />
+              <span>مصفوفة التحليل المقارن</span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-extrabold text-white">
               جاهز لمفاضلة ومقارنة الخيارات؟
             </h3>
-            <p className="text-xs sm:text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
               استعرض جدول المقارنة جنباً إلى جنب لاكتشاف الفروقات الجوهرية بين العقارات المرشحة.
             </p>
           </div>
 
           <Link
             href={`/case/${params.id}/compare`}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all active:scale-[0.98] shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm shadow-md shadow-blue-600/30 transition-all active:scale-[0.98] shrink-0 relative z-10"
           >
             <span>{comparisonLabel}</span>
             <span aria-hidden="true">←</span>

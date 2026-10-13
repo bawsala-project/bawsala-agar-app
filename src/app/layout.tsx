@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
-const ibmPlexSansArabic = IBM_Plex_Sans_Arabic({
-  subsets: ["arabic"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "بوصلة العقار",
+  title: "بوصلة العقار | مستشارك الهندسي والمالي المحايد",
+  description: "فحص فني وهندسي مستقل لقرار التملك بأرقام قطعية وتدقيق محايد",
 };
 
 export default function RootLayout({
@@ -18,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`${ibmPlexSansArabic.className} bg-gray-50 text-gray-900 antialiased`}>
+    <html lang="ar" dir="rtl" className="scroll-smooth">
+      <body className="bg-[#F8FAFC] text-slate-800 antialiased selection:bg-blue-600 selection:text-white font-sans">
         {children}
       </body>
     </html>

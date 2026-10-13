@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useEffect, useRef } from "react";
+import { Lightbulb, Search } from "lucide-react";
 import {
   saveFindingAction,
   type FindingResult,
@@ -142,7 +143,7 @@ export function FindingItem({
 
   return (
     <article
-      className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:border-gray-300 transition-colors space-y-4"
+      className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm hover:border-slate-300 transition-all space-y-4"
       aria-labelledby={`item-q-${item.id}`}
     >
       {/* Top Meta: Priority & Trigger Reason */}
@@ -150,27 +151,27 @@ export function FindingItem({
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "px-2.5 py-0.5 rounded-full font-bold border",
+              "px-3 py-1 rounded-full font-extrabold border shadow-xs",
               priorityConfig.badgeClasses
             )}
           >
             {priorityConfig.label}
           </span>
 
-          <span className="px-2 py-0.5 rounded-md bg-gray-50 text-gray-500 border border-gray-100 font-medium">
+          <span className="px-2.5 py-1 rounded-xl bg-slate-100/80 text-slate-600 border border-slate-200/60 font-semibold text-[11px]">
             {triggerLabel}
           </span>
         </div>
 
         {/* Affected Assessment Axes */}
         {item.affected_assessment_types && item.affected_assessment_types.length > 0 && (
-          <div className="flex items-center gap-1 text-[11px] text-gray-500 font-medium">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
             <span>يؤثر على:</span>
             <div className="flex items-center gap-1">
               {item.affected_assessment_types.map((axis) => (
                 <span
                   key={axis}
-                  className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px]"
+                  className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-100"
                 >
                   {ASSESSMENT_TYPE_LABELS_AR[axis] || axis}
                 </span>
@@ -183,24 +184,24 @@ export function FindingItem({
       {/* Question Text */}
       <h3
         id={`item-q-${item.id}`}
-        className="text-base sm:text-lg font-bold text-gray-900 leading-snug"
+        className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug"
       >
         {item.question_ar}
       </h3>
 
       {/* Why it matters box */}
-      <div className="bg-amber-50/60 border border-amber-200/70 rounded-xl p-3 text-xs sm:text-sm text-gray-700 space-y-1">
-        <div className="flex items-center gap-1.5 font-bold text-amber-900">
-          <span aria-hidden="true">💡</span>
+      <div className="bg-amber-50/50 border border-amber-200/80 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-700 space-y-1 shadow-xs">
+        <div className="flex items-center gap-1.5 font-extrabold text-amber-900">
+          <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
           <span>سبب الأهمية:</span>
         </div>
-        <p className="leading-relaxed pr-5">{item.why_it_matters_ar}</p>
+        <p className="leading-relaxed pr-5 font-normal text-slate-800">{item.why_it_matters_ar}</p>
       </div>
 
       {/* How to check box */}
-      <div className="bg-blue-50/50 border border-blue-200/70 rounded-xl p-3 text-xs sm:text-sm text-gray-800 space-y-1">
-        <div className="flex items-center gap-1.5 font-bold text-blue-900">
-          <span aria-hidden="true">🔍</span>
+      <div className="bg-blue-50/50 border border-blue-200/80 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-800 space-y-1 shadow-xs">
+        <div className="flex items-center gap-1.5 font-extrabold text-blue-900">
+          <Search className="w-3.5 h-3.5 text-blue-600" />
           <span>طريقة الفحص الميداني:</span>
         </div>
         <p className="leading-relaxed pr-5 font-medium text-slate-800">
@@ -209,26 +210,26 @@ export function FindingItem({
       </div>
 
       {/* Interactive Finding Buttons (3 Segmented Radios) */}
-      <div className="pt-2 border-t border-gray-100 space-y-3">
+      <div className="pt-3 border-t border-slate-100 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-gray-600 block">
+          <span className="text-xs font-bold text-slate-700 block">
             تسجيل نتيجة الفحص:
           </span>
 
           {/* Sync indicator */}
-          <div className="text-[11px] font-semibold flex items-center gap-1.5">
+          <div className="text-[11px] font-bold flex items-center gap-1.5">
             {isPending || syncStatus === "saving" ? (
               <span className="text-blue-600 flex items-center gap-1 animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                 <span>جاري الحفظ...</span>
               </span>
             ) : syncStatus === "saved" ? (
-              <span className="text-emerald-600 flex items-center gap-1 font-bold">
+              <span className="text-emerald-600 flex items-center gap-1 font-extrabold">
                 <span>✓</span>
                 <span>تم الحفظ</span>
               </span>
             ) : syncStatus === "error" ? (
-              <span className="text-rose-600 flex items-center gap-1 font-bold">
+              <span className="text-rose-600 flex items-center gap-1 font-extrabold">
                 <span>⚠</span>
                 <span>{errorMessage || "فشل الحفظ"}</span>
               </span>
@@ -240,7 +241,7 @@ export function FindingItem({
         <div
           role="radiogroup"
           aria-label={`نتيجة فحص: ${item.question_ar}`}
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-3 gap-2 sm:gap-2.5"
         >
           {/* Button 1: good (سليم / مطابق) */}
           <button
@@ -249,10 +250,10 @@ export function FindingItem({
             aria-checked={result === "good"}
             onClick={() => handleResultSelect("good")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border",
+              "px-3 py-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs",
               result === "good"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-200"
-                : "bg-white text-gray-700 hover:bg-emerald-50/40 hover:text-emerald-700 border-gray-200"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-200"
+                : "bg-white text-slate-700 hover:bg-emerald-50/50 hover:text-emerald-700 border-slate-200/80"
             )}
           >
             <span aria-hidden="true">✓</span>
@@ -266,10 +267,10 @@ export function FindingItem({
             aria-checked={result === "problem"}
             onClick={() => handleResultSelect("problem")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border",
+              "px-3 py-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs",
               result === "problem"
-                ? "bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-200"
-                : "bg-white text-gray-700 hover:bg-rose-50/40 hover:text-rose-700 border-gray-200"
+                ? "bg-rose-600 text-white border-rose-600 shadow-md ring-2 ring-rose-200"
+                : "bg-white text-slate-700 hover:bg-rose-50/50 hover:text-rose-700 border-slate-200/80"
             )}
           >
             <span aria-hidden="true">⚠</span>
@@ -283,10 +284,10 @@ export function FindingItem({
             aria-checked={result === "not_checked"}
             onClick={() => handleResultSelect("not_checked")}
             className={cn(
-              "px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border",
+              "px-3 py-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs",
               result === "not_checked"
-                ? "bg-slate-700 text-white border-slate-700 shadow-sm ring-2 ring-slate-200"
-                : "bg-white text-gray-700 hover:bg-slate-50 border-gray-200"
+                ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-200"
+                : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80"
             )}
           >
             <span aria-hidden="true">—</span>
@@ -296,23 +297,23 @@ export function FindingItem({
 
         {/* Auto-expanded optional note input when good or problem is selected */}
         {showNoteInput && (
-          <div className="pt-2 space-y-1.5 animate-fadeIn">
+          <div className="pt-2 space-y-2 animate-fadeIn">
             <div className="flex items-center justify-between text-xs">
               <label
                 htmlFor={`note-${item.id}`}
-                className="font-bold text-gray-600 flex items-center gap-1"
+                className="font-extrabold text-slate-700 flex items-center gap-1.5"
               >
                 <span>ملاحظات إضافية (اختياري)</span>
                 {result === "problem" && (
-                  <span className="text-rose-600 text-[11px]">
+                  <span className="text-rose-600 text-[11px] font-bold">
                     - يُفضل توثيق تفاصيل المشكلة
                   </span>
                 )}
               </label>
               <span
                 className={cn(
-                  "text-[10px] font-medium",
-                  note.length >= 280 ? "text-amber-600 font-bold" : "text-gray-400"
+                  "text-[10px] font-bold font-mono",
+                  note.length >= 280 ? "text-amber-600" : "text-slate-400"
                 )}
               >
                 {note.length}/300
@@ -327,7 +328,7 @@ export function FindingItem({
               rows={2}
               maxLength={300}
               placeholder="دوّن تفاصيل أو شواهد رأيتها أثناء الزيارة..."
-              className="w-full text-xs sm:text-sm p-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-gray-800 placeholder-gray-400 bg-gray-50/50 resize-none transition-colors"
+              className="w-full text-xs sm:text-sm p-3.5 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-800 placeholder-slate-400 bg-slate-50/60 resize-none transition-colors"
             />
           </div>
         )}

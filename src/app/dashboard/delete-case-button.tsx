@@ -1,7 +1,7 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { softDeleteCaseAction } from "@/actions/cases";
-import { Button } from "@/components/ui/button";
 
 interface DeleteCaseButtonProps {
   caseId: string;
@@ -17,9 +17,14 @@ export function DeleteCaseButton({ caseId }: DeleteCaseButtonProps) {
         }
       }}
     >
-      <Button type="submit" variant="ghost" className="text-xs text-red-700 hover:bg-red-50">
-        حذف الحالة
-      </Button>
+      <button
+        type="submit"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+        title="حذف الحالة"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">حذف الحالة</span>
+      </button>
     </form>
   );
 }

@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import {
-  FindingItem,
-} from "./finding-item";
+import { Sparkles } from "lucide-react";
+import { FindingItem } from "./finding-item";
 import {
   CATEGORY_LABELS_AR,
   type InspectionCategory,
@@ -102,9 +101,9 @@ export function InspectionView({
   const progressPercent = totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
 
   return (
-    <div className="space-y-8 pb-28">
+    <div className="space-y-10 pb-32">
       {/* Category Sections */}
-      <div className="space-y-8">
+      <div className="space-y-10">
         {CATEGORY_ORDER.map((category) => {
           const categoryItems = groupedItems[category];
           if (!categoryItems || categoryItems.length === 0) return null;
@@ -119,20 +118,20 @@ export function InspectionView({
               aria-labelledby={`cat-title-${category}`}
             >
               {/* Category Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg" aria-hidden="true">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl" aria-hidden="true">
                     {icon}
                   </span>
                   <h2
                     id={`cat-title-${category}`}
-                    className="text-base sm:text-lg font-bold text-gray-900"
+                    className="text-base sm:text-lg font-extrabold text-slate-900"
                   >
                     {categoryTitle}
                   </h2>
                 </div>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">
-                  {categoryItems.length}
+                <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200/60 shadow-xs">
+                  {categoryItems.length} بنود
                 </span>
               </div>
 
@@ -161,25 +160,25 @@ export function InspectionView({
       {/* Floating / Sticky Bottom Summary & Completion Banner */}
       <aside
         aria-label="شريط ملخص نتائج المعاينة"
-        className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-xl z-30 p-3 sm:p-4"
+        className="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-2xl z-30 p-3 sm:p-4"
       >
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Real-time Counter & Progress */}
-          <div className="w-full sm:w-auto space-y-1">
+          <div className="w-full sm:w-auto space-y-1.5">
             <div className="flex items-center justify-between sm:justify-start gap-3">
-              <span className="text-xs sm:text-sm font-bold text-gray-900">
+              <span className="text-xs sm:text-sm font-extrabold text-slate-900">
                 تم فحص {checkedCount} من {totalItems} بنود ({problemCount} مشاكل مسجلة)
               </span>
 
               {goodCount > 0 && (
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200 shadow-xs">
                   {goodCount} مطابق
                 </span>
               )}
             </div>
 
             {/* Visual Progress Bar */}
-            <div className="w-full sm:w-64 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="w-full sm:w-72 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
               <div
                 className={cn(
                   "h-full transition-all duration-300 rounded-full",
@@ -195,13 +194,14 @@ export function InspectionView({
             {hasAtLeastOneFinding ? (
               <Link
                 href={`/case/${caseId}/reassess?propertyId=${propertyId}`}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-blue-600/20 transition-all active:scale-[0.98]"
               >
+                <Sparkles className="w-4 h-4" />
                 <span>تحديث التقييم بناءً على الزيارة</span>
                 <span aria-hidden="true">←</span>
               </Link>
             ) : (
-              <span className="text-xs text-gray-500 hidden sm:inline-block">
+              <span className="text-xs text-slate-400 font-medium hidden sm:inline-block">
                 اختر نتيجة فحص بند واحد على الأقل لتفعيل إعادة التقييم
               </span>
             )}

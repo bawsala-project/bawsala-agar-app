@@ -23,22 +23,29 @@ export default async function PropertiesPage({
     redirect(`/case/${params.id}/needs`);
   }
 
-  // Fetch properties with latest extraction runs and extracted facts
-  const { data: properties } = await supabase
-    .from("properties")
-    .select(`
-      *,
-      extraction_runs (
-        id,
-        status,
-        error_code,
-        started_at,
-        finished_at
-      ),
-      property_facts (*)
-    `)
-    .eq("case_id", params.id)
-    .order("created_at", { ascending: true });
+  // Fetch case city and properties with latest extraction runs and extracted facts
+  const [{ data: caseData }, { data: properties }] = await Promise.all([
+    supabase
+      .from("decision_cases")
+      .select("city")
+      .eq("id", params.id)
+      .maybeSingle(),
+    supabase
+      .from("properties")
+      .select(`
+        *,
+        extraction_runs (
+          id,
+          status,
+          error_code,
+          started_at,
+          finished_at
+        ),
+        property_facts (*)
+      `)
+      .eq("case_id", params.id)
+      .order("created_at", { ascending: true }),
+  ]);
 
   // Get current user ID for direct client upload paths
   const {
@@ -60,6 +67,7 @@ export default async function PropertiesPage({
     <PropertiesView
       caseId={params.id}
       userId={userId}
+      city={caseData?.city ?? null}
       properties={properties || []}
       signedThumbnails={signedThumbnails}
     />

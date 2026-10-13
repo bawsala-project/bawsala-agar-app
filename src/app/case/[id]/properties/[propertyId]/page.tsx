@@ -14,24 +14,30 @@ export default async function PropertyDetailPage({
 
   const supabase = createClient();
 
-  // Load the property; 404 if not found or not in this case
-  const { data: property, error: propErr } = await supabase
-    .from("properties")
-    .select("*")
-    .eq("id", params.propertyId)
-    .eq("case_id", params.id)
-    .maybeSingle();
+  // Load case city, property, and its facts in parallel
+  const [{ data: caseData }, { data: property, error: propErr }, { data: facts }] =
+    await Promise.all([
+      supabase
+        .from("decision_cases")
+        .select("city")
+        .eq("id", params.id)
+        .maybeSingle(),
+      supabase
+        .from("properties")
+        .select("*")
+        .eq("id", params.propertyId)
+        .eq("case_id", params.id)
+        .maybeSingle(),
+      supabase
+        .from("property_facts")
+        .select("*")
+        .eq("property_id", params.propertyId)
+        .order("created_at", { ascending: true }),
+    ]);
 
   if (propErr || !property) {
     notFound();
   }
-
-  // Load its facts
-  const { data: facts } = await supabase
-    .from("property_facts")
-    .select("*")
-    .eq("property_id", params.propertyId)
-    .order("created_at", { ascending: true });
 
   const resolved = resolveFacts((facts as PropertyFact[]) || []);
 
@@ -39,6 +45,7 @@ export default async function PropertyDetailPage({
     <PropertyDetailsView
       caseId={params.id}
       property={property}
+      city={caseData?.city ?? null}
       facts={(facts as PropertyFact[]) || []}
       resolved={resolved}
     />
