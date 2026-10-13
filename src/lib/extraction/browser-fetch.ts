@@ -204,7 +204,7 @@ export async function fetchViaHeadlessBrowser(
                       }
                     };
 
-                    ws.onerror = (err) => {
+                    ws.onerror = () => {
                       clearTimeout(timer);
                       finish({ ok: false, error: "WebSocket error" });
                     };
