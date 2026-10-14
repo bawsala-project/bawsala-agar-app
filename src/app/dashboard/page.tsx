@@ -1,33 +1,34 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  FolderOpen,
   MapPin,
   Calendar,
   Building2,
   Plus,
+  ChevronLeft,
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 import { DASHBOARD_STATUS_LABELS, loadDashboardCases, type DashboardCaseStatus } from "@/lib/dashboard/cases";
 import { DeleteCaseButton } from "./delete-case-button";
 import { cn } from "@/lib/utils";
+import { BawsalaCompass } from "@/components/brand/bawsala-compass";
 
 const STATUS_BADGE_CONFIG: Record<DashboardCaseStatus, { badgeClasses: string; dotClass: string }> = {
   analyzed: {
-    badgeClasses: "bg-emerald-50 text-emerald-800 border-emerald-200 shadow-xs",
-    dotClass: "bg-emerald-500",
+    badgeClasses: "bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4] font-medium",
+    dotClass: "bg-[#1E6B43]",
   },
   inspected: {
-    badgeClasses: "bg-blue-50 text-blue-800 border-blue-200 shadow-xs",
-    dotClass: "bg-blue-500",
+    badgeClasses: "bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF] font-medium",
+    dotClass: "bg-[#9A6700]",
   },
   ready: {
-    badgeClasses: "bg-amber-50 text-amber-800 border-amber-200 shadow-xs",
-    dotClass: "bg-amber-500",
+    badgeClasses: "bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] font-medium",
+    dotClass: "bg-[var(--navy)]",
   },
   draft: {
-    badgeClasses: "bg-slate-100 text-slate-700 border-slate-200 shadow-xs",
-    dotClass: "bg-slate-400",
+    badgeClasses: "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] font-medium",
+    dotClass: "bg-[var(--dusty-blue)]",
   },
 };
 
@@ -40,29 +41,26 @@ export default async function DashboardPage() {
   const cases = await loadDashboardCases();
 
   return (
-    <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8" dir="rtl">
+    <main className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8 font-body text-[var(--navy)]" dir="rtl">
       {/* Header Card */}
-      <div className="relative bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-4 overflow-hidden">
-        {/* Subtle Ambient Background Light */}
-        <div className="absolute -top-32 -left-32 w-80 h-80 bg-blue-50/60 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+      <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200/70 text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-blue-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)]" />
               <span>لوحة التحكم والدراسات العقارية</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-[var(--navy)] tracking-tight">
               حالات القرار الخاصة بي ({cases.length})
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-xl leading-relaxed">
               متابعة دراسات التقييم الميداني والمالي، فحص الصكوك ومقارنة العقارات المرشحة لكل مسكن.
             </p>
           </div>
 
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 hover:bg-blue-600 px-6 py-3 text-xs sm:text-sm font-extrabold text-white shadow-md shadow-slate-900/10 transition-all self-start sm:self-center shrink-0 active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] px-6 py-3 text-xs sm:text-sm font-display font-medium text-[var(--cream)] shadow-sm transition-all self-start sm:self-center shrink-0 active:scale-[0.98] no-underline"
           >
             <Plus className="w-4 h-4" />
             <span>إنشاء حالة جديدة +</span>
@@ -72,22 +70,22 @@ export default async function DashboardPage() {
 
       {/* Cases List */}
       {cases.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-8 sm:p-12 text-center space-y-4 shadow-xs">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
-            <FolderOpen className="w-7 h-7" />
+        <div className="bg-[var(--paper)] rounded-[28px] border border-dashed border-[var(--mist)] p-8 sm:p-12 text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center mx-auto p-2.5">
+            <BawsalaCompass size={36} animateHover />
           </div>
-          <div className="space-y-1 max-w-md mx-auto">
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h2 className="text-base sm:text-lg font-display font-bold text-[var(--navy)]">
               لا توجد دراسات قرار نشطة حتى الآن
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
               ابدأ الآن بإنشاء دراسة استشارية جديدة لتحديد ميزانيتك، فحص عقاراتك المرشحة، والمفاضلة بينها بأرقام قطعية.
             </p>
           </div>
           <div className="pt-2">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-blue-600/20 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm shadow-sm transition-all no-underline"
             >
               <Plus className="w-4 h-4" />
               <span>بدء دراسة قرار جديدة</span>
@@ -102,18 +100,18 @@ export default async function DashboardPage() {
             return (
               <li
                 key={c.id}
-                className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm hover:border-slate-300 hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-5 sm:p-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)] hover:border-[var(--navy)] transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="space-y-2">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="flex items-center gap-1.5 font-extrabold text-base sm:text-lg text-slate-900">
-                      <MapPin className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span className="flex items-center gap-1.5 font-display font-bold text-base sm:text-lg text-[var(--navy)]">
+                      <MapPin className="w-4 h-4 text-[var(--navy)] shrink-0" />
                       <span>{c.city}</span>
                     </span>
 
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs font-extrabold",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-xs",
                         statusConfig.badgeClasses
                       )}
                     >
@@ -122,9 +120,9 @@ export default async function DashboardPage() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 flex items-center gap-3">
+                  <p className="text-xs text-[var(--dusty-blue)] flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <Calendar className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                       <span>
                         {new Date(c.createdAt).toLocaleDateString("ar-SA", {
                           year: "numeric",
@@ -134,11 +132,11 @@ export default async function DashboardPage() {
                       </span>
                     </span>
 
-                    <span className="text-slate-300">·</span>
+                    <span>·</span>
 
                     <span className="flex items-center gap-1">
-                      <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-semibold text-slate-700">
+                      <Building2 className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
+                      <span className="font-medium text-[var(--navy)]">
                         {c.propertiesCount} {c.propertiesCount === 1 ? "عقار" : "عقارات"}
                       </span>
                     </span>
@@ -148,9 +146,10 @@ export default async function DashboardPage() {
                 <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
                   <Link
                     href={c.href}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm shadow-sm shadow-blue-600/20 transition-all active:scale-[0.98]"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98] no-underline"
                   >
-                    <span>فتح الحالة ←</span>
+                    <span>فتح الحالة</span>
+                    <ChevronLeft className="w-4 h-4" />
                   </Link>
                   <DeleteCaseButton caseId={c.id} />
                 </div>

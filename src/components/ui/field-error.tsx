@@ -14,7 +14,7 @@ export const FieldError = forwardRef<HTMLParagraphElement, FieldErrorProps>(
       <p
         ref={ref}
         role="alert"
-        className={cn("text-sm text-red-600 mt-1", className)}
+        className={cn("text-xs text-[var(--danger)] font-medium mt-1", className)}
         {...props}
       >
         {content}

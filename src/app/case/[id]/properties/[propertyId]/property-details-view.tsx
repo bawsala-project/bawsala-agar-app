@@ -104,7 +104,7 @@ function AdoptCandidateButton({
         type="button"
         disabled={pending}
         onClick={handleAdopt}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] disabled:opacity-50 text-[var(--cream)] text-xs font-display font-medium transition-all shadow-xs cursor-pointer active:scale-[0.98]"
       >
         {pending ? (
           <>
@@ -118,7 +118,7 @@ function AdoptCandidateButton({
           </>
         )}
       </button>
-      {error && <span className="text-[11px] text-rose-600 font-bold">{error}</span>}
+      {error && <span className="text-[11px] text-[#A62626] font-medium">{error}</span>}
     </div>
   );
 }
@@ -175,14 +175,14 @@ function InlineCorrectionForm({
           value={val}
           onChange={(e) => setVal(e.target.value)}
           placeholder={placeholder || `أدخل ${label}...`}
-          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium"
+          className="w-full px-3.5 py-2.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-xs text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 focus:bg-[var(--paper)] focus:outline-none focus:border-[var(--navy)] transition-all font-medium"
         />
-        {error && <p className="text-[11px] text-rose-600 font-bold mt-1">{error}</p>}
+        {error && <p className="text-[11px] text-[#A62626] font-medium mt-1">{error}</p>}
       </div>
       <button
         type="submit"
         disabled={pending || !val.trim()}
-        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+        className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] disabled:opacity-50 text-[var(--cream)] text-xs font-display font-medium transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
       >
         {pending ? (
           <>
@@ -231,61 +231,61 @@ export function PropertyDetailsView({
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Top Navigation & Breadcrumb */}
       <div>
         <Link
           href={`/case/${caseId}/properties`}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-bold text-slate-700 hover:text-blue-600 hover:border-slate-300 transition-all shadow-xs mb-4"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] hover:border-[var(--navy)] transition-all shadow-xs mb-4"
         >
           <ArrowRight className="w-3.5 h-3.5" />
           <span>العودة لقائمة العقارات المرشحة</span>
         </Link>
 
-        <div className="bg-white rounded-3xl border border-slate-200/70 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-8 shadow-[0_20px_60px_rgba(15,26,43,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] text-xs font-medium">
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--navy)]" />
                 <span>تدقيق الحقائق والأدلة</span>
               </span>
               {city && (
-                <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                <span className="px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
                   {city}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
                 {property.input_mode === "url" ? (
                   <>
-                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                    <Globe className="w-3.5 h-3.5 text-[var(--navy)]" />
                     <span>رابط إلكتروني</span>
                   </>
                 ) : property.input_mode === "image" ? (
                   <>
-                    <Camera className="w-3.5 h-3.5 text-slate-600" />
+                    <Camera className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                     <span>صور الإعلان</span>
                   </>
                 ) : (
                   <>
-                    <FileEdit className="w-3.5 h-3.5 text-slate-600" />
+                    <FileEdit className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                     <span>إدخال يدوي</span>
                   </>
                 )}
               </span>
             </div>
 
-            <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-bold text-[var(--navy)] tracking-tight font-display">
               {displayName}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed">
               مراجعة وتدقيق الحقائق المستخرجة من الإعلانات وفض التعارضات بناءً على الصك ومخطط البناء
             </p>
           </div>
 
-          <div className="flex items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+          <div className="flex items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-[var(--mist)]">
             <div className="text-right">
-              <div className="text-[11px] text-slate-400">إجمالي الحقائق</div>
-              <div className="text-sm font-extrabold text-slate-800">
+              <div className="text-[11px] text-[var(--dusty-blue)]">إجمالي الحقائق</div>
+              <div className="text-sm font-bold text-[var(--navy)] font-display tabular-nums">
                 {facts.length} معلومة مسجلة
               </div>
             </div>
@@ -293,24 +293,20 @@ export function PropertyDetailsView({
         </div>
       </div>
 
-      {/* ============================================================== */}
-      {/* Group A: معلومات متعارضة (Conflicting Fields) */}
-      {/* ============================================================== */}
+      {/* Group A: Conflicting Fields */}
       {conflictingFields.length > 0 && (
-        <section className="bg-white rounded-3xl border border-rose-200/80 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-56 h-56 bg-rose-50/50 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex items-center justify-between pb-4 border-b border-rose-100">
+        <section className="bg-[var(--paper)] rounded-[28px] border border-[#F6CBC8] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#A62626] animate-pulse" />
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] flex items-center gap-2 font-display">
                   <span>معلومات متعارضة تتطلب فض النزاع</span>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800">
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8]">
                     {conflictingFields.length}
                   </span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
                   رُصدت أرقام متضاربة من مصادر مختلفة (مثل اختلاف المساحة في الرابط عن صورة المخطط)
                 </p>
               </div>
@@ -318,8 +314,8 @@ export function PropertyDetailsView({
           </div>
 
           {/* Principle explanation */}
-          <div className="bg-rose-50/60 border border-rose-200/60 rounded-2xl p-4 flex items-start gap-3 text-xs text-rose-900 leading-relaxed font-medium">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <div className="bg-[#FDF1F0] border border-[#F6CBC8] rounded-2xl p-4 flex items-start gap-3 text-xs text-[#A62626] leading-relaxed font-medium">
+            <AlertTriangle className="w-4 h-4 text-[#A62626] shrink-0 mt-0.5" />
             <div>
               <span className="font-bold">قاعدة بوصلة العقار القطعية (Zero Averaging):</span> لا
               نقوم بحساب المتوسط الحسابي للأرقام المتضاربة مطلقاً. يجب أن تعتمد القيمة الرسمية
@@ -336,18 +332,18 @@ export function PropertyDetailsView({
               return (
                 <div
                   key={field}
-                  className="p-5 bg-slate-50/60 rounded-2xl border border-slate-200 space-y-4"
+                  className="p-5 bg-[var(--cream)] rounded-2xl border border-[var(--mist)] space-y-4"
                 >
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-[var(--navy)] flex items-center gap-2 font-display">
                       <span>{def.label}</span>
                       {def.isCritical && (
-                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-semibold text-[#A62626] bg-[#FDF1F0] border border-[#F6CBC8] px-2 py-0.5 rounded-full">
                           شرط حتمي
                         </span>
                       )}
                     </h3>
-                    <span className="text-xs text-slate-400">اختر القيمة الصحيحة</span>
+                    <span className="text-xs text-[var(--dusty-blue)]">اختر القيمة الصحيحة</span>
                   </div>
 
                   {/* Candidate Options */}
@@ -361,18 +357,18 @@ export function PropertyDetailsView({
                       return (
                         <div
                           key={idx}
-                          className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-3 shadow-xs hover:border-slate-300 transition-all"
+                          className="bg-[var(--paper)] p-4 rounded-2xl border border-[var(--mist)] flex flex-col justify-between gap-3 shadow-xs hover:border-[var(--navy)] transition-colors"
                         >
                           <div>
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-base font-extrabold text-slate-900">
+                              <span className="text-base font-bold text-[var(--navy)] font-display tabular-nums">
                                 {formatFieldValue(field, cand.value)}
                               </span>
                               <div className="flex gap-1 flex-wrap">
                                 {cand.sources.map((s, sIdx) => (
                                   <span
                                     key={sIdx}
-                                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold"
+                                    className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] font-medium"
                                   >
                                     {getSourceLabel(s)}
                                   </span>
@@ -381,13 +377,13 @@ export function PropertyDetailsView({
                             </div>
 
                             {quotes.length > 0 && (
-                              <blockquote className="text-xs text-slate-500 italic mt-2 p-2 bg-slate-50 rounded-xl border-r-2 border-slate-300 line-clamp-2">
+                              <blockquote className="text-xs text-[var(--dusty-blue)] italic mt-2 p-2 bg-[var(--cream)] rounded-xl border-r-2 border-[var(--navy)] line-clamp-2">
                                 &quot;{quotes[0]}&quot;
                               </blockquote>
                             )}
                           </div>
 
-                          <div className="pt-2 border-t border-slate-100">
+                          <div className="pt-2 border-t border-[var(--mist)]">
                             <AdoptCandidateButton
                               caseId={caseId}
                               propertyId={property.id}
@@ -401,8 +397,8 @@ export function PropertyDetailsView({
                   </div>
 
                   {/* Manual Override Alternative */}
-                  <div className="pt-3 border-t border-slate-200">
-                    <p className="text-xs font-bold text-slate-700 mb-1">
+                  <div className="pt-3 border-t border-[var(--mist)]">
+                    <p className="text-xs font-medium text-[var(--navy)] mb-1">
                       أو أدخل القيمة الفعلية المعتمدة وفق الصك:
                     </p>
                     <InlineCorrectionForm
@@ -420,22 +416,20 @@ export function PropertyDetailsView({
         </section>
       )}
 
-      {/* ============================================================== */}
-      {/* Group B: معلومات ناقصة (Missing / Unknown Fields) */}
-      {/* ============================================================== */}
+      {/* Group B: Missing / Unknown Fields */}
       {unknownFields.length > 0 && (
-        <section className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <section className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              <span className="w-2 h-2 rounded-full bg-[#9A6700]" />
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] flex items-center gap-2 font-display">
                   <span>معلومات ناقصة ومطلوبة للتقييم</span>
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60">
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF]">
                     {unknownFields.length}
                   </span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
                   لم يتم العثور على هذه الحقائق في الإعلان. يمكنك إدخالها يدوياً لرفع دقة التقييم والمقارنة.
                 </p>
               </div>
@@ -449,16 +443,16 @@ export function PropertyDetailsView({
               return (
                 <div
                   key={field}
-                  className="p-4 sm:p-5 bg-slate-50/50 rounded-2xl border border-slate-200/80 space-y-2 hover:border-slate-300 transition-all"
+                  className="p-4 sm:p-5 bg-[var(--cream)] rounded-2xl border border-[var(--mist)] space-y-2 hover:border-[var(--navy)] transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-bold text-slate-800">{def.label}</span>
+                    <span className="text-xs sm:text-sm font-medium text-[var(--navy)]">{def.label}</span>
                     {def.isCritical ? (
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold text-[#9A6700] bg-[#FFF9EC] border border-[#F9E2AF] px-2 py-0.5 rounded-full">
                         مهم للمقارنة
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400">غير متوفر</span>
+                      <span className="text-[10px] text-[var(--dusty-blue)]">غير متوفر</span>
                     )}
                   </div>
 
@@ -477,21 +471,19 @@ export function PropertyDetailsView({
         </section>
       )}
 
-      {/* ============================================================== */}
-      {/* Group C: معلومات مؤكدة ومدققة (Known Fields) */}
-      {/* ============================================================== */}
-      <section className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      {/* Group C: Known Fields */}
+      <section className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+            <span className="w-2 h-2 rounded-full bg-[#1E6B43]" />
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] flex items-center gap-2 font-display">
                 <span>حقائق مؤكدة ومدققة</span>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/60">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]">
                   {knownFields.length}
                 </span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
                 بيانات تم التحقق من مصدرها وتثبيتها للاستخدام في محرك المقارنة والتقييم
               </p>
             </div>
@@ -499,14 +491,14 @@ export function PropertyDetailsView({
         </div>
 
         {knownFields.length === 0 ? (
-          <div className="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-            <p className="text-xs font-bold text-slate-500">لم يتم تأكيد أي معلومات بعد</p>
-            <p className="text-[11px] text-slate-400 mt-1">
+          <div className="text-center py-8 bg-[var(--cream)] rounded-2xl border border-dashed border-[var(--mist)]">
+            <p className="text-xs font-medium text-[var(--navy)]">لم يتم تأكيد أي معلومات بعد</p>
+            <p className="text-[11px] text-[var(--dusty-blue)] mt-1">
               قم بفض التعارضات أو إدخال المعلومات الناقصة أعلاه
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 rounded-2xl border border-slate-200/70 overflow-hidden bg-slate-50/30">
+          <div className="divide-y divide-[var(--mist)] rounded-2xl border border-[var(--mist)] overflow-hidden bg-[var(--paper)]">
             {knownFields.map((field) => {
               const res = resolved.fields[field];
               if (res.status !== "known") return null;
@@ -518,18 +510,18 @@ export function PropertyDetailsView({
               const evidenceQuote = relatedFacts.find((f) => f.evidence_text)?.evidence_text;
 
               return (
-                <div key={field} className="p-4 sm:p-5 space-y-2 hover:bg-slate-50 transition-colors">
+                <div key={field} className="p-4 sm:p-5 space-y-2 hover:bg-[var(--cream)]/40 transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-slate-500 font-semibold">{def.label}:</span>
-                      <span className="text-sm sm:text-base font-extrabold text-slate-900">
+                      <span className="text-xs text-[var(--dusty-blue)]">{def.label}:</span>
+                      <span className="text-sm sm:text-base font-bold text-[var(--navy)] font-display tabular-nums">
                         {formatFieldValue(field, res.value)}
                       </span>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                           res.certainty === "user_stated"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                            ? "bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]"
+                            : "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]"
                         }`}
                       >
                         {res.certainty === "user_stated" ? "إدخال شخصي" : "مستخرج من الإعلان"}
@@ -539,7 +531,7 @@ export function PropertyDetailsView({
                     <button
                       type="button"
                       onClick={() => setEditingField(isEditing ? null : field)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 self-start sm:self-center px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--navy)] hover:text-[var(--midnight)] self-start sm:self-center px-3 py-1 rounded-full border border-[var(--mist)] hover:border-[var(--navy)] bg-[var(--cream)] transition-colors cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>{isEditing ? "إلغاء التعديل" : "تصحيح"}</span>
@@ -547,19 +539,19 @@ export function PropertyDetailsView({
                   </div>
 
                   {evidenceQuote && (
-                    <details className="text-xs text-slate-600 pt-1 group">
-                      <summary className="cursor-pointer text-slate-400 hover:text-slate-600 select-none inline-flex items-center gap-1 font-medium">
+                    <details className="text-xs text-[var(--dusty-blue)] pt-1 group">
+                      <summary className="cursor-pointer text-[var(--dusty-blue)] hover:text-[var(--navy)] select-none inline-flex items-center gap-1 font-medium">
                         <span>عرض نص الدليل المقتبس</span>
                         <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
                       </summary>
-                      <blockquote className="mt-2 p-3 bg-white rounded-xl border-r-2 border-blue-500 text-slate-700 italic shadow-xs">
+                      <blockquote className="mt-2 p-3 bg-[var(--cream)] rounded-xl border-r-2 border-[var(--navy)] text-[var(--navy)] italic">
                         &quot;{evidenceQuote}&quot;
                       </blockquote>
                     </details>
                   )}
 
                   {isEditing && (
-                    <div className="pt-3 border-t border-slate-200 mt-2">
+                    <div className="pt-3 border-t border-[var(--mist)] mt-2">
                       <InlineCorrectionForm
                         caseId={caseId}
                         propertyId={property.id}
@@ -577,18 +569,16 @@ export function PropertyDetailsView({
         )}
       </section>
 
-      {/* ============================================================== */}
-      {/* Group D: ادعاءات ومميزات تسويقية (Listing Claims) */}
-      {/* ============================================================== */}
-      <section className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      {/* Group D: Listing Claims */}
+      <section className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-900" />
+            <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
                 مميزات وادعاءات تسويقية (غير مدققة رسمياً)
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
                 نصوص وادعاءات منسوخة من وصف المسوق لم تخضع بعد للتحقق الميداني
               </p>
             </div>
@@ -597,23 +587,23 @@ export function PropertyDetailsView({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Unit Claims */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Home className="w-3.5 h-3.5 text-blue-600" />
+          <div className="bg-[var(--cream)] p-5 rounded-2xl border border-[var(--mist)] space-y-3">
+            <div className="flex items-center justify-between border-b border-[var(--mist)] pb-2">
+              <h3 className="text-xs font-medium text-[var(--navy)] flex items-center gap-1.5">
+                <Home className="w-3.5 h-3.5 text-[var(--navy)]" />
                 <span>مواصفات الوحدة</span>
               </h3>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
                 {resolved.claims.unit.length}
               </span>
             </div>
             {resolved.claims.unit.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">لا توجد ادعاءات مسجلة</p>
+              <p className="text-xs text-[var(--dusty-blue)] italic">لا توجد ادعاءات مسجلة</p>
             ) : (
-              <ul className="text-xs text-slate-700 space-y-2">
+              <ul className="text-xs text-[var(--navy)] space-y-2">
                 {resolved.claims.unit.map((c) => (
                   <li key={c.id} className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold mt-0.5">•</span>
+                    <span className="text-[var(--navy)] font-bold mt-0.5">•</span>
                     <span className="leading-relaxed">{c.raw_text || String(c.value)}</span>
                   </li>
                 ))}
@@ -622,23 +612,23 @@ export function PropertyDetailsView({
           </div>
 
           {/* Building Claims */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+          <div className="bg-[var(--cream)] p-5 rounded-2xl border border-[var(--mist)] space-y-3">
+            <div className="flex items-center justify-between border-b border-[var(--mist)] pb-2">
+              <h3 className="text-xs font-medium text-[var(--navy)] flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-[var(--navy)]" />
                 <span>مواصفات المبنى</span>
               </h3>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
                 {resolved.claims.building.length}
               </span>
             </div>
             {resolved.claims.building.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">لا توجد ادعاءات مسجلة</p>
+              <p className="text-xs text-[var(--dusty-blue)] italic">لا توجد ادعاءات مسجلة</p>
             ) : (
-              <ul className="text-xs text-slate-700 space-y-2">
+              <ul className="text-xs text-[var(--navy)] space-y-2">
                 {resolved.claims.building.map((c) => (
                   <li key={c.id} className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold mt-0.5">•</span>
+                    <span className="text-[var(--navy)] font-bold mt-0.5">•</span>
                     <span className="leading-relaxed">{c.raw_text || String(c.value)}</span>
                   </li>
                 ))}
@@ -647,23 +637,23 @@ export function PropertyDetailsView({
           </div>
 
           {/* Neighborhood Claims */}
-          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-              <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+          <div className="bg-[var(--cream)] p-5 rounded-2xl border border-[var(--mist)] space-y-3">
+            <div className="flex items-center justify-between border-b border-[var(--mist)] pb-2">
+              <h3 className="text-xs font-medium text-[var(--navy)] flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--navy)]" />
                 <span>الحي والخدمات</span>
               </h3>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white text-slate-600 border border-slate-200">
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
                 {resolved.claims.neighborhood.length}
               </span>
             </div>
             {resolved.claims.neighborhood.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">لا توجد ادعاءات مسجلة</p>
+              <p className="text-xs text-[var(--dusty-blue)] italic">لا توجد ادعاءات مسجلة</p>
             ) : (
-              <ul className="text-xs text-slate-700 space-y-2">
+              <ul className="text-xs text-[var(--navy)] space-y-2">
                 {resolved.claims.neighborhood.map((c) => (
                   <li key={c.id} className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold mt-0.5">•</span>
+                    <span className="text-[var(--navy)] font-bold mt-0.5">•</span>
                     <span className="leading-relaxed">{c.raw_text || String(c.value)}</span>
                   </li>
                 ))}
@@ -674,10 +664,10 @@ export function PropertyDetailsView({
       </section>
 
       {/* Bottom Action Footer */}
-      <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)] flex flex-col sm:flex-row items-center justify-between gap-4">
         <Link
           href={`/case/${caseId}/properties`}
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
           <span>العودة لحصر العقارات</span>
@@ -686,7 +676,7 @@ export function PropertyDetailsView({
         <Link href={`/case/${caseId}/preflight`} className="w-full sm:w-auto">
           <button
             type="button"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
           >
             <span>المتابعة إلى بوابة الفحص المبدئي</span>
             <ArrowLeft className="w-4 h-4" />

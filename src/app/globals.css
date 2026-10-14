@@ -1,9 +1,350 @@
-@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap');
+@import "../styles/tokens.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================================
+   1. Base HTML & Body Settings (Quiet Editorial Real-Estate Brand on Cream Paper)
+   ============================================================================= */
+html {
+  direction: rtl;
+  overflow-x: hidden;
+  max-width: 100vw;
+  background-color: var(--cream);
+  color: var(--navy);
+  font-family: var(--font-body);
+}
+
+body {
+  direction: rtl;
+  overflow-x: hidden;
+  max-width: 100vw;
+  background-color: var(--cream);
+  color: var(--navy);
+  font-family: var(--font-body);
+  font-size: clamp(15px, 1.05vw, 17px);
+  line-height: 1.8;
+  position: relative;
+  letter-spacing: normal !important;
+}
+
+/* Tabular nums on every number */
+*, *::before, *::after {
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+
+/* Never apply letter-spacing to Arabic text (breaks cursive connections) */
+[dir="rtl"],
+[lang="ar"],
+body {
+  letter-spacing: normal !important;
+}
+
+/* Latin text may use subtle tracking */
+[dir="ltr"]:not([lang="ar"]),
+:lang(en) {
+  letter-spacing: 0.04em;
+}
+
+/* Custom Selection */
+::selection {
+  background: rgba(189, 196, 212, 0.45) !important;
+  color: var(--navy) !important;
+}
+
+/* Slim Custom Scrollbar (6px) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mist);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dusty-blue);
+}
+
 * {
-  font-family: 'Almarai', sans-serif;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mist) var(--cream);
+}
+
+/* Global focus-visible ring: 2px solid --navy, offset 3px */
+:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--navy) !important;
+  outline-offset: 3px !important;
+}
+
+/* =============================================================================
+   2. Typography (Display: Thmanyah Serif Display; Body: Thmanyah Sans)
+   ============================================================================= */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.3;
+  color: var(--navy);
+  letter-spacing: normal !important;
+}
+
+h1 {
+  font-size: clamp(32px, 4.2vw, 54px);
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+h4, h5, h6 {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+p, li {
+  line-height: 1.8;
+  color: var(--dusty-blue);
+  letter-spacing: normal !important;
+}
+
+/* Helper text */
+.text-helper,
+.text-muted {
+  color: var(--dusty-blue) !important;
+}
+
+small,
+.text-xs,
+.text-sm {
+  font-size: clamp(12px, 0.85rem, 14px);
+  color: var(--dusty-blue);
+  letter-spacing: normal !important;
+}
+
+label {
+  color: var(--navy);
+  font-size: clamp(13px, 0.85rem, 14px);
+}
+
+/* =============================================================================
+   3. Surfaces & Cards (Paper on Cream, 1px Mist border, 0 20px 60px rgba(15,26,43,0.06))
+   ============================================================================= */
+.surface-card {
+  background-color: var(--paper);
+  border: 1px solid var(--mist);
+  border-radius: var(--radius-card);
+  box-shadow: 0 20px 60px rgba(15, 26, 43, 0.06);
+}
+
+.surface-card-interactive {
+  background-color: var(--paper);
+  border: 1px solid var(--mist);
+  border-radius: var(--radius-card);
+  box-shadow: 0 20px 60px rgba(15, 26, 43, 0.06);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.surface-card-interactive:hover {
+  transform: translateY(-4px);
+  border-color: var(--navy);
+  box-shadow: 0 24px 70px rgba(15, 26, 43, 0.09);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--navy);
+  color: var(--cream);
+  border-radius: var(--radius-pill);
+  padding: 12px 28px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--midnight);
+  transform: translateY(-1px);
+}
+
+.btn-secondary,
+.btn-ghost {
+  background-color: transparent;
+  color: var(--navy);
+  border: 1px solid var(--navy);
+  border-radius: var(--radius-pill);
+  padding: 12px 28px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-secondary:hover,
+.btn-ghost:hover {
+  background-color: rgba(15, 26, 43, 0.05);
+}
+
+/* Badges & Tags */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--mist);
+  background-color: var(--paper);
+  color: var(--dusty-blue);
+}
+
+/* Status Badges */
+.badge-ok {
+  background-color: var(--status-ok-bg);
+  color: var(--status-ok);
+  border: 1px solid var(--status-ok-border);
+}
+
+.badge-warn {
+  background-color: var(--status-warn-bg);
+  color: var(--status-warn);
+  border: 1px solid var(--status-warn-border);
+}
+
+.badge-danger {
+  background-color: var(--status-danger-bg);
+  color: var(--status-danger);
+  border: 1px solid var(--status-danger-border);
+}
+
+/* =============================================================================
+   4. Motion & Animation Rules
+   ============================================================================= */
+@keyframes compassSpinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-compass-spin {
+  animation: compassSpinSlow 20s linear infinite;
+}
+
+/* Prefers-reduced-motion fallback */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-compass-spin {
+    animation: none !important;
+  }
+}
+
+/* =============================================================================
+   5. Shared Button System (Editorial Standard)
+   - Primary: var(--navy) background, var(--cream) text at full opacity,
+     font weight 500-600, font-size >= 16px.
+   - Disabled: keeps navy background, text cream at minimum 70% opacity.
+   - Ghost: transparent/cream background, 1px navy border, navy text at full opacity.
+   ============================================================================= */
+.btn-primary,
+button.btn-primary,
+a.btn-primary {
+  background-color: var(--btn-primary-bg) !important;
+  color: var(--btn-primary-text) !important;
+  font-family: var(--font-body);
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  opacity: 1 !important;
+}
+
+.btn-primary *,
+.btn-primary svg,
+.btn-primary .lucide {
+  color: var(--btn-primary-text) !important;
+  opacity: 1 !important;
+}
+
+.btn-primary:disabled,
+.btn-primary[aria-disabled="true"] {
+  background-color: var(--btn-primary-disabled-bg) !important;
+  color: var(--btn-primary-disabled-text) !important;
+  opacity: 1 !important;
+}
+
+.btn-primary:disabled *,
+.btn-primary:disabled svg {
+  color: var(--btn-primary-disabled-text) !important;
+  opacity: 1 !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--btn-primary-hover-bg) !important;
+  color: var(--btn-primary-hover-text) !important;
+}
+
+.btn-primary:hover:not(:disabled) *,
+.btn-primary:hover:not(:disabled) svg {
+  color: var(--btn-primary-hover-text) !important;
+}
+
+.btn-ghost,
+button.btn-ghost,
+a.btn-ghost {
+  background-color: var(--btn-ghost-bg) !important;
+  color: var(--btn-ghost-text) !important;
+  border: 1px solid var(--btn-ghost-border) !important;
+  font-family: var(--font-body);
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  opacity: 1 !important;
+}
+
+.btn-ghost *,
+.btn-ghost svg {
+  color: var(--btn-ghost-text) !important;
+  opacity: 1 !important;
 }

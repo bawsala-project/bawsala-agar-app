@@ -4,7 +4,6 @@ import type { RequirementsRow } from "./constraints";
 
 describe("Comparison Engine (compare.ts) - Acceptance 1", () => {
   const sampleRequirements: RequirementsRow = {
-    id: "req-1",
     case_id: "case-1",
     max_budget_sar: 900_000,
     household_size: 4,
@@ -16,7 +15,6 @@ describe("Comparison Engine (compare.ts) - Acceptance 1", () => {
     ],
     preferences: [],
     important_locations: [],
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 

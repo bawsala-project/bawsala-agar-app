@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   ArrowLeft,
   Coins,
-  Users,
   Layers,
   Car,
   Sparkles,
@@ -60,12 +59,12 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-900 hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+      className="w-full sm:w-auto px-8 py-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-[var(--cream)] font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-xs cursor-pointer"
     >
       {pending ? (
         <>
-          <Loader2 className="w-4 h-4 animate-spin text-white" />
-          <span>جاري حفظ المعايير والانتقال...</span>
+          <Loader2 className="w-4 h-4 animate-spin text-[var(--cream)]" />
+          <span>جاري حفظ المعايير والانتقال…</span>
         </>
       ) : (
         <>
@@ -128,68 +127,59 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     initialConstraints.some((c) => c.key === "new_building_only")
   );
 
-  const initialMaxFloor = initialConstraints.find((c) => c.key === "max_floor");
-  const [hasMaxFloor, setHasMaxFloor] = useState(Boolean(initialMaxFloor));
+  const existingMaxFloor = initialConstraints.find((c) => c.key === "max_floor");
+  const [hasMaxFloor, setHasMaxFloor] = useState(Boolean(existingMaxFloor));
   const [maxFloorValue, setMaxFloorValue] = useState(
-    initialMaxFloor?.value !== undefined ? String(initialMaxFloor.value) : ""
+    existingMaxFloor?.value !== undefined ? String(existingMaxFloor.value) : "4"
   );
 
-  const [customConstraints, setCustomConstraints] = useState<CustomConstraintItem[]>(() => {
-    return initialConstraints
-      .filter((c) => c.key === "custom")
-      .map((c, index) => ({
-        id: `custom-init-${index}`,
-        text: String(c.value ?? c.label ?? ""),
-      }));
-  });
+  // Custom constraints list (up to 10 total)
+  const initialCustom = initialConstraints
+    .filter((c) => c.key === "custom" || c.key.startsWith("custom_"))
+    .map((c, i) => ({ id: `c-${i}`, text: c.label }));
+  const [customConstraints, setCustomConstraints] =
+    useState<CustomConstraintItem[]>(initialCustom);
 
-  // Section 4: Preferences and Important locations
+  // Section 4: Preferences (weighted)
   const initialPrefs = Array.isArray(initialData?.preferences)
     ? (initialData?.preferences as Array<{
         label: string;
         weight: PreferenceWeight;
-      }>)
-    : [];
+      }>).map((p, i) => ({ id: `p-${i}`, label: p.label, weight: p.weight }))
+    : [
+        { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" as PreferenceWeight },
+        { id: "p-1", label: "قرب من المسجد والحديقة", weight: "high" as PreferenceWeight },
+      ];
+  const [preferences, setPreferences] = useState<PreferenceItem[]>(initialPrefs);
 
-  const [preferences, setPreferences] = useState<PreferenceItem[]>(() => {
-    return initialPrefs.map((p, index) => ({
-      id: `pref-init-${index}`,
-      label: String(p.label ?? ""),
-      weight:
-        p.weight === "high" || p.weight === "low" ? p.weight : "medium",
-    }));
-  });
-
+  // Section 5: Important locations
   const initialLocs = Array.isArray(initialData?.important_locations)
     ? (initialData?.important_locations as Array<{
         label: string;
         address_text: string;
         frequency: LocationFrequency;
-      }>)
-    : [];
+      }>).map((l, i) => ({
+        id: `l-${i}`,
+        label: l.label,
+        address_text: l.address_text,
+        frequency: l.frequency,
+      }))
+    : [{ id: "l-0", label: "مقر العمل الرئيسي", address_text: "", frequency: "daily" as LocationFrequency }];
+  const [locations, setLocations] = useState<LocationItem[]>(initialLocs);
 
-  const [locations, setLocations] = useState<LocationItem[]>(() => {
-    return initialLocs.map((l, index) => ({
-      id: `loc-init-${index}`,
-      label: String(l.label ?? ""),
-      address_text: String(l.address_text ?? ""),
-      frequency: l.frequency === "weekly" ? "weekly" : "daily",
-    }));
-  });
-
-  // Total hard constraints count
-  const fixedConstraintsCount =
-    (hasElevator ? 1 : 0) +
-    (hasParking ? 1 : 0) +
-    (hasNewBuilding ? 1 : 0) +
-    (hasMaxFloor ? 1 : 0);
-  const totalHardConstraints = fixedConstraintsCount + customConstraints.length;
-
+  // Constraint handlers
   const handleAddCustomConstraint = () => {
-    if (totalHardConstraints >= 10) return;
+    const totalActive =
+      (hasElevator ? 1 : 0) +
+      (hasParking ? 1 : 0) +
+      (hasNewBuilding ? 1 : 0) +
+      (hasMaxFloor ? 1 : 0) +
+      customConstraints.length;
+
+    if (totalActive >= 10) return;
     setCustomConstraints((prev) => [
       ...prev,
-      { id: `custom-${Date.now()}-${prev.length}`, text: "" },
+      { id: `c-${Date.now()}`, text: "" },
     ]);
   };
 
@@ -203,11 +193,12 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     setCustomConstraints((prev) => prev.filter((c) => c.id !== id));
   };
 
+  // Preference handlers
   const handleAddPreference = () => {
     if (preferences.length >= 10) return;
     setPreferences((prev) => [
       ...prev,
-      { id: `pref-${Date.now()}-${prev.length}`, label: "", weight: "medium" },
+      { id: `p-${Date.now()}`, label: "", weight: "medium" },
     ]);
   };
 
@@ -217,11 +208,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     value: string
   ) => {
     setPreferences((prev) =>
-      prev.map((p) => {
-        if (p.id !== id) return p;
-        if (field === "label") return { ...p, label: value };
-        return { ...p, weight: value as PreferenceWeight };
-      })
+      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
     );
   };
 
@@ -229,12 +216,13 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     setPreferences((prev) => prev.filter((p) => p.id !== id));
   };
 
+  // Location handlers
   const handleAddLocation = () => {
     if (locations.length >= 5) return;
     setLocations((prev) => [
       ...prev,
       {
-        id: `loc-${Date.now()}-${prev.length}`,
+        id: `l-${Date.now()}`,
         label: "",
         address_text: "",
         frequency: "daily",
@@ -248,12 +236,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     value: string
   ) => {
     setLocations((prev) =>
-      prev.map((l) => {
-        if (l.id !== id) return l;
-        if (field === "label") return { ...l, label: value };
-        if (field === "address_text") return { ...l, address_text: value };
-        return { ...l, frequency: value as LocationFrequency };
-      })
+      prev.map((l) => (l.id === id ? { ...l, [field]: value } : l))
     );
   };
 
@@ -261,33 +244,41 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     setLocations((prev) => prev.filter((l) => l.id !== id));
   };
 
-  // Build serialized arrays for submission
+  // Build serialized arrays for hidden inputs
   const serializedConstraints: HardConstraint[] = [];
   if (hasElevator) {
-    serializedConstraints.push({ key: "elevator_required", label: "وجود مصعد" });
-  }
-  if (hasParking) {
-    serializedConstraints.push({ key: "private_parking", label: "موقف سيارة خاص" });
-  }
-  if (hasNewBuilding) {
-    serializedConstraints.push({ key: "new_building_only", label: "مبنى جديد / أول ساكن" });
-  }
-  if (hasMaxFloor) {
     serializedConstraints.push({
-      key: "max_floor",
-      label: "أقصى دور",
-      value: maxFloorValue !== "" ? Number(maxFloorValue) : 0,
+      key: "elevator_required",
+      label: "وجود مصعد عامل في المبنى",
     });
   }
-  for (const item of customConstraints) {
-    if (item.text.trim()) {
+  if (hasParking) {
+    serializedConstraints.push({
+      key: "private_parking",
+      label: "موقف سيارة خاص ومسجل بالصك",
+    });
+  }
+  if (hasNewBuilding) {
+    serializedConstraints.push({
+      key: "new_building_only",
+      label: "مبنى جديد أو أول ساكن",
+    });
+  }
+  if (hasMaxFloor && maxFloorValue) {
+    serializedConstraints.push({
+      key: "max_floor",
+      label: `أقصى دور مسموح به هو الدور ${maxFloorValue}`,
+      value: Number(maxFloorValue),
+    });
+  }
+  customConstraints.forEach((c) => {
+    if (c.text.trim()) {
       serializedConstraints.push({
         key: "custom",
-        label: item.text.trim(),
-        value: item.text.trim(),
+        label: c.text.trim(),
       });
     }
-  }
+  });
 
   const serializedPreferences = preferences
     .filter((p) => p.label.trim())
@@ -308,26 +299,23 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
   const showBudgetPreview = !isNaN(parsedBudget) && parsedBudget > 0;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10" dir="rtl">
       {/* Hero / Page Intro */}
-      <section className="text-center max-w-3xl mx-auto space-y-4">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-slate-700 text-xs font-medium shadow-xs">
-          <ShieldCheck className="w-4 h-4 text-blue-600" />
+      <section className="text-center max-w-3xl mx-auto space-y-3">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium shadow-xs">
+          <ShieldCheck className="w-4 h-4 text-[var(--navy)]" />
           <span>المرحلة الأولى • صياغة المعايير الهندسية والمالية</span>
           {city && (
             <>
-              <span className="text-slate-300">•</span>
-              <span className="font-bold text-blue-600">{city}</span>
+              <span className="text-[var(--mist)]">•</span>
+              <span className="font-bold text-[var(--navy)]">{city}</span>
             </>
           )}
         </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.3]">
-          محددات واحتياجات قرار الشراء <br className="hidden sm:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-l from-slate-900 via-slate-800 to-blue-600">
-            بدقة هندسية غير قابلة للمساومة
-          </span>
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-[var(--navy)] tracking-tight leading-[1.3] font-display">
+          محددات واحتياجات قرار الشراء
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 font-normal leading-relaxed max-w-2xl mx-auto">
+        <p className="text-xs sm:text-sm text-[var(--dusty-blue)] font-normal leading-relaxed max-w-2xl mx-auto">
           تحدد هذه المعايير خوارزمية الفرز والتقييم الحتمي. أي عقار يتجاوز ميزانيتك القصوى أو يخالف شروطك الحتمية سيتم استبعاده فوراً من المنافسة.
         </p>
       </section>
@@ -353,22 +341,20 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
         {/* ============================================================== */}
         {/* Section 1: الميزانية وطريقة الشراء */}
         {/* ============================================================== */}
-        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-56 h-56 bg-blue-50/50 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
                   الميزانية والقدرة المالية
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
                   السقف المالي الأعلى وطريقة السداد المقترحة
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
               شرط حتمي
             </span>
           </div>
@@ -376,24 +362,22 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Budget Input */}
             <div className="space-y-2">
-              <label htmlFor="max_budget_sar" className="block text-xs font-bold text-slate-700">
+              <label htmlFor="max_budget_sar" className="block text-xs font-bold text-[var(--navy)]">
                 الميزانية القصوى المتاحة (ريال سعودي)
               </label>
-              <div className="relative">
-                <input
-                  id="max_budget_sar"
-                  name="max_budget_sar"
-                  type="number"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  placeholder="مثال: 950000"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
-                />
-              </div>
+              <input
+                id="max_budget_sar"
+                name="max_budget_sar"
+                type="number"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder="مثال: 950000"
+                className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+              />
 
               {showBudgetPreview && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 border border-blue-200/60 text-blue-700 text-xs font-bold mt-1">
-                  <Coins className="w-3.5 h-3.5 text-blue-600" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] text-xs font-bold mt-1">
+                  <Coins className="w-3.5 h-3.5 text-[var(--navy)]" />
                   <span>المبلغ المعتمد: {formatSAR(parsedBudget)}</span>
                 </div>
               )}
@@ -405,7 +389,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
 
             {/* Purchase Method */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700">
+              <label className="block text-xs font-bold text-[var(--navy)]">
                 طريقة التمويل والشراء
               </label>
               <input type="hidden" name="purchase_method" value={purchaseMethod} />
@@ -415,12 +399,12 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                   onClick={() => setPurchaseMethod("cash")}
                   className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     purchaseMethod === "cash"
-                      ? "bg-slate-900 text-white border-slate-900 shadow-xs font-bold"
-                      : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                      ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] font-bold shadow-xs"
+                      : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)] font-medium"
                   }`}
                 >
                   <span className="block text-xs">نقداً</span>
-                  <span className="block text-[10px] opacity-70 mt-0.5">سيولة جاهزة</span>
+                  <span className="block text-[10px] opacity-75 mt-0.5">سيولة جاهزة</span>
                 </button>
 
                 <button
@@ -428,12 +412,12 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                   onClick={() => setPurchaseMethod("finance")}
                   className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     purchaseMethod === "finance"
-                      ? "bg-slate-900 text-white border-slate-900 shadow-xs font-bold"
-                      : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                      ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] font-bold shadow-xs"
+                      : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)] font-medium"
                   }`}
                 >
                   <span className="block text-xs">تمويل عقاري</span>
-                  <span className="block text-[10px] opacity-70 mt-0.5">بنكي / دعم</span>
+                  <span className="block text-[10px] opacity-75 mt-0.5">بنكي / دعم</span>
                 </button>
 
                 <button
@@ -441,12 +425,12 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                   onClick={() => setPurchaseMethod("undecided")}
                   className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                     purchaseMethod === "undecided"
-                      ? "bg-slate-900 text-white border-slate-900 shadow-xs font-bold"
-                      : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                      ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] font-bold shadow-xs"
+                      : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)] font-medium"
                   }`}
                 >
                   <span className="block text-xs">لم يتقرر بعد</span>
-                  <span className="block text-[10px] opacity-70 mt-0.5">قيد الدراسة</span>
+                  <span className="block text-[10px] opacity-75 mt-0.5">قيد الدراسة</span>
                 </button>
               </div>
               {state?.errors?.purchase_method?.[0] && (
@@ -459,42 +443,43 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
         {/* ============================================================== */}
         {/* Section 2: احتياج الأسرة */}
         {/* ============================================================== */}
-        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                  مواصفات المسكن واحتياج الأسرة
+                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
+                  السعة المكانية للأسرة
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  الحد الأدنى لعدد الغرف والمساحة الصافية المناسبة لأسرتك
+                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
+                  الحد الأدنى لعدد الغرف والمساحة الصافية
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
-              معايير تشغيلية
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
+              احتياج وظيفي
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {/* Household Size */}
             <div className="space-y-2">
-              <label htmlFor="household_size" className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-slate-400" />
-                <span>أفراد الأسرة المقيمين (1–20)</span>
+              <label htmlFor="household_size" className="block text-xs font-bold text-[var(--navy)]">
+                عدد أفراد الأسرة
               </label>
-              <input
-                id="household_size"
-                name="household_size"
-                type="number"
-                min={1}
-                max={20}
-                value={householdSize}
-                onChange={(e) => setHouseholdSize(e.target.value)}
-                placeholder="مثال: 4"
-                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
-              />
+              <div className="relative">
+                <input
+                  id="household_size"
+                  name="household_size"
+                  type="number"
+                  min={1}
+                  max={25}
+                  value={householdSize}
+                  onChange={(e) => setHouseholdSize(e.target.value)}
+                  placeholder="مثال: 5"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                />
+              </div>
               {state?.errors?.household_size?.[0] && (
                 <FieldError message={state.errors.household_size[0]} />
               )}
@@ -502,42 +487,45 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
 
             {/* Min Bedrooms */}
             <div className="space-y-2">
-              <label htmlFor="min_bedrooms" className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                <span>الحد الأدنى لغرف النوم (1–10)</span>
+              <label htmlFor="min_bedrooms" className="block text-xs font-bold text-[var(--navy)]">
+                الحد الأدنى لغرف النوم
               </label>
-              <input
-                id="min_bedrooms"
-                name="min_bedrooms"
-                type="number"
-                min={1}
-                max={10}
-                value={minBedrooms}
-                onChange={(e) => setMinBedrooms(e.target.value)}
-                placeholder="مثال: 3"
-                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
-              />
+              <div className="relative">
+                <input
+                  id="min_bedrooms"
+                  name="min_bedrooms"
+                  type="number"
+                  min={1}
+                  max={15}
+                  value={minBedrooms}
+                  onChange={(e) => setMinBedrooms(e.target.value)}
+                  placeholder="مثال: 3"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                />
+              </div>
               {state?.errors?.min_bedrooms?.[0] && (
                 <FieldError message={state.errors.min_bedrooms[0]} />
               )}
             </div>
 
-            {/* Min Area Sqm */}
+            {/* Min Area */}
             <div className="space-y-2">
-              <label htmlFor="min_area_sqm" className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-slate-400" />
-                <span>الحد الأدنى للمساحة (م²) (اختياري)</span>
+              <label htmlFor="min_area_sqm" className="block text-xs font-bold text-[var(--navy)]">
+                الحد الأدنى للمساحة (م²)
               </label>
-              <input
-                id="min_area_sqm"
-                name="min_area_sqm"
-                type="number"
-                step="any"
-                value={minAreaSqm}
-                onChange={(e) => setMinAreaSqm(e.target.value)}
-                placeholder="مثال: 150"
-                className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
-              />
+              <div className="relative">
+                <input
+                  id="min_area_sqm"
+                  name="min_area_sqm"
+                  type="number"
+                  min={30}
+                  max={5000}
+                  value={minAreaSqm}
+                  onChange={(e) => setMinAreaSqm(e.target.value)}
+                  placeholder="مثال: 150"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                />
+              </div>
               {state?.errors?.min_area_sqm?.[0] && (
                 <FieldError message={state.errors.min_area_sqm[0]} />
               )}
@@ -546,37 +534,24 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
         </div>
 
         {/* ============================================================== */}
-        {/* Section 3: شروط لا تنازل عنها (Hard Constraints) */}
+        {/* Section 3: الشروط الحتمية */}
         {/* ============================================================== */}
-        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
+              <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                    شروط حتمية لا تنازل عنها
-                  </h2>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100">
-                    استبعاد فوري
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  أي عقار يفتقر إلى أي شرط هنا سيتم استبعاده فوراً من المنافسة
+                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
+                  الشروط الحتمية الصارمة (Hard Constraints)
+                </h2>
+                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
+                  معايير استبعاد تلقائي فورية، العقار الذي لا يحققها يُقصى
                 </p>
               </div>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-              {totalHardConstraints} / 10
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
+              استبعاد إلزامي
             </span>
-          </div>
-
-          {/* Warning Notice */}
-          <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-900 leading-relaxed">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold">قاعدة التحليل الهندسي الحتمي:</span> السعر المنخفض لا يعوض أبداً عيباً جوهرياً مثل غياب المصعد في الأدوار العليا أو عدم وجود موقف خاص. هذه الشروط تحميك من الشراء العاطفي.
-            </div>
           </div>
 
           {/* Interactive Fixed Constraint Cards */}
@@ -587,28 +562,28 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               onClick={() => setHasElevator(!hasElevator)}
               className={`p-4 rounded-2xl border text-right transition-all flex items-center justify-between gap-3 cursor-pointer ${
                 hasElevator
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                  : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 bg-white"
+                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-xs"
+                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)]"
               }`}
             >
               <div className="flex items-center gap-3">
                 <span
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    hasElevator ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                    hasElevator ? "bg-[var(--midnight)] text-[var(--cream)]" : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
                   }`}
                 >
                   <Layers className="w-4 h-4" />
                 </span>
                 <div>
                   <div className="text-xs font-bold">وجود مصعد عامل</div>
-                  <div className={`text-[11px] ${hasElevator ? "text-slate-300" : "text-slate-400"}`}>
+                  <div className={`text-[11px] ${hasElevator ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
                     إلزامي للأدوار العليا
                   </div>
                 </div>
               </div>
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
-                  hasElevator ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                  hasElevator ? "bg-[var(--cream)] border-[var(--cream)] text-[var(--navy)]" : "border-[var(--mist)] text-transparent"
                 }`}
               >
                 <Check className="w-3.5 h-3.5" />
@@ -621,28 +596,28 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               onClick={() => setHasParking(!hasParking)}
               className={`p-4 rounded-2xl border text-right transition-all flex items-center justify-between gap-3 cursor-pointer ${
                 hasParking
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                  : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 bg-white"
+                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-xs"
+                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)]"
               }`}
             >
               <div className="flex items-center gap-3">
                 <span
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    hasParking ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                    hasParking ? "bg-[var(--midnight)] text-[var(--cream)]" : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
                   }`}
                 >
                   <Car className="w-4 h-4" />
                 </span>
                 <div>
                   <div className="text-xs font-bold">موقف سيارة خاص</div>
-                  <div className={`text-[11px] ${hasParking ? "text-slate-300" : "text-slate-400"}`}>
+                  <div className={`text-[11px] ${hasParking ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
                     مسجل بالصك أو مخصص
                   </div>
                 </div>
               </div>
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
-                  hasParking ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                  hasParking ? "bg-[var(--cream)] border-[var(--cream)] text-[var(--navy)]" : "border-[var(--mist)] text-transparent"
                 }`}
               >
                 <Check className="w-3.5 h-3.5" />
@@ -655,28 +630,28 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               onClick={() => setHasNewBuilding(!hasNewBuilding)}
               className={`p-4 rounded-2xl border text-right transition-all flex items-center justify-between gap-3 cursor-pointer ${
                 hasNewBuilding
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                  : "border-slate-200/80 text-slate-700 hover:border-slate-300 hover:bg-slate-50 font-medium bg-white"
+                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-xs"
+                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)]"
               }`}
             >
               <div className="flex items-center gap-3">
                 <span
                   className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    hasNewBuilding ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                    hasNewBuilding ? "bg-[var(--midnight)] text-[var(--cream)]" : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
                   }`}
                 >
                   <Sparkles className="w-4 h-4" />
                 </span>
                 <div>
                   <div className="text-xs font-bold">مبنى جديد / أول ساكن</div>
-                  <div className={`text-[11px] ${hasNewBuilding ? "text-slate-300" : "text-slate-400"}`}>
+                  <div className={`text-[11px] ${hasNewBuilding ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
                     عمر العقار صفر سنوات
                   </div>
                 </div>
               </div>
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
-                  hasNewBuilding ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                  hasNewBuilding ? "bg-[var(--cream)] border-[var(--cream)] text-[var(--navy)]" : "border-[var(--mist)] text-transparent"
                 }`}
               >
                 <Check className="w-3.5 h-3.5" />
@@ -687,8 +662,8 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
             <div
               className={`p-4 rounded-2xl border transition-all space-y-3 ${
                 hasMaxFloor
-                  ? "bg-slate-50 border-slate-300"
-                  : "border-slate-200/80 bg-white"
+                  ? "bg-[var(--cream)] border-[var(--navy)]"
+                  : "border-[var(--mist)] bg-[var(--cream)]"
               }`}
             >
               <button
@@ -699,19 +674,19 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                 <div className="flex items-center gap-3">
                   <span
                     className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                      hasMaxFloor ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"
+                      hasMaxFloor ? "bg-[var(--navy)] text-[var(--cream)]" : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
                     }`}
                   >
                     <Building2 className="w-4 h-4" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold text-slate-800">أقصى دور مسموح به</div>
-                    <div className="text-[11px] text-slate-400">تحديد أعلى دور ترغب بالسكن فيه</div>
+                    <div className="text-xs font-bold text-[var(--navy)]">أقصى دور مسموح به</div>
+                    <div className="text-[11px] text-[var(--dusty-blue)]">تحديد أعلى دور ترغب بالسكن فيه</div>
                   </div>
                 </div>
                 <div
                   className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
-                    hasMaxFloor ? "bg-blue-600 border-blue-600 text-white" : "border-slate-300 text-transparent"
+                    hasMaxFloor ? "bg-[var(--navy)] border-[var(--navy)] text-[var(--cream)]" : "border-[var(--mist)] text-transparent"
                   }`}
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -719,7 +694,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               </button>
 
               {hasMaxFloor && (
-                <div className="pt-2 border-t border-slate-200/60">
+                <div className="pt-2 border-t border-[var(--mist)]">
                   <input
                     id="max_floor_val"
                     type="number"
@@ -728,7 +703,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                     value={maxFloorValue}
                     onChange={(e) => setMaxFloorValue(e.target.value)}
                     placeholder="رقم الدور الأقصى (مثال: 3)"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-bold text-[var(--navy)] focus:border-[var(--navy)] outline-none"
                   />
                 </div>
               )}
@@ -736,19 +711,19 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
           </div>
 
           {/* Custom Conditions */}
-          <div className="pt-4 border-t border-slate-100 space-y-3">
+          <div className="pt-4 border-t border-[var(--mist)] space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-700">شروط إضافية خاصة بك</span>
-                <p className="text-[11px] text-slate-400">
-                  شروط فنية أخرى ملزمة لك (مثال: غرفة سائق، مدخل مستقل، عزل صوتي)
+                <span className="text-xs font-bold text-[var(--navy)]">شروط إضافية خاصة بك</span>
+                <p className="text-[11px] text-[var(--dusty-blue)]">
+                  شروط فنية أخرى ملزمة لك (مثال: غرفة خادمة، مدخل مستقل، عزل صوتي)
                 </p>
               </div>
               <button
                 type="button"
-                disabled={totalHardConstraints >= 10}
+                disabled={serializedConstraints.length >= 10}
                 onClick={handleAddCustomConstraint}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>إضافة شرط مخصص</span>
@@ -762,12 +737,12 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                   maxLength={120}
                   onChange={(e) => handleUpdateCustomConstraint(item.id, e.target.value)}
                   placeholder="اكتب الشرط الحتمي (مثال: غرفة خادمة مستقلة، شرفة لا تطل على الجيران)"
-                  className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all"
+                  className="flex-1 px-4 py-3 rounded-xl bg-[var(--cream)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveCustomConstraint(item.id)}
-                  className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                  className="p-3 text-[var(--dusty-blue)] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
                   title="حذف الشرط"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -784,20 +759,20 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
         {/* ============================================================== */}
         {/* Section 4: التفضيلات والمواقع المهمة */}
         {/* ============================================================== */}
-        <div className="bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-8 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-8">
+          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+              <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
                   التفضيلات التنافسية والمواقع المهمة
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
                   معايير ترجيحية تُمنح درجات ونقاط للمقارنة والمفاضلة بين العقارات المتأهلة
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/40">
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
               أوزان تفضيلية
             </span>
           </div>
@@ -806,14 +781,14 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-800">
+                <span className="text-xs font-bold text-[var(--navy)]">
                   قائمة التفضيلات التفضيلية (حتى 10 تفضيلات)
                 </span>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[var(--dusty-blue)]">
                   حدد درجة الأهمية النسبية لكل ميزة للمساعدة في وزن التقييم النهائي
                 </p>
               </div>
-              <span className="text-xs font-bold text-slate-500">
+              <span className="text-xs font-bold text-[var(--dusty-blue)]">
                 {preferences.length} / 10
               </span>
             </div>
@@ -822,14 +797,14 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               {preferences.map((pref) => (
                 <div
                   key={pref.id}
-                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/70"
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)]"
                 >
                   <input
                     value={pref.label}
                     maxLength={80}
                     onChange={(e) => handleUpdatePreference(pref.id, "label", e.target.value)}
                     placeholder="وصف الميزة المرغوبة (مثال: واجهة شمالية، مطبخ راكب، تشطيب مودرن)"
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
                   />
                   <div className="w-full sm:w-44">
                     <select
@@ -841,7 +816,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                           e.target.value as PreferenceWeight
                         )
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 shadow-xs focus:border-blue-600 focus:outline-none"
+                      className="w-full rounded-xl border border-[var(--mist)] bg-[var(--paper)] px-3 py-2.5 text-xs font-bold text-[var(--navy)] shadow-xs focus:border-[var(--navy)] focus:outline-none"
                     >
                       <option value="high">أهمية عالية (ترجيح قوي)</option>
                       <option value="medium">أهمية متوسطة (عادية)</option>
@@ -851,7 +826,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                   <button
                     type="button"
                     onClick={() => handleRemovePreference(pref.id)}
-                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
+                    className="p-2.5 text-[var(--dusty-blue)] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
                     title="حذف التفضيل"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -864,7 +839,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               type="button"
               disabled={preferences.length >= 10}
               onClick={handleAddPreference}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>إضافة تفضيل جديد</span>
@@ -876,17 +851,17 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
           </div>
 
           {/* Important Locations Sub-section */}
-          <div className="pt-6 border-t border-slate-100 space-y-4">
+          <div className="pt-6 border-t border-[var(--mist)] space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-slate-800">
+                <span className="text-xs font-bold text-[var(--navy)]">
                   المواقع الجغرافية المهمة للتنقل اليومي (حتى 5 مواقع)
                 </span>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[var(--dusty-blue)]">
                   نحسب أزمنة التنقل وعبء الزحام لكل عقار مرشح إلى هذه المقرات
                 </p>
               </div>
-              <span className="text-xs font-bold text-slate-500">
+              <span className="text-xs font-bold text-[var(--dusty-blue)]">
                 {locations.length} / 5
               </span>
             </div>
@@ -895,7 +870,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               {locations.map((loc) => (
                 <div
                   key={loc.id}
-                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/70"
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)]"
                 >
                   <div className="w-full sm:w-44">
                     <input
@@ -903,7 +878,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                       maxLength={60}
                       onChange={(e) => handleUpdateLocation(loc.id, "label", e.target.value)}
                       placeholder="اسم المقر (مثل: عمل الزوج، مدرسة)"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
                     />
                   </div>
                   <div className="flex-1">
@@ -912,7 +887,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                       maxLength={200}
                       onChange={(e) => handleUpdateLocation(loc.id, "address_text", e.target.value)}
                       placeholder="الحي أو الشارع (مثل: حي الملقا، طريق الملك فهد)"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
                     />
                   </div>
                   <div className="w-full sm:w-36">
@@ -925,7 +900,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                           e.target.value as LocationFrequency
                         )
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 shadow-xs focus:border-blue-600 focus:outline-none"
+                      className="w-full rounded-xl border border-[var(--mist)] bg-[var(--paper)] px-3 py-2.5 text-xs font-bold text-[var(--navy)] shadow-xs focus:border-[var(--navy)] focus:outline-none"
                     >
                       <option value="daily">تردد يومي (عمل/مدرسة)</option>
                       <option value="weekly">تردد أسبوعي (عائلة/ترفيه)</option>
@@ -934,7 +909,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
                   <button
                     type="button"
                     onClick={() => handleRemoveLocation(loc.id)}
-                    className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
+                    className="p-2.5 text-[var(--dusty-blue)] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
                     title="حذف الموقع"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -947,7 +922,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               type="button"
               disabled={locations.length >= 5}
               onClick={handleAddLocation}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>إضافة مقر مهم</span>
@@ -968,9 +943,9 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
         )}
 
         {/* Submit Action Bar */}
-        <div className="bg-white rounded-3xl border border-slate-200/70 p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 shadow-[0_20px_60px_rgba(15,26,43,0.06)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-xs text-[var(--dusty-blue)]">
+            <ShieldCheck className="w-4 h-4 text-[var(--navy)] shrink-0" />
             <span>
               يتم حفظ المحددات وتطبيقها حتمياً في مراحل المقارنة والتحليل اللاحقة.
             </span>

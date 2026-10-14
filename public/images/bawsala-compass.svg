@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+  <!-- Radial Dial Ticks -->
+  <g class="compass-dial">
+    <line x1="50.00" y1="19.50" x2="50.00" y2="12.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="53.50" y1="16.68" x2="53.97" y2="12.21" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="56.97" y1="17.23" x2="57.90" y2="12.83" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="60.35" y1="18.14" x2="61.74" y2="13.86" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="63.63" y1="19.40" x2="65.46" y2="15.29" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="65.25" y1="23.59" x2="69.00" y2="17.09" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="69.69" y1="22.90" x2="72.34" y2="19.26" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="72.42" y1="25.10" x2="75.43" y2="21.76" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="74.90" y1="27.58" x2="78.24" y2="24.57" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="77.10" y1="30.31" x2="80.74" y2="27.66" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="76.41" y1="34.75" x2="82.91" y2="31.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="80.60" y1="36.37" x2="84.71" y2="34.54" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="81.86" y1="39.65" x2="86.14" y2="38.26" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="82.77" y1="43.03" x2="87.17" y2="42.10" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="83.32" y1="46.50" x2="87.79" y2="46.03" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="80.50" y1="50.00" x2="88.00" y2="50.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="83.32" y1="53.50" x2="87.79" y2="53.97" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="82.77" y1="56.97" x2="87.17" y2="57.90" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="81.86" y1="60.35" x2="86.14" y2="61.74" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="80.60" y1="63.63" x2="84.71" y2="65.46" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="76.41" y1="65.25" x2="82.91" y2="69.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="77.10" y1="69.69" x2="80.74" y2="72.34" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="74.90" y1="72.42" x2="78.24" y2="75.43" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="72.42" y1="74.90" x2="75.43" y2="78.24" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="69.69" y1="77.10" x2="72.34" y2="80.74" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="65.25" y1="76.41" x2="69.00" y2="82.91" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="63.63" y1="80.60" x2="65.46" y2="84.71" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="60.35" y1="81.86" x2="61.74" y2="86.14" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="56.97" y1="82.77" x2="57.90" y2="87.17" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="53.50" y1="83.32" x2="53.97" y2="87.79" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="50.00" y1="80.50" x2="50.00" y2="88.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="46.50" y1="83.32" x2="46.03" y2="87.79" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="43.03" y1="82.77" x2="42.10" y2="87.17" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="39.65" y1="81.86" x2="38.26" y2="86.14" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="36.37" y1="80.60" x2="34.54" y2="84.71" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="34.75" y1="76.41" x2="31.00" y2="82.91" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="30.31" y1="77.10" x2="27.66" y2="80.74" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="27.58" y1="74.90" x2="24.57" y2="78.24" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="25.10" y1="72.42" x2="21.76" y2="75.43" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="22.90" y1="69.69" x2="19.26" y2="72.34" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="23.59" y1="65.25" x2="17.09" y2="69.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="19.40" y1="63.63" x2="15.29" y2="65.46" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="18.14" y1="60.35" x2="13.86" y2="61.74" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="17.23" y1="56.97" x2="12.83" y2="57.90" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="16.68" y1="53.50" x2="12.21" y2="53.97" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="19.50" y1="50.00" x2="12.00" y2="50.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="16.68" y1="46.50" x2="12.21" y2="46.03" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="17.23" y1="43.03" x2="12.83" y2="42.10" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="18.14" y1="39.65" x2="13.86" y2="38.26" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="19.40" y1="36.37" x2="15.29" y2="34.54" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="23.59" y1="34.75" x2="17.09" y2="31.00" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="22.90" y1="30.31" x2="19.26" y2="27.66" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="25.10" y1="27.58" x2="21.76" y2="24.57" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="27.58" y1="25.10" x2="24.57" y2="21.76" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="30.31" y1="22.90" x2="27.66" y2="19.26" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="34.75" y1="23.59" x2="31.00" y2="17.09" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.95" />
+    <line x1="36.37" y1="19.40" x2="34.54" y2="15.29" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="39.65" y1="18.14" x2="38.26" y2="13.86" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="43.03" y1="17.23" x2="42.10" y2="12.83" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+    <line x1="46.50" y1="16.68" x2="46.03" y2="12.21" stroke="currentColor" stroke-width="0.75" stroke-linecap="round" opacity="0.65" />
+  </g>
+  <!-- Slim Needle tilted 15 deg -->
+  <g class="compass-needle" transform="rotate(15 50 50)">
+    <polygon points="50,6 53.5,50 50,94 46.5,50" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+    <polygon points="50,6 53.5,50 50,94" fill="currentColor" opacity="0.85" />
+    <line x1="50" y1="6" x2="50" y2="94" stroke="currentColor" stroke-width="0.75" />
+  </g>
+</svg>

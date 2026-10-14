@@ -61,7 +61,7 @@ export function reassessProperty(
   previousAssessment: ReassessInputAssessment,
   targetFindings: AffectedTargetsResult,
   property: PropertyFloorInput,
-  requirements?: Partial<RequirementsRow> | null
+  requirements?: (Partial<RequirementsRow> & Record<string, unknown>) | null
 ): ReassessmentResult {
   // 1. Deep clone previous arrays
   const newConstraints: ConstraintResult[] = (previousAssessment.constraint_results || []).map(

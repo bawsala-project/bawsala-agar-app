@@ -35,7 +35,6 @@ function makeEmptyResolved(): ResolveFactsResult {
 
 function makeRequirements(overrides: Partial<RequirementsRow> = {}): RequirementsRow {
   return {
-    id: "req-1",
     case_id: "case-1",
     max_budget_sar: 1000000,
     purchase_method: "cash",
@@ -45,7 +44,6 @@ function makeRequirements(overrides: Partial<RequirementsRow> = {}): Requirement
     hard_constraints: [],
     preferences: [],
     important_locations: [],
-    created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
   };

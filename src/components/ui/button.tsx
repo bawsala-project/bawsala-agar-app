@@ -9,9 +9,9 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
-  secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-400",
-  ghost: "bg-transparent text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-400",
+  primary: "bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] focus-visible:ring-[var(--navy)] shadow-sm font-body font-semibold text-base rounded-full disabled:bg-[var(--navy)] disabled:text-[var(--cream)]/70 disabled:opacity-100",
+  secondary: "bg-[var(--paper)] text-[var(--navy)] hover:bg-[var(--cream)] border border-[var(--mist)] hover:border-[var(--navy)] focus-visible:ring-[var(--navy)] font-body text-base font-semibold rounded-full",
+  ghost: "bg-transparent text-[var(--navy)] hover:bg-[var(--paper)] border border-[var(--navy)] font-body text-base font-semibold rounded-full",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -36,7 +36,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={isDisabled}
         aria-busy={pending}
         className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          "inline-flex items-center justify-center gap-2 px-7 py-3.5 text-base font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed active:scale-[0.98]",
           variantStyles[variant],
           className
         )}
@@ -61,11 +61,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             <path
               className="opacity-75"
               fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
         )}
-        <span>{children}</span>
+        {children}
       </button>
     );
   }

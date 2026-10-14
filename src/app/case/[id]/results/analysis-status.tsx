@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, RotateCcw, Sparkles } from "lucide-react";
+import { AlertCircle, RotateCcw } from "lucide-react";
 import { startAnalysis } from "@/actions/analysis";
-import { Button } from "@/components/ui/button";
+import { CompassLoader } from "@/components/brand/compass-loader";
 
 export type AnalysisStatusMode = "start" | "wait" | "failed";
 
@@ -25,7 +25,6 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
   const run = useCallback(async () => {
     setBusy(true);
     setError(null);
-    // On success the action redirects to the results; otherwise it returns an error.
     const result = await startAnalysis(caseId);
     if (result?.error) {
       setError(result.error);
@@ -55,35 +54,37 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
 
   if (mode === "failed") {
     return (
-      <div className="w-full max-w-xl mx-auto py-16 px-4" role="alert">
-        <div className="bg-white rounded-3xl border border-rose-200/80 shadow-sm p-8 sm:p-10 text-center space-y-6">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shadow-xs">
+      <div className="w-full max-w-xl mx-auto py-16 px-4" role="alert" dir="rtl">
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[#F6CBC8] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-8 sm:p-10 text-center space-y-6">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#FDF1F0] text-[#A62626] flex items-center justify-center border border-[#F6CBC8]">
             <AlertCircle className="w-7 h-7" />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-slate-900">تعذر استكمال التحليل الآلي</h2>
-            <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-              تم تأكيد دفعتك (10 ر.س)، ولكن حدث خطأ تقني أثناء معالجة التحليل.
+            <h2 className="text-xl font-display font-bold text-[var(--navy)]">
+              تعذر استكمال التحليل الآلي
+            </h2>
+            <p className="text-sm text-[var(--dusty-blue)] max-w-md mx-auto leading-relaxed">
+              تم تأكيد دفعتك (10 ر.س)، ولكن حدث عارض أثناء معالجة المطابقة الهندسية.
             </p>
           </div>
 
           {error && (
-            <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs font-mono text-rose-800 text-right">
+            <div className="p-3.5 bg-[#FDF1F0] rounded-xl border border-[#F6CBC8] text-xs font-mono text-[#A62626] text-right">
               {error}
             </div>
           )}
 
           <div className="pt-2">
-            <Button
-              variant="primary"
-              pending={busy}
+            <button
+              type="button"
+              disabled={busy}
               onClick={() => void run()}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md"
+              className="btn-primary inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-semibold text-base shadow-sm transition-all active:scale-[0.98] disabled:bg-[var(--navy)] disabled:text-[var(--cream)]/70 disabled:cursor-not-allowed disabled:opacity-100 cursor-pointer opacity-100"
             >
-              <RotateCcw className="w-4 h-4" />
-              <span>إعادة تشغيل التحليل مجانًا</span>
-            </Button>
+              <RotateCcw className="w-4 h-4 text-[var(--cream)] opacity-100 shrink-0" />
+              <span className="text-[var(--cream)] text-base font-semibold opacity-100">إعادة تشغيل التحليل مجانًا</span>
+            </button>
           </div>
         </div>
       </div>
@@ -92,38 +93,43 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
 
   return (
     <div
-      className="w-full max-w-xl mx-auto py-20 px-4 text-center space-y-6"
+      className="w-full max-w-xl mx-auto py-16 px-4 text-center space-y-8 select-none"
       role="status"
       aria-live="polite"
+      dir="rtl"
     >
-      <div className="relative w-20 h-20 mx-auto">
-        <div className="absolute inset-0 rounded-3xl bg-blue-100 animate-ping opacity-30" />
-        <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-tr from-slate-900 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
-          <Sparkles className="w-8 h-8 animate-pulse text-blue-200" />
+      <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-8 sm:p-12 shadow-[0_20px_60px_rgba(15,26,43,0.04)] relative overflow-hidden space-y-6">
+        {/* CompassLoader component */}
+        <div className="relative z-10 flex flex-col items-center justify-center">
+          <CompassLoader
+            size={72}
+            state="searching"
+            showProgressLine={true}
+            messages={[
+              "ندقق المساحات الصافية ونطابق كروكي البلدية والصك…",
+              "نحسب تكاليف التشغيل السنوية والالتزامات الخفية…",
+              "نحلل مطابقة العقارات لاشتراطات كود البناء السعودي…",
+              "نقيس كفاءة العزل وموثوقية خدمات المبنى والمصعد…",
+              "نصيغ التوصية الهندسية المحايدة لحماية قرارك…",
+            ]}
+          />
         </div>
-      </div>
 
-      <div className="space-y-2 max-w-md mx-auto">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-          تم تأكيد الدفع بنجاح — جارٍ تحليل العقارات...
-        </h2>
-        <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-          يستغرق التحليل بضع ثوانٍ لمطابقة الشروط وفحص المخاطر
-        </p>
-      </div>
+        <div className="relative z-10 space-y-2 max-w-md mx-auto pt-2">
+          <h2 className="text-xl sm:text-2xl font-display font-bold text-[var(--navy)] tracking-tight">
+            تم تأكيد الدفع بنجاح — جارٍ تحليل العقارات
+          </h2>
+          <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed">
+            محرك بوصلة العقار يجري الفحص الميداني المحايد ويطابق الشروط الملزمة والمساحات
+          </p>
+        </div>
 
-      {/* Progress pulse dots */}
-      <div className="flex items-center justify-center gap-2 pt-2">
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: "0ms" }} />
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: "150ms" }} />
-        <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+        {error && (
+          <p className="relative z-10 text-xs text-[#A62626] bg-[#FDF1F0] p-3 rounded-xl border border-[#F6CBC8] max-w-sm mx-auto">
+            {error}
+          </p>
+        )}
       </div>
-
-      {error && (
-        <p className="text-xs text-rose-700 bg-rose-50 p-3 rounded-xl border border-rose-200 max-w-sm mx-auto">
-          {error}
-        </p>
-      )}
     </div>
   );
 }

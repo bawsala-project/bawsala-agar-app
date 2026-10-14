@@ -46,15 +46,15 @@ export const PRIORITY_LABELS_AR: Record<
 > = {
   high: {
     label: "عاجل",
-    badgeClasses: "bg-rose-50 text-rose-700 border-rose-200",
+    badgeClasses: "bg-rose-950/60 text-rose-300 border border-rose-800/60 shadow-xs",
   },
   medium: {
     label: "مهم",
-    badgeClasses: "bg-amber-50 text-amber-700 border-amber-200",
+    badgeClasses: "bg-amber-950/60 text-amber-300 border border-amber-800/60 shadow-xs",
   },
   low: {
     label: "إرشادي",
-    badgeClasses: "bg-slate-100 text-slate-700 border-slate-200",
+    badgeClasses: "bg-[rgba(28,46,74,0.7)] text-[var(--mist)] border border-[rgba(82,103,125,0.4)] shadow-xs",
   },
 };
 

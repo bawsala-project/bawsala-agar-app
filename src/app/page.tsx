@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { ALLOWED_CITIES } from "@/lib/auth";
+import { ALLOWED_CITIES } from "@/lib/constants/cities";
 import { ConsultationCard } from "@/components/home/consultation-card";
+import { HeroSection } from "@/components/home/hero-section";
+import { HeroConsultationWrapper } from "@/components/home/hero-consultation-wrapper";
+import { BawsalaNavbar } from "@/components/layout/bawsala-navbar";
 import {
-  Compass,
+  IntroOverlay,
+  CompassDivider,
+  BawsalaWordmark,
+  BawsalaCompass,
+} from "@/components/brand";
+import {
   ShieldCheck,
   Calendar,
   Building2,
@@ -41,154 +49,93 @@ export default async function HomePage() {
   const latestCaseId = cases.length > 0 ? cases[0].id : null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
-      {/* Header / Navigation */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-100/80 transition-all">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm group-hover:bg-blue-600 transition-colors">
-              <Compass className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-extrabold text-slate-900 tracking-tight">
-                  بوصلة العقار
-                </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/50">
-                  استشاري المشتري
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 font-light hidden sm:block">
-                فحص فني وهندسي مستقل لقرار التملك
-              </p>
-            </div>
-          </Link>
+    <div
+      dir="rtl"
+      lang="ar"
+      className="min-h-screen bg-[var(--cream)] text-[var(--navy)] font-body antialiased selection:bg-[var(--mist)] selection:text-[var(--navy)] relative overflow-x-hidden"
+    >
+      {/* Opening Intro Animation Overlay (plays once per session) */}
+      <IntroOverlay />
 
-          {/* Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1.5 p-1.5 rounded-full bg-slate-100/70 border border-slate-200/40 text-xs font-semibold text-slate-600">
-            <Link
-              className="px-4 py-2 rounded-full bg-white text-slate-900 shadow-sm transition-all"
-              href="#"
-            >
-              الرئيسية والبدء
-            </Link>
-            <Link
-              className="px-4 py-2 rounded-full hover:text-slate-900 hover:bg-white/60 transition-all"
-              href={latestCaseId ? `/case/${latestCaseId}/properties` : "#consultation-card"}
-            >
-              العقارات المرشحة
-            </Link>
-            <Link
-              className="px-4 py-2 rounded-full hover:text-slate-900 hover:bg-white/60 transition-all"
-              href={latestCaseId ? `/case/${latestCaseId}/inspection` : "#consultation-card"}
-            >
-              الفحص الهندسي
-            </Link>
-            <Link
-              className="px-4 py-2 rounded-full hover:text-slate-900 hover:bg-white/60 transition-all"
-              href={latestCaseId ? `/case/${latestCaseId}/compare` : "#consultation-card"}
-            >
-              مصفوفة المقارنة
-            </Link>
-          </nav>
+      {/* Floating Centered Island Navbar */}
+      <BawsalaNavbar
+        latestCaseId={latestCaseId}
+        sessionCount={cases.length}
+        activeId="home"
+      />
 
-          {/* Active Sessions Trigger */}
-          <div className="flex items-center gap-3">
-            <a
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-200/70 text-slate-700 text-xs font-bold hover:bg-white hover:border-slate-300 transition-all shadow-xs"
-              href="#active-sessions"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>جلسات التقييم</span>
-              <span className="px-2 py-0.5 rounded-full bg-slate-200/70 text-[11px] text-slate-800">
-                {cases.length}
-              </span>
-            </a>
-          </div>
-        </div>
-      </header>
+      {/* Hero Section with Line-by-Line Masked Rise, Kashida Accent, Arched Property Image & Two Buttons */}
+      <HeroSection />
 
-      {/* Main Content Wrap */}
-      <main className="max-w-6xl mx-auto px-6 py-12 md:py-16 space-y-20">
-        {/* Hero Section: Architectural Minimalism */}
-        <section className="text-center max-w-3xl mx-auto space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 text-slate-700 text-xs font-medium shadow-xs">
-            <ShieldCheck className="w-4 h-4 text-blue-600" />
-            <span>حياد استشاري تام 100% • في صف المشتري بلا عمولات تسويقية</span>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.3] md:leading-[1.25]">
-            اتخذ قرار شراء مسكنك <br className="hidden sm:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-l from-slate-900 via-slate-800 to-blue-600">
-              بأرقام قطعية وتدقيق هندسي محايد
-            </span>
-          </h1>
-          <p className="text-sm md:text-base text-slate-500 font-normal leading-relaxed max-w-2xl mx-auto">
-            نكشف الفوارق الخفية بين المساحات الترويجية والواقع الفعلي للصك ومخطط البناء، ونزن تكاليف التشغيل المخفية قبل دفع أي عربون أو توقيع تمويل عقاري.
-          </p>
-        </section>
+      {/* Overlapping "بدء دراسة قرار استشاري جديدة" Card on Paper Background */}
+      <HeroConsultationWrapper>
+        <ConsultationCard allowedCities={ALLOWED_CITIES} />
+      </HeroConsultationWrapper>
 
-        {/* Interactive Consultation Card */}
-        <section id="consultation-card" className="max-w-4xl mx-auto">
-          <ConsultationCard allowedCities={ALLOWED_CITIES} />
-        </section>
+      {/* Main Content Area */}
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-24 relative z-10">
 
-        {/* Active Consultations History */}
+        {/* Active Consultations History Section */}
         <section className="max-w-4xl mx-auto space-y-6" id="active-sessions">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--mist)] pb-4">
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-slate-900">جلسات القرار النشطة</h2>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl font-display font-bold text-[var(--navy)]">
+                  جلسات القرار النشطة
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-[var(--paper)] text-[var(--navy)] text-[11px] font-bold border border-[var(--mist)]">
                   {cases.length} {cases.length === 1 ? "جلسة" : "جلسات"}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-[var(--dusty-blue)] mt-1">
                 تابع إدخال العقارات أو استخرج التقرير الهندسي الشامل
               </p>
             </div>
+
             {cases.length > 0 && (
               <button
-                className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-slate-200/80 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-xs font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] hover:border-[var(--navy)] transition-all cursor-pointer shadow-xs"
                 type="button"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                 <span>تصفية الجلسات</span>
               </button>
             )}
           </div>
 
           {cases.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 mx-auto flex items-center justify-center">
-                <Inbox className="w-6 h-6" />
+            <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-10 sm:p-12 text-center space-y-4 shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] text-[var(--navy)] mx-auto flex items-center justify-center border border-[var(--mist)]">
+                <Inbox className="w-6 h-6 text-[var(--dusty-blue)]" />
               </div>
-              <h3 className="text-sm font-bold text-slate-800">لا توجد جلسات دراسة سابقة</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+                لا توجد جلسات دراسة سابقة
+              </h3>
+              <p className="text-xs text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
                 ابدأ جلستك الاستشارية الأولى باختيار المدينة المستهدفة أعلاه، وسيتم حفظ مسار دراستك تلقائياً هنا.
               </p>
             </div>
           ) : (
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {cases.map((c) => {
                 const propCount = c.properties?.length || 0;
                 let statusBadge = {
                   text: "مسودة أولية",
-                  dotClass: "bg-slate-400",
-                  bgClass: "bg-slate-100 text-slate-600",
+                  dotClass: "bg-[var(--dusty-blue)]",
+                  bgClass: "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]",
                 };
 
                 if (propCount >= 2) {
                   statusBadge = {
                     text: "جاهز للمطابقة والتحليل",
-                    dotClass: "bg-emerald-500",
-                    bgClass: "bg-emerald-50 text-emerald-700",
+                    dotClass: "bg-[var(--status-ok)]",
+                    bgClass: "bg-[var(--cream)] text-[var(--status-ok)] border-[var(--mist)]",
                   };
                 } else if (propCount === 1) {
                   statusBadge = {
                     text: "بانتظار إضافة بقية العقارات",
-                    dotClass: "bg-amber-500",
-                    bgClass: "bg-amber-50 text-amber-700",
+                    dotClass: "bg-[var(--status-warn)]",
+                    bgClass: "bg-[var(--cream)] text-[var(--status-warn)] border-[var(--mist)]",
                   };
                 }
 
@@ -201,45 +148,47 @@ export default async function HomePage() {
                 return (
                   <div
                     key={c.id}
-                    className="bg-white rounded-2xl border border-slate-200/70 p-5 md:p-6 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-5"
+                    className="bg-[var(--paper)] rounded-[24px] border border-[var(--mist)] p-5 md:p-6 shadow-[0_20px_60px_rgba(15,26,43,0.06)] hover:border-[var(--navy)] transition-all flex flex-col md:flex-row md:items-center justify-between gap-5 group"
                   >
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] text-[11px] font-bold border border-[var(--mist)]">
                           {c.city}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[11px] font-medium">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-[11px] font-medium">
                           عقار سكني
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${statusBadge.bgClass}`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusBadge.bgClass}`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dotClass}`} />
                           {statusBadge.text}
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900">
+
+                      <h3 className="text-base font-display font-bold text-[var(--navy)]">
                         دراسة قرار شراء عقار في {c.city}
                       </h3>
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 font-light">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--dusty-blue)] font-normal">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                           {dateFormatted}
                         </span>
-                        <span className="flex items-center gap-1 text-slate-700 font-semibold">
-                          <Building2 className="w-4 h-4 text-blue-600" />
+                        <span className="flex items-center gap-1.5 text-[var(--navy)] font-semibold">
+                          <Building2 className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                           {propCount} {propCount === 1 ? "عقار مضاف" : "عقارات مرشحة"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between md:justify-end gap-5 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+                    <div className="flex items-center justify-between md:justify-end gap-5 pt-3 md:pt-0 border-t md:border-t-0 border-[var(--mist)]">
                       <Link
                         href={`/case/${c.id}/${propCount > 0 ? "properties" : "needs"}`}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-blue-600 transition-colors"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] text-[var(--cream)] text-xs font-bold hover:bg-[var(--midnight)] transition-all shadow-xs"
                       >
                         <span>متابعة القرار</span>
-                        <ArrowLeft className="w-4 h-4" />
+                        <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
                       </Link>
                     </div>
                   </div>
@@ -249,42 +198,56 @@ export default async function HomePage() {
           )}
         </section>
 
-        {/* Value Pillar Cards (Minimal, Quiet Luxury) */}
+        {/* Compass Divider */}
+        <CompassDivider withEmblem className="my-10 max-w-4xl mx-auto" />
+
+        {/* Value Pillar Cards (Minimal, Quiet Luxury on Cream Paper) */}
         <section className="max-w-4xl mx-auto space-y-8 pt-4">
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold text-slate-900">لماذا تختلف بوصلة العقار؟</h2>
-            <p className="text-xs text-slate-400 max-w-lg mx-auto">
+            <h2 className="text-xl sm:text-2xl font-display font-bold text-[var(--navy)]">
+              لماذا تختلف بوصلة العقار؟
+            </h2>
+            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-lg mx-auto">
               معايير مكتب استشاري وهندسي مستقل مصممة لحماية أموالك، بعيداً عن أساليب التسويق العقاري
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Pillar 1 */}
-            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 md:p-8 space-y-4 hover:shadow-sm transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <Scale className="w-6 h-6 text-blue-600" />
+            <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-6 md:p-8 space-y-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
+                <Scale className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">حياد استشاري 100%</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-light">
+              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+                حياد استشاري 100%
+              </h3>
+              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
                 لا نتقاضى عمولات تسويقية من أي مطور، ولا نروج لعقار على حساب آخر. مصلحتك كطرف مشترٍ هي غايتنا الوحيدة.
               </p>
             </div>
+
             {/* Pillar 2 */}
-            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 md:p-8 space-y-4 hover:shadow-sm transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center">
-                <ShieldCheck className="w-6 h-6 text-slate-800" />
+            <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-6 md:p-8 space-y-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">كشف تضارب المساحات والصكوك</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-light">
+              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+                كشف تضارب المساحات والصكوك
+              </h3>
+              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
                 نكشف الهدر الإعلاني ونطابق المساحة الصافية القابلة للعيش، مع تدقيق ملكية المواقف والارتدادات والتراخيص الرسمية.
               </p>
             </div>
+
             {/* Pillar 3 */}
-            <div className="bg-white rounded-3xl border border-slate-200/70 p-6 md:p-8 space-y-4 hover:shadow-sm transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-emerald-600" />
+            <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-6 md:p-8 space-y-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">تحليل تكلفة الامتلاك (TCO)</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-light">
+              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+                تحليل تكلفة الامتلاك (TCO)
+              </h3>
+              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
                 لا ننظر لسعر الشراء فقط، بل نحسب مصاريف اتحاد الملاك، كفاءة استهلاك الطاقة، والصيانة الدورية المتوقعة لـ 10 سنوات قادمة.
               </p>
             </div>
@@ -292,15 +255,25 @@ export default async function HomePage() {
         </section>
       </main>
 
-      {/* Clean, Minimalist Footer */}
-      <footer className="mt-20 border-t border-slate-200/60 bg-white/60 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700">بوصلة العقار</span>
+      {/* Clean Editorial Footer on Cream Paper with Large Faint Logo */}
+      <footer className="mt-20 border-t border-[var(--mist)] bg-[var(--cream)] py-12 relative z-10 pb-28 md:pb-12">
+        <div className="max-w-[1200px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--dusty-blue)]">
+          <div className="flex items-center gap-3">
+            <div className="text-[var(--navy)]">
+              <BawsalaCompass size={22} animateHover />
+            </div>
+            <span className="font-display font-black text-sm text-[var(--navy)]">بوصلة العقار</span>
             <span>•</span>
-            <span>منظومة استشارية هندسية ومالية مستقلة</span>
+            <span>منظومة استشارية وهندسية مستقلة</span>
           </div>
-          <div>متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة</div>
+          <div className="text-[var(--dusty-blue)] font-normal">
+            متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة
+          </div>
+        </div>
+
+        {/* Large Faint Footer Wordmark in Navy Ink */}
+        <div className="w-full overflow-hidden select-none pointer-events-none text-center pt-8 pb-2 opacity-[0.05] text-[var(--navy)]">
+          <BawsalaWordmark size="xl" tracking="0.45em" />
         </div>
       </footer>
     </div>

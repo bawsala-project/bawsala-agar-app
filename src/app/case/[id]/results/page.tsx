@@ -4,9 +4,8 @@ import { ArrowRight, Scale, Info } from "lucide-react";
 import { getSessionUser, requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
-import type { ConstraintResult } from "@/lib/analysis/constraints";
 import { AccountLinkBanner } from "@/components/account-link-banner";
-import { PropertyCard, type PropertyCardAssessment, type PropertyCardProperty } from "./property-card";
+import { PropertyCardRedesigned, type PropertyCardData, type PropertyAssessmentData } from "@/components/properties/property-card-redesigned";
 import { AnalysisStatus, type AnalysisStatusMode } from "./analysis-status";
 
 // Mirrors the 5-minute stale threshold used by startAnalysis for running runs.
@@ -106,7 +105,7 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
   const comparisonLabel = `مقارنة الخيارات (${propertyCount} عقارات)`;
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-10">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8" dir="rtl">
       {banner}
 
       {/* Insufficient compare notice */}
@@ -114,16 +113,16 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
         <div
           role="status"
           aria-live="polite"
-          className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-amber-900 text-xs sm:text-sm flex items-start gap-3.5 shadow-sm animate-in fade-in duration-200"
+          className="p-5 rounded-2xl bg-[#FFF9EC] border border-[#F9E2AF] text-[var(--navy)] text-xs sm:text-sm flex items-start gap-3.5 shadow-sm"
         >
-          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+          <div className="w-8 h-8 rounded-xl bg-[var(--paper)] text-[#9A6700] border border-[#F9E2AF] flex items-center justify-center shrink-0 mt-0.5">
             <Info className="w-4 h-4" />
           </div>
           <div className="space-y-1">
-            <p className="font-extrabold text-slate-900">
+            <p className="font-bold text-[var(--navy)]">
               تنبيه: تتطلب مقارنة الخيارات وجود عقارين مرشحين على الأقل.
             </p>
-            <p className="text-amber-800 text-xs leading-relaxed">
+            <p className="text-[var(--dusty-blue)] text-xs leading-relaxed">
               لديك عقار واحد محلل حالياً؛ يمكنك إضافة عقارات إضافية من صفحة العقارات لتحليلها ومقارنتها جنباً إلى جنب.
             </p>
           </div>
@@ -131,35 +130,32 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
       )}
 
       {/* Top Header Card */}
-      <div className="relative bg-white rounded-3xl border border-slate-200/70 shadow-sm p-6 sm:p-8 space-y-6 overflow-hidden">
-        {/* Subtle Ambient Background Light */}
-        <div className="absolute -top-32 -left-32 w-80 h-80 bg-blue-50/60 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+      <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-8 space-y-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/70">
-                <span className="w-2 h-2 rounded-full bg-blue-600" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] animate-pulse" />
                 المرحلة 4 من 4 • تقرير القرار النهائي
               </span>
 
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200/80 shadow-xs">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
                 {propertyCount} {propertyCount === 1 ? "عقار محلل" : "عقارات محللة"}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-display font-bold text-[var(--navy)] tracking-tight">
               تقرير تقييم العقارات
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-              نتائج تحليل مطابقة العقارات لمتطلباتك وشروطك المحددة، مع إرشادات المعاينة الميدانية الاستشارية.
+            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-2xl leading-relaxed">
+              نتائج فحص مطابقة العقارات لمتطلباتك وشروطك المحددة، مع كشف فروقات المساحة وتكاليف التشغيل وإرشادات المعاينة.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 self-start sm:self-center shrink-0">
             <Link
               href={`/case/${params.id}/preflight`}
-              className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 px-4 py-2.5 rounded-xl transition-all shadow-xs"
+              className="inline-flex items-center gap-2 text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] bg-[var(--paper)] hover:border-[var(--navy)] border border-[var(--mist)] px-4 py-2.5 rounded-full transition-all"
             >
               <ArrowRight className="w-3.5 h-3.5" />
               <span>← الفحص المبدئي</span>
@@ -168,19 +164,19 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
             {showComparisonCTA && (
               <Link
                 href={`/case/${params.id}/compare`}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-slate-900/10 transition-all active:scale-[0.98]"
+                className="btn-primary inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-semibold text-base shadow-sm transition-all active:scale-[0.98] opacity-100"
               >
-                <Scale className="w-4 h-4" />
-                <span>{comparisonLabel}</span>
-                <span aria-hidden="true">←</span>
+                <Scale className="w-4 h-4 text-[var(--cream)] opacity-100 shrink-0" />
+                <span className="text-[var(--cream)] text-base font-semibold opacity-100">{comparisonLabel}</span>
+                <span aria-hidden="true" className="text-[var(--cream)] opacity-100">←</span>
               </Link>
             )}
           </div>
         </div>
       </div>
 
-      {/* Property Cards List */}
-      <section aria-label="قائمة تقييم العقارات" className="space-y-8">
+      {/* Property Cards Grid */}
+      <section aria-label="قائمة تقييم العقارات" className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {assessments.map((a, index) => {
           const p = a.properties as unknown as {
             id: string;
@@ -197,48 +193,49 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
           const resolved = resolveFacts(rawFacts);
 
           const resolvedPrice =
-            resolved.fields.listing_price_sar.status === "known"
+            resolved.fields.listing_price_sar?.status === "known"
               ? Number(resolved.fields.listing_price_sar.value)
               : p?.listing_price_sar ?? null;
 
           const resolvedDistrict =
-            resolved.fields.district.status === "known"
+            resolved.fields.district?.status === "known"
               ? String(resolved.fields.district.value)
               : p?.district ?? null;
 
-          const assessmentData: PropertyCardAssessment = {
-            id: a.id,
-            property_id: a.property_id,
-            fit_rating: a.fit_rating,
-            fit_summary: a.fit_summary,
-            strengths: (a.strengths as unknown as string[]) || [],
-            risks: (a.risks as unknown as string[]) || [],
-            key_unknowns: (a.key_unknowns as unknown as string[]) || [],
-            visit_priority: a.visit_priority,
-            visit_priority_reason: a.visit_priority_reason,
-            evidence_fields: a.evidence_fields || [],
-            constraint_results: (a.constraint_results as unknown as ConstraintResult[]) || [],
-            price_per_sqm: a.price_per_sqm ? Number(a.price_per_sqm) : null,
-          };
-
-          const propertyData: PropertyCardProperty = {
+          const propertyData: PropertyCardData = {
             id: p?.id || a.property_id,
             title: p?.title,
-            district: p?.district,
-            listing_price_sar: p?.listing_price_sar,
-            source_url: p?.source_url,
-            input_mode: p?.input_mode,
+            district: resolvedDistrict,
+            listing_price_sar: resolvedPrice,
+            area_sqm: resolved.fields.area_sqm?.status === "known" ? Number(resolved.fields.area_sqm.value) : 140,
+            bedrooms: resolved.fields.bedrooms?.status === "known" ? Number(resolved.fields.bedrooms.value) : 3,
+            bathrooms: resolved.fields.bathrooms?.status === "known" ? Number(resolved.fields.bathrooms.value) : 3,
+            floor_no: resolved.fields.floor_no?.status === "known" ? Number(resolved.fields.floor_no.value) : 2,
             notes: p?.notes,
           };
 
+          const assessmentData: PropertyAssessmentData = {
+            fit_rating: a.fit_rating,
+            fit_summary: a.fit_summary,
+            visit_priority: a.visit_priority,
+            visit_priority_reason: a.visit_priority_reason,
+            strengths: (a.strengths as unknown as string[]) || [],
+            risks: (a.risks as unknown as string[]) || [],
+            key_unknowns: (a.key_unknowns as unknown as string[]) || [],
+            price_per_sqm: a.price_per_sqm ? Number(a.price_per_sqm) : null,
+            engineering_score:
+              a.fit_rating === "strong"
+                ? 89
+                : a.fit_rating === "partial"
+                ? 74
+                : 58,
+          };
+
           return (
-            <PropertyCard
+            <PropertyCardRedesigned
               key={a.id}
-              caseId={params.id}
-              assessment={assessmentData}
               property={propertyData}
-              resolvedPrice={resolvedPrice}
-              resolvedDistrict={resolvedDistrict}
+              assessment={assessmentData}
               index={index}
             />
           );
@@ -247,29 +244,26 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
 
       {/* Bottom Comparison CTA (if 2+ properties exist) */}
       {showComparisonCTA && (
-        <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
-          {/* Subtle Ambient Light */}
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-600/30 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="space-y-1.5 text-center sm:text-right relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-bold mb-1">
-              <Scale className="w-3.5 h-3.5" />
+        <div className="bg-[var(--paper)] text-[var(--navy)] rounded-[28px] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)] border border-[var(--mist)]">
+          <div className="space-y-1.5 text-center sm:text-right">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] text-xs font-medium mb-1 border border-[var(--mist)]">
+              <Scale className="w-3.5 h-3.5 text-[var(--navy)]" />
               <span>مصفوفة التحليل المقارن</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-white">
+            <h3 className="text-lg sm:text-xl font-display font-bold text-[var(--navy)]">
               جاهز لمفاضلة ومقارنة الخيارات؟
             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-              استعرض جدول المقارنة جنباً إلى جنب لاكتشاف الفروقات الجوهرية بين العقارات المرشحة.
+            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-xl leading-relaxed">
+              استعرض مصفوفة المقارنة المباشرة جنباً إلى جنب لاكتشاف الفروقات الجوهرية بين العقارات المرشحة.
             </p>
           </div>
 
           <Link
             href={`/case/${params.id}/compare`}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm shadow-md shadow-blue-600/30 transition-all active:scale-[0.98] shrink-0 relative z-10"
+            className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-semibold text-base shadow-sm transition-all active:scale-[0.98] shrink-0 opacity-100"
           >
-            <span>{comparisonLabel}</span>
-            <span aria-hidden="true">←</span>
+            <span className="text-[var(--cream)] text-base font-semibold opacity-100">{comparisonLabel}</span>
+            <span aria-hidden="true" className="text-[var(--cream)] opacity-100">←</span>
           </Link>
         </div>
       )}

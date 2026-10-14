@@ -165,13 +165,13 @@ describe("initiateCheckoutAction", () => {
       const origEnv = process.env.NODE_ENV;
       const origMock = process.env.ENABLE_MOCK_PAYMENTS;
       try {
-        process.env.NODE_ENV = "production";
+        (process.env as Record<string, string | undefined>).NODE_ENV = "production";
         delete process.env.ENABLE_MOCK_PAYMENTS;
 
         const { MockPaymentProvider } = await import("@/lib/payments/mock");
         expect(() => new MockPaymentProvider()).toThrow("MockPaymentProvider is disabled in production");
       } finally {
-        process.env.NODE_ENV = origEnv;
+        (process.env as Record<string, string | undefined>).NODE_ENV = origEnv;
         if (origMock) process.env.ENABLE_MOCK_PAYMENTS = origMock;
       }
     });

@@ -1,0 +1,157 @@
+/* =============================================================================
+   BAWSALA (بوصلة العقار) - MASTER DESIGN TOKENS
+   Visual System Specification • Editorial Cream & Navy Theme • RTL Arabic-First
+   ============================================================================= */
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah-sans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah-sans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyah-sans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyah-serif-display-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyah-serif-display-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Text';
+  src: url('/fonts/thmanyah-serif-text-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ---------------------------------------------------------------------------
+     1. COLOR PALETTE (Quiet Editorial Real-Estate Brand on Cream Paper with Navy Ink)
+     --------------------------------------------------------------------------- */
+  --cream: #F3EFE7;       /* page background */
+  --paper: #FAF8F3;       /* cards, surfaces */
+  --navy: #0F1A2B;        /* all primary text, icons, primary buttons */
+  --midnight: #1C2E4A;    /* headings accents, hover states */
+  --dusty-blue: #52677D;  /* secondary text, labels */
+  --mist: #BDC4D4;        /* hairlines, borders, inactive states */
+
+  /* ---------------------------------------------------------------------------
+     Shared Button Styles (Contrast Ratio > 15:1 WCAG AAA Compliant)
+     --------------------------------------------------------------------------- */
+  --btn-primary-bg: #0F1A2B;
+  --btn-primary-text: #F3EFE7;
+  --btn-primary-hover-bg: #1C2E4A;
+  --btn-primary-hover-text: #F3EFE7;
+  --btn-primary-disabled-bg: #0F1A2B;
+  --btn-primary-disabled-text: rgba(243, 239, 231, 0.7);
+  --btn-ghost-bg: transparent;
+  --btn-ghost-text: #0F1A2B;
+  --btn-ghost-border: #0F1A2B;
+
+  /* Legacy & Semantic Mapping */
+  --deep-navy: #0F1A2B;
+  --buttercream: #F3EFE7;
+  --bone: #F3EFE7;
+  --bone-soft: #FAF8F3;
+  --bone-deep: #E7E2D6;
+  --ink: #0F1A2B;
+  --charcoal: #0F1A2B;
+  --charcoal-soft: #52677D;
+  --bronze: #1C2E4A;
+  --bronze-light: #52677D;
+  --line: #BDC4D4;
+  --line-strong: rgba(15, 26, 43, 0.25);
+
+  /* Status Colors (Subtle editorial tones) */
+  --status-ok: #2D6A4F;
+  --status-ok-bg: rgba(45, 106, 79, 0.08);
+  --status-ok-border: rgba(45, 106, 79, 0.3);
+
+  --status-warn: #9A6700;
+  --status-warn-bg: rgba(154, 103, 0, 0.08);
+  --status-warn-border: rgba(154, 103, 0, 0.3);
+
+  --status-danger: #A61C1C;
+  --status-danger-bg: rgba(166, 28, 28, 0.08);
+  --status-danger-border: rgba(166, 28, 28, 0.3);
+
+  --status-info: #1B4965;
+  --status-info-bg: rgba(27, 73, 101, 0.08);
+  --status-info-border: rgba(27, 73, 101, 0.3);
+
+  --ok: var(--status-ok);
+  --warn: var(--status-warn);
+  --danger: var(--status-danger);
+
+  /* ---------------------------------------------------------------------------
+     2. SURFACES & SHADOWS
+     Quiet editorial paper surfaces. No heavy shadows, no glow, no glass blur.
+     --------------------------------------------------------------------------- */
+  --bg-page: var(--cream);
+  --shadow-soft: 0 20px 60px rgba(15, 26, 43, 0.06);
+  --shadow-card: 0 20px 60px rgba(15, 26, 43, 0.06);
+  --shadow-float: 0 20px 60px rgba(15, 26, 43, 0.08);
+
+  /* ---------------------------------------------------------------------------
+     3. TYPOGRAPHY (Thmanyah font family strictly)
+     --------------------------------------------------------------------------- */
+  --font-display: 'Thmanyah Serif Display', 'Thmanyah Sans', serif;
+  --font-body: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif;
+  --font-heading: 'Thmanyah Serif Display', 'Thmanyah Sans', serif;
+  --font-wordmark: 'Cinzel', 'Trajan Pro', Georgia, serif;
+
+  --leading-headline: 1.3;
+  --leading-snug: 1.4;
+  --leading-body: 1.8;
+
+  /* ---------------------------------------------------------------------------
+     4. MOTION RULES
+     Easing: cubic-bezier(0.22, 1, 0.36, 1)
+     Durations: micro 200ms, standard 600ms, hero 1000ms
+     --------------------------------------------------------------------------- */
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-micro: 200ms;
+  --duration-standard: 600ms;
+  --duration-hero: 1000ms;
+
+  /* ---------------------------------------------------------------------------
+     5. GEOMETRY & SPACING
+     --------------------------------------------------------------------------- */
+  --max-content-width: 1200px;
+  --section-padding-desktop: 120px;
+  --section-padding-mobile: 72px;
+
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --radius-card: 28px;
+  --radius-sheet: 32px;
+  --radius-pill: 9999px;
+}

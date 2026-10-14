@@ -1,7 +1,9 @@
 import { requireCase } from "@/lib/auth";
 import { StepIndicator } from "./step-indicator";
 import Link from "next/link";
-import { Compass, Home } from "lucide-react";
+import { Home } from "lucide-react";
+import { BawsalaCompass } from "@/components/brand/bawsala-compass";
+import { BawsalaWordmark } from "@/components/brand/bawsala-wordmark";
 
 export default async function CaseLayout({
   children,
@@ -13,25 +15,25 @@ export default async function CaseLayout({
   await requireCase(params.id);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-800 antialiased font-sans">
+    <div className="min-h-screen flex flex-col bg-[var(--cream)] text-[var(--navy)] antialiased font-body selection:bg-[var(--mist)] selection:text-[var(--navy)]">
       {/* Executive Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-slate-100/80 transition-all">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3.5 group shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm group-hover:bg-blue-600 transition-colors">
-              <Compass className="w-5 h-5 text-white" />
+      <header className="sticky top-0 z-50 bg-[var(--paper)] border-b border-[var(--mist)] shadow-xs transition-all">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+          {/* Brand Logo Lockup */}
+          <Link href="/" className="flex items-center gap-3 group shrink-0 no-underline focus:outline-hidden">
+            <div className="text-[var(--navy)] flex items-center justify-center">
+              <BawsalaCompass size={28} animateHover />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+                <span className="font-display font-black text-base sm:text-lg text-[var(--navy)] tracking-tight">
                   بوصلة العقار
                 </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/50">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]">
                   استشاري المشتري
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-light hidden sm:block">
+              <p className="text-xs text-[var(--dusty-blue)] font-normal hidden sm:block">
                 فحص فني وهندسي مستقل لقرار التملك
               </p>
             </div>
@@ -46,16 +48,16 @@ export default async function CaseLayout({
           <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-50 border border-slate-200/70 text-slate-700 text-xs font-bold hover:bg-white hover:border-slate-300 transition-all shadow-xs"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] text-xs font-bold hover:bg-[var(--paper)] transition-all shadow-xs no-underline"
             >
-              <Home className="w-3.5 h-3.5 text-slate-500" />
+              <Home className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
               <span className="hidden sm:inline">الرئيسية</span>
             </Link>
           </div>
         </div>
 
         {/* Mobile Stepper subheader */}
-        <div className="lg:hidden border-t border-slate-100/70 px-4 py-2.5 overflow-x-auto no-scrollbar flex justify-center bg-slate-50/60">
+        <div className="lg:hidden border-t border-[var(--mist)] px-4 py-2.5 overflow-x-auto no-scrollbar flex justify-center bg-[var(--paper)]">
           <StepIndicator caseId={params.id} />
         </div>
       </header>
@@ -66,14 +68,22 @@ export default async function CaseLayout({
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200/60 bg-white/60 py-8">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-700">بوصلة العقار</span>
+      <footer className="mt-auto border-t border-[var(--mist)] bg-[var(--cream)] py-10 pb-28 md:pb-10">
+        <div className="max-w-[1200px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--dusty-blue)]">
+          <div className="flex items-center gap-2.5">
+            <div className="text-[var(--navy)] flex items-center justify-center">
+              <BawsalaCompass size={18} animateHover />
+            </div>
+            <span className="font-display font-black text-sm text-[var(--navy)]">بوصلة العقار</span>
             <span>•</span>
             <span>منظومة استشارية هندسية ومالية مستقلة</span>
           </div>
           <div>متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة</div>
+        </div>
+
+        {/* Large Faint Footer Wordmark in Navy Ink */}
+        <div className="w-full overflow-hidden select-none pointer-events-none text-center pt-8 pb-2 opacity-[0.05] text-[var(--navy)]">
+          <BawsalaWordmark size="xl" tracking="0.45em" />
         </div>
       </footer>
     </div>

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import crypto from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
@@ -312,11 +313,16 @@ describe("Week 4 end-to-end: guest -> preflight -> checkout -> paid analysis -> 
     expect(Number(initiated!.amount_sar)).toBe(10);
 
     // 3. Reconcile: the provider's actual effect matches the expected effect
-    const verified = await new MockPaymentProvider().verifyWebhook({
+    const webhookPayload = {
       eventId: `evt_${stamp}`,
       caseId,
       amountSar: 10,
-    });
+    };
+    const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+    const signature = secret
+      ? crypto.createHmac("sha256", secret).update(JSON.stringify(webhookPayload)).digest("hex")
+      : undefined;
+    const verified = await new MockPaymentProvider().verifyWebhook(webhookPayload, signature);
     const settled = await settlePayment(key, verified);
     expect(settled).toEqual({ outcome: "paid", caseId });
 

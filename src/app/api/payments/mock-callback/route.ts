@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { MockPaymentProvider } from "@/lib/payments/mock";
 import { settlePayment } from "@/lib/payments/settle";
@@ -33,11 +34,16 @@ export async function GET(request: NextRequest) {
 
   // The mock gateway reports exactly what was initiated for this key.
   const adapter = new MockPaymentProvider();
-  const verified = await adapter.verifyWebhook({
+  const payload = {
     eventId: `mock_evt_${key}`,
     caseId: payment.case_id,
     amountSar: Number(payment.amount_sar),
-  });
+  };
+  const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+  const signature = secret
+    ? crypto.createHmac("sha256", secret).update(JSON.stringify(payload)).digest("hex")
+    : undefined;
+  const verified = await adapter.verifyWebhook(payload, signature);
   const result = await settlePayment(key, verified);
 
   switch (result.outcome) {

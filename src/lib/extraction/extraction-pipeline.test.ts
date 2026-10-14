@@ -212,7 +212,9 @@ describe("Extraction pipeline lifecycle and limits", () => {
 
     const res = await runExtraction(testPropId);
     expect(res.ok).toBe(false);
-    expect(res.errorCode).toBe("blocked_host");
+    if (!res.ok) {
+      expect(res.errorCode).toBe("blocked_host");
+    }
 
     // Check extraction_runs: the new run is failed
     const { data: runs } = await adminSupabase
@@ -252,7 +254,9 @@ describe("Extraction pipeline lifecycle and limits", () => {
     // Now attempt the 6th extraction
     const res = await runExtraction(testPropId);
     expect(res.ok).toBe(false);
-    expect(res.errorCode).toBe("attempt_limit");
+    if (!res.ok) {
+      expect(res.errorCode).toBe("attempt_limit");
+    }
 
     // Total runs in DB must still be 5
     const { count: finalCount } = await adminSupabase

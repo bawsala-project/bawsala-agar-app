@@ -8,7 +8,6 @@ import {
   type InspectionItemRow,
 } from "@/actions/inspection";
 import {
-  PRIORITY_LABELS_AR,
   TRIGGER_REASON_LABELS_AR,
   ASSESSMENT_TYPE_LABELS_AR,
   type InspectionPriority,
@@ -99,29 +98,25 @@ export function FindingItem({
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value.slice(0, 300);
     setNote(val);
+
     if (result) {
       onFindingChange?.(item.id, result, val);
-    }
 
-    // Debounce save for note typing
-    if (noteTimeoutRef.current) {
-      clearTimeout(noteTimeoutRef.current);
-    }
+      if (noteTimeoutRef.current) {
+        clearTimeout(noteTimeoutRef.current);
+      }
 
-    if (result) {
       noteTimeoutRef.current = setTimeout(() => {
-        if (val !== lastSavedRef.current.note) {
-          triggerSave(result, val);
-        }
-      }, 700);
+        triggerSave(result, val);
+      }, 800);
     }
   };
 
   const handleNoteBlur = () => {
-    if (noteTimeoutRef.current) {
-      clearTimeout(noteTimeoutRef.current);
-    }
-    if (result && (note !== lastSavedRef.current.note || result !== lastSavedRef.current.result)) {
+    if (result && note !== lastSavedRef.current.note) {
+      if (noteTimeoutRef.current) {
+        clearTimeout(noteTimeoutRef.current);
+      }
       triggerSave(result, note);
     }
   };
@@ -135,7 +130,6 @@ export function FindingItem({
   }, []);
 
   const priority = item.priority as InspectionPriority;
-  const priorityConfig = PRIORITY_LABELS_AR[priority] || PRIORITY_LABELS_AR.medium;
   const triggerReason = item.trigger_reason as InspectionTriggerReason;
   const triggerLabel = TRIGGER_REASON_LABELS_AR[triggerReason] || "تحقق ميداني";
 
@@ -143,7 +137,7 @@ export function FindingItem({
 
   return (
     <article
-      className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm hover:border-slate-300 transition-all space-y-4"
+      className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-5 sm:p-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)] space-y-4"
       aria-labelledby={`item-q-${item.id}`}
     >
       {/* Top Meta: Priority & Trigger Reason */}
@@ -151,27 +145,31 @@ export function FindingItem({
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "px-3 py-1 rounded-full font-extrabold border shadow-xs",
-              priorityConfig.badgeClasses
+              "px-3 py-0.5 rounded-full font-medium text-xs border",
+              priority === "high"
+                ? "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]"
+                : priority === "medium"
+                ? "bg-[#FFF9EC] text-[#9A6700] border-[#F9E2AF]"
+                : "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
             )}
           >
-            {priorityConfig.label}
+            {priority === "high" ? "أولوية مرتفعة" : priority === "medium" ? "أولوية متوسطة" : "أولوية منخفضة"}
           </span>
 
-          <span className="px-2.5 py-1 rounded-xl bg-slate-100/80 text-slate-600 border border-slate-200/60 font-semibold text-[11px]">
+          <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-[11px] font-medium">
             {triggerLabel}
           </span>
         </div>
 
         {/* Affected Assessment Axes */}
         {item.affected_assessment_types && item.affected_assessment_types.length > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--dusty-blue)] font-medium">
             <span>يؤثر على:</span>
             <div className="flex items-center gap-1">
               {item.affected_assessment_types.map((axis) => (
                 <span
                   key={axis}
-                  className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-100"
+                  className="px-2 py-0.5 rounded-md bg-[var(--cream)] text-[var(--navy)] font-medium text-[10px] border border-[var(--mist)]"
                 >
                   {ASSESSMENT_TYPE_LABELS_AR[axis] || axis}
                 </span>
@@ -184,52 +182,52 @@ export function FindingItem({
       {/* Question Text */}
       <h3
         id={`item-q-${item.id}`}
-        className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug"
+        className="text-base sm:text-lg font-bold font-display text-[var(--navy)] leading-snug"
       >
         {item.question_ar}
       </h3>
 
       {/* Why it matters box */}
-      <div className="bg-amber-50/50 border border-amber-200/80 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-700 space-y-1 shadow-xs">
-        <div className="flex items-center gap-1.5 font-extrabold text-amber-900">
-          <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
+      <div className="bg-[var(--cream)] border border-[var(--mist)] rounded-2xl p-3.5 text-xs text-[var(--navy)] space-y-1">
+        <div className="flex items-center gap-1.5 font-bold text-[#9A6700]">
+          <Lightbulb className="w-3.5 h-3.5 text-[#9A6700]" />
           <span>سبب الأهمية:</span>
         </div>
-        <p className="leading-relaxed pr-5 font-normal text-slate-800">{item.why_it_matters_ar}</p>
+        <p className="leading-relaxed pr-5 font-normal text-[var(--dusty-blue)]">{item.why_it_matters_ar}</p>
       </div>
 
       {/* How to check box */}
-      <div className="bg-blue-50/50 border border-blue-200/80 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-800 space-y-1 shadow-xs">
-        <div className="flex items-center gap-1.5 font-extrabold text-blue-900">
-          <Search className="w-3.5 h-3.5 text-blue-600" />
+      <div className="bg-[var(--cream)] border border-[var(--mist)] rounded-2xl p-3.5 text-xs text-[var(--navy)] space-y-1">
+        <div className="flex items-center gap-1.5 font-bold text-[var(--navy)]">
+          <Search className="w-3.5 h-3.5 text-[var(--navy)]" />
           <span>طريقة الفحص الميداني:</span>
         </div>
-        <p className="leading-relaxed pr-5 font-medium text-slate-800">
+        <p className="leading-relaxed pr-5 font-medium text-[var(--dusty-blue)]">
           {item.how_to_check_ar}
         </p>
       </div>
 
       {/* Interactive Finding Buttons (3 Segmented Radios) */}
-      <div className="pt-3 border-t border-slate-100 space-y-3">
+      <div className="pt-3 border-t border-[var(--mist)] space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-700 block">
+          <span className="text-xs font-medium text-[var(--navy)] block">
             تسجيل نتيجة الفحص:
           </span>
 
           {/* Sync indicator */}
-          <div className="text-[11px] font-bold flex items-center gap-1.5">
+          <div className="text-[11px] font-medium flex items-center gap-1.5">
             {isPending || syncStatus === "saving" ? (
-              <span className="text-blue-600 flex items-center gap-1 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+              <span className="text-[var(--dusty-blue)] flex items-center gap-1 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)]" />
                 <span>جاري الحفظ...</span>
               </span>
             ) : syncStatus === "saved" ? (
-              <span className="text-emerald-600 flex items-center gap-1 font-extrabold">
+              <span className="text-[#1E6B43] flex items-center gap-1 font-medium">
                 <span>✓</span>
                 <span>تم الحفظ</span>
               </span>
             ) : syncStatus === "error" ? (
-              <span className="text-rose-600 flex items-center gap-1 font-extrabold">
+              <span className="text-[#A62626] flex items-center gap-1 font-medium">
                 <span>⚠</span>
                 <span>{errorMessage || "فشل الحفظ"}</span>
               </span>
@@ -250,10 +248,10 @@ export function FindingItem({
             aria-checked={result === "good"}
             onClick={() => handleResultSelect("good")}
             className={cn(
-              "px-3 py-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs",
+              "px-3 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs cursor-pointer",
               result === "good"
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-200"
-                : "bg-white text-slate-700 hover:bg-emerald-50/50 hover:text-emerald-700 border-slate-200/80"
+                ? "bg-[#1E6B43] text-[var(--cream)] border-[#1E6B43] shadow-sm"
+                : "bg-[var(--paper)] text-[var(--navy)] hover:border-[#1E6B43] border-[var(--mist)]"
             )}
           >
             <span aria-hidden="true">✓</span>
@@ -267,10 +265,10 @@ export function FindingItem({
             aria-checked={result === "problem"}
             onClick={() => handleResultSelect("problem")}
             className={cn(
-              "px-3 py-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs",
+              "px-3 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs cursor-pointer",
               result === "problem"
-                ? "bg-rose-600 text-white border-rose-600 shadow-md ring-2 ring-rose-200"
-                : "bg-white text-slate-700 hover:bg-rose-50/50 hover:text-rose-700 border-slate-200/80"
+                ? "bg-[#A62626] text-[var(--cream)] border-[#A62626] shadow-sm"
+                : "bg-[var(--paper)] text-[var(--navy)] hover:border-[#A62626] border-[var(--mist)]"
             )}
           >
             <span aria-hidden="true">⚠</span>
@@ -284,10 +282,10 @@ export function FindingItem({
             aria-checked={result === "not_checked"}
             onClick={() => handleResultSelect("not_checked")}
             className={cn(
-              "px-3 py-3 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs",
+              "px-3 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs cursor-pointer",
               result === "not_checked"
-                ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-200"
-                : "bg-white text-slate-700 hover:bg-slate-50 border-slate-200/80"
+                ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-sm"
+                : "bg-[var(--paper)] text-[var(--navy)] hover:border-[var(--navy)] border-[var(--mist)]"
             )}
           >
             <span aria-hidden="true">—</span>
@@ -301,19 +299,19 @@ export function FindingItem({
             <div className="flex items-center justify-between text-xs">
               <label
                 htmlFor={`note-${item.id}`}
-                className="font-extrabold text-slate-700 flex items-center gap-1.5"
+                className="font-medium text-[var(--navy)] flex items-center gap-1.5"
               >
                 <span>ملاحظات إضافية (اختياري)</span>
                 {result === "problem" && (
-                  <span className="text-rose-600 text-[11px] font-bold">
+                  <span className="text-[#A62626] text-[11px] font-medium">
                     - يُفضل توثيق تفاصيل المشكلة
                   </span>
                 )}
               </label>
               <span
                 className={cn(
-                  "text-[10px] font-bold font-mono",
-                  note.length >= 280 ? "text-amber-600" : "text-slate-400"
+                  "text-[10px] font-mono",
+                  note.length >= 280 ? "text-[#9A6700]" : "text-[var(--dusty-blue)]"
                 )}
               >
                 {note.length}/300
@@ -328,7 +326,7 @@ export function FindingItem({
               rows={2}
               maxLength={300}
               placeholder="دوّن تفاصيل أو شواهد رأيتها أثناء الزيارة..."
-              className="w-full text-xs sm:text-sm p-3.5 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-800 placeholder-slate-400 bg-slate-50/60 resize-none transition-colors"
+              className="w-full text-xs sm:text-sm p-3.5 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 bg-[var(--cream)] focus:bg-[var(--paper)] resize-none transition-colors"
             />
           </div>
         )}

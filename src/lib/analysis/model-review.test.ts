@@ -3,9 +3,12 @@ import { analyzeProperty } from "@/lib/ai/analyze";
 import type { PropertyAnalysisPromptInput } from "@/lib/ai/prompts/analysis";
 import type { RequirementsRow } from "./constraints";
 
-describe("Live AI Model Assessment & Negative Constraints Verification (Acceptance 6)", () => {
+const runAiTests = process.env.RUN_AI_TESTS === "1" || process.env.RUN_AI_TESTS === "true";
+const hasApiKey = Boolean(process.env.AI_GATEWAY_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+const describeAi = runAiTests && hasApiKey ? describe : describe.skip;
+
+describeAi("Live AI Model Assessment & Negative Constraints Verification (Acceptance 6)", () => {
   const req: RequirementsRow = {
-    id: "req-1",
     case_id: "case-1",
     max_budget_sar: 900000,
     purchase_method: "cash",
@@ -23,6 +26,7 @@ describe("Live AI Model Assessment & Negative Constraints Verification (Acceptan
     important_locations: [
       { label: "مقر العمل", address_text: "حي المروج" },
     ],
+    updated_at: new Date().toISOString(),
   };
 
   it("Property 1 (Good fit): verifies no market-price claims, no travel times, no buy/don't-buy wording", async () => {
