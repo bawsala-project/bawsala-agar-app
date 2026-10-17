@@ -148,7 +148,7 @@ export function CityCompassSelector({
                     >
                       <MapPin className="w-3.5 h-3.5" />
                     </div>
-                    <span className="font-display font-bold text-base">
+                    <span className="font-body font-bold text-base">
                       {city.name}
                     </span>
                   </div>

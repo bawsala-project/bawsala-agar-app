@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] px-6 py-3 text-xs sm:text-sm font-display font-medium text-[var(--cream)] shadow-sm transition-all self-start sm:self-center shrink-0 active:scale-[0.98] no-underline"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] px-6 py-3 text-xs sm:text-sm font-body font-bold text-[var(--cream)] shadow-sm transition-all self-start sm:self-center shrink-0 active:scale-[0.98] no-underline"
           >
             <Plus className="w-4 h-4" />
             <span>إنشاء حالة جديدة +</span>
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
           <div className="pt-2">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm shadow-sm transition-all no-underline"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm shadow-sm transition-all no-underline"
             >
               <Plus className="w-4 h-4" />
               <span>بدء دراسة قرار جديدة</span>
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
               >
                 <div className="space-y-2">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <span className="flex items-center gap-1.5 font-display font-bold text-base sm:text-lg text-[var(--navy)]">
+                    <span className="flex items-center gap-1.5 font-body font-bold text-base sm:text-lg text-[var(--navy)]">
                       <MapPin className="w-4 h-4 text-[var(--navy)] shrink-0" />
                       <span>{c.city}</span>
                     </span>
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
                 <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
                   <Link
                     href={c.href}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98] no-underline"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98] no-underline"
                   >
                     <span>فتح الحالة</span>
                     <ChevronLeft className="w-4 h-4" />

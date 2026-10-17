@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { BawsalaCompass } from "@/components/brand/bawsala-compass";
 import { FieldError } from "@/components/ui/field-error";
-import { formatSAR } from "@/lib/utils";
 import {
   addProperty,
   removeProperty,
@@ -192,7 +191,7 @@ function QuickPasteModal({
               <FileText className="w-4 h-4" />
             </span>
             <div>
-              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+              <h3 className="text-base font-body font-bold text-[var(--navy)]">
                 استيراد سريع لبيانات الإعلان
               </h3>
               <p className="text-xs text-[var(--dusty-blue)]">
@@ -242,7 +241,7 @@ function QuickPasteModal({
             type="button"
             onClick={handleImport}
             disabled={pending}
-            className="px-6 py-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-display font-medium transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-[0.98]"
+            className="px-6 py-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-body font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-[0.98]"
           >
             {pending ? (
               <>
@@ -280,7 +279,7 @@ function BookmarkletBanner({ caseId }: { caseId: string }) {
   return (
     <div className="bg-[var(--paper)] text-[var(--navy)] rounded-[28px] p-6 sm:p-7 relative overflow-hidden shadow-[0_20px_60px_rgba(15,26,43,0.04)] flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border border-[var(--mist)]">
       <div className="space-y-1.5 max-w-xl">
-        <div className="flex items-center gap-2 font-display font-bold text-[var(--navy)] text-sm sm:text-base">
+        <div className="flex items-center gap-2 font-body font-bold text-[var(--navy)] text-sm sm:text-base">
           <Bookmark className="w-4 h-4 text-[var(--navy)]" />
           <span>كليبر المتصفح المباشر (تجاوز حظر المنصات العقارية)</span>
         </div>
@@ -305,7 +304,7 @@ function BookmarkletBanner({ caseId }: { caseId: string }) {
               e.preventDefault();
             }
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] rounded-full text-xs font-display font-medium shadow-sm cursor-grab active:cursor-grabbing transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] rounded-full text-xs font-body font-bold shadow-sm cursor-grab active:cursor-grabbing transition-colors"
           title="اسحب هذا الزر إلى شريط إشارات المتصفح"
         >
           <Bookmark className="w-3.5 h-3.5" />
@@ -486,7 +485,7 @@ export function PropertiesView({
               <BawsalaCompass size={32} animateHover />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-[var(--navy)] font-display">لم تقم بإضافة أي عقار حتى الآن</h3>
+              <h3 className="text-base font-bold text-[var(--navy)] font-body">لم تقم بإضافة أي عقار حتى الآن</h3>
               <p className="text-xs text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
                 أضف أول عقار باستخدام النموذج أدناه عبر رابط الإعلان أو الصور أو المواصفات اليدوية لبدء التدقيق الهندسي المستقل.
               </p>
@@ -552,7 +551,7 @@ export function PropertiesView({
                         </span>
                         <Link
                           href={`/case/${caseId}/properties/${p.id}`}
-                          className="text-sm sm:text-base font-display font-bold text-[var(--navy)] hover:text-[var(--midnight)] truncate transition-colors inline-block"
+                          className="text-sm sm:text-base font-body font-bold text-[var(--navy)] hover:text-[var(--midnight)] truncate transition-colors inline-block"
                         >
                           {displayName}
                         </Link>
@@ -585,8 +584,8 @@ export function PropertiesView({
                         return (
                           <div className="flex flex-wrap items-center gap-2 text-xs">
                             {displayPrice && (
-                              <span className="font-display font-bold text-[var(--navy)] bg-[var(--cream)] border border-[var(--mist)] px-3 py-1 rounded-xl tabular-nums">
-                                {formatSAR(Number(displayPrice))}
+                              <span className="font-body font-bold text-[var(--navy)] bg-[var(--cream)] border border-[var(--mist)] px-3 py-1 rounded-xl tabular-nums">
+                                {Number(displayPrice).toLocaleString("en-US")} ر.س
                               </span>
                             )}
                             {displayArea && (
@@ -681,7 +680,7 @@ export function PropertiesView({
                                   onClick={() =>
                                     setQuickPasteProp({ id: p.id, url: p.source_url || "" })
                                   }
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-display font-medium transition-all shadow-xs cursor-pointer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-body font-bold transition-all shadow-xs cursor-pointer"
                                 >
                                   <FileText className="w-3.5 h-3.5" />
                                   <span>استيراد سريع (لصق بيانات الصفحة)</span>
@@ -698,7 +697,7 @@ export function PropertiesView({
                   <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-[var(--mist)]">
                     <Link
                       href={`/case/${caseId}/properties/${p.id}`}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] text-xs font-display font-medium transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] text-xs font-body font-bold transition-colors cursor-pointer"
                     >
                       <span>تدقيق وتفاصيل</span>
                       <ArrowLeft className="w-3.5 h-3.5" />
@@ -961,8 +960,8 @@ export function PropertiesView({
                     className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-xs sm:text-sm text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 focus:bg-[var(--paper)] focus:outline-none focus:border-[var(--navy)] transition-all tabular-nums"
                   />
                   {showPricePreview && (
-                    <p className="text-[11px] text-[var(--navy)] font-display font-medium">
-                      المبلغ: {formatSAR(parsedManualPrice)}
+                    <p className="text-[11px] text-[var(--navy)] font-body font-bold tabular-nums">
+                      المبلغ: {parsedManualPrice.toLocaleString("en-US")} ر.س
                     </p>
                   )}
                   {manualState?.errors?.listing_price_sar?.[0] && (
@@ -1091,7 +1090,7 @@ export function PropertiesView({
           <Link href={`/case/${caseId}/preflight`} className="w-full sm:w-auto">
             <button
               type="button"
-              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
             >
               <span>متابعة إلى بوابة الفحص المبدئي</span>
               <ArrowLeft className="w-4 h-4" />
@@ -1101,7 +1100,7 @@ export function PropertiesView({
           <button
             type="button"
             disabled
-            className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] font-display font-medium text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-not-allowed opacity-60"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] font-body font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-not-allowed opacity-60"
           >
             <span>متابعة إلى بوابة الفحص المبدئي</span>
             <ArrowLeft className="w-4 h-4" />

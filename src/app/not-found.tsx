@@ -25,7 +25,7 @@ export default function NotFound() {
 
         <Link
           href="/"
-          className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-bold text-sm shadow-xs transition-all active:scale-[0.98] relative z-10 no-underline"
+          className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-sm shadow-xs transition-all active:scale-[0.98] relative z-10 no-underline"
         >
           <Home className="w-4 h-4 text-[var(--cream)]" />
           <span>العودة للرئيسية</span>

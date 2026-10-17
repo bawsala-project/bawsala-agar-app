@@ -114,6 +114,8 @@ describe("ReassessPage Server Component (Acceptance 1, 3 & 4)", () => {
         newFitRating: "weak",
         previousVisitPriority: "medium",
         newVisitPriority: "low",
+        previousRank: 1,
+        newRank: 2,
         addedRisks: ["المصعد معطل بالكامل ويحتاج استبدال"],
         resolvedUnknowns: ["تم التأكد من وجود موقف خاص مظلل"],
         explanationAr: "أدى تعطل المصعد بالدور 3 إلى مخالفة شرط المصعد وتراجع التقييم لضعيف.",
@@ -135,6 +137,9 @@ describe("ReassessPage Server Component (Acceptance 1, 3 & 4)", () => {
     expect(html).toContain("تغير درجة التوافق الإجمالية");
     expect(html).toContain("توافق جزئي");
     expect(html).toContain("توافق ضعيف");
+    expect(html).toContain("تغير الترتيب التنافسي بين الخيارات:");
+    expect(html).toContain("المركز #1");
+    expect(html).toContain("المركز #2");
 
     // Added risks and resolved unknowns
     expect(html).toContain("المصعد معطل بالكامل ويحتاج استبدال");

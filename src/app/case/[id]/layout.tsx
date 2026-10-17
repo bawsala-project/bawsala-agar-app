@@ -63,7 +63,7 @@ export default async function CaseLayout({
       </header>
 
       {/* Main Page Content */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 md:py-12">
+      <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-6 py-6 md:py-8">
         {children}
       </main>
 

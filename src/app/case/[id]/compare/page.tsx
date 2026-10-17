@@ -9,8 +9,14 @@ import {
 } from "lucide-react";
 import { requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { resolveComparison, type PropertyAssessmentWithProperty } from "@/lib/analysis/compare";
+import {
+  resolveComparison,
+  computePoolFitScores,
+  type PropertyAssessmentWithProperty,
+} from "@/lib/analysis/compare";
 import { ComparisonMatrix, type ComparisonItem } from "@/components/properties/comparison-matrix";
+
+import type { ConstraintResult } from "@/lib/analysis/constraints";
 
 interface ComparePageProps {
   params: { id: string };
@@ -18,7 +24,7 @@ interface ComparePageProps {
 
 export default async function ComparePage({ params }: ComparePageProps) {
   // 1. Guard with RLS
-  await requireCase(params.id);
+  const decisionCase = await requireCase(params.id);
 
   // 2. Fetch requirements and latest committed run
   const supabase = createClient();
@@ -76,9 +82,21 @@ export default async function ComparePage({ params }: ComparePageProps) {
   );
 
   const { mode, items, summaryAr, close_options } = comparison;
+  const poolScores = computePoolFitScores(items, requirements?.max_budget_sar ?? null);
 
   const assessmentMap = new Map(
-    (assessments as Array<{ property_id: string; properties?: { floor_no?: number | null; property_facts?: Array<{ bathrooms?: number | null }> | null } | null; fit_summary?: string }>).map((a) => [a.property_id, a])
+    (
+      assessments as unknown as Array<{
+        property_id: string;
+        properties?: {
+          floor_no?: number | null;
+          property_facts?: Array<{ bathrooms?: number | null }> | null;
+        } | null;
+        fit_summary?: string;
+        visit_priority_reason?: string;
+        constraint_results?: ConstraintResult[];
+      }>
+    ).map((a) => [a.property_id, a])
   );
 
   // Map to ComparisonItem for the ComparisonMatrix component
@@ -92,20 +110,29 @@ export default async function ComparePage({ params }: ComparePageProps) {
       rank: it.rank ?? (idx + 1),
       title: it.title,
       district: it.district,
+      city: decisionCase.city,
       listing_price_sar: it.price || 0,
       price_per_sqm: it.price_per_sqm,
+      price_delta_budget: it.price_delta_budget,
       area_sqm: it.area_sqm,
       bedrooms: it.bedrooms,
       bathrooms: fact?.bathrooms ?? null,
       floor_no: rawProp?.floor_no ?? null,
       fit_rating: it.fit_rating,
       visit_priority: it.visit_priority,
-      fit_summary: it.main_advantage_ar || rawAssessment?.fit_summary || "",
+      visit_priority_reason: rawAssessment?.visit_priority_reason || "",
+      fit_summary: rawAssessment?.fit_summary || it.main_advantage_ar || "",
+      main_advantage_ar: it.main_advantage_ar,
+      main_tradeoff_ar: it.main_tradeoff_ar,
+      what_could_change_rank_ar: it.what_could_change_rank_ar,
       strengths: it.strengths,
       risks: it.risks,
       key_unknowns: it.key_unknowns,
-      engineering_score:
-        it.fit_rating === "strong" ? 89 : it.fit_rating === "partial" ? 74 : 58,
+      constraint_summary: it.constraint_summary,
+      constraint_results: Array.isArray(rawAssessment?.constraint_results)
+        ? rawAssessment?.constraint_results
+        : it.constraints,
+      engineering_score: poolScores[idx] ?? 75,
     };
   });
 
@@ -200,7 +227,7 @@ export default async function ComparePage({ params }: ComparePageProps) {
             <Scale className="w-4 h-4" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-display font-bold text-[var(--navy)]">
+            <h3 className="text-sm font-body font-bold text-[var(--navy)]">
               خيارات متقاربة جدًا
             </h3>
             <p className="text-xs text-[var(--dusty-blue)] leading-relaxed">

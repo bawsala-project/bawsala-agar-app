@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ClipboardCheck, Scale } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getOrGenerateInspectionItems, type InspectionItemRow } from "@/actions/inspection";
@@ -34,11 +34,17 @@ export default async function InspectionPage({
 
   // 3. Determine active property (fallback to first)
   const activePropertyId = searchParams?.propertyId || properties[0].id;
-  const activeProperty =
-    properties.find((p) => p.id === activePropertyId) || properties[0];
+  const activeIdx = Math.max(
+    0,
+    properties.findIndex((p) => p.id === activePropertyId)
+  );
+  const activeProperty = properties[activeIdx] || properties[0];
 
   // 4. Load or generate items for active property
-  const items: InspectionItemRow[] = await getOrGenerateInspectionItems(params.id, activeProperty.id);
+  const items: InspectionItemRow[] = await getOrGenerateInspectionItems(
+    params.id,
+    activeProperty.id
+  );
 
   // 5. Fetch existing findings for this property
   const { data: findings = [] } = await supabase
@@ -57,11 +63,12 @@ export default async function InspectionPage({
     },
     idx: number
   ) {
-    if (p.title) return p.title;
-    if (p.district) return `عقار ${p.district}`;
+    const cleanTitle = p.title?.trim();
+    if (cleanTitle && cleanTitle !== "عقار بدون عنوان") return cleanTitle;
+    if (p.district) return `عقار ${p.district} #${idx + 1}`;
     if (p.input_mode === "url" && p.source_url) {
       try {
-        return new URL(p.source_url).hostname;
+        return `${new URL(p.source_url).hostname} #${idx + 1}`;
       } catch {
         return `رابط إلكتروني #${idx + 1}`;
       }
@@ -70,68 +77,50 @@ export default async function InspectionPage({
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8 font-body text-[var(--navy)]" dir="rtl">
-      {/* Top Navigation & Breadcrumbs */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={`/case/${params.id}/results`}
-          className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] bg-[var(--paper)] hover:border-[var(--navy)] border border-[var(--mist)] px-4 py-2 rounded-full transition-all shadow-xs"
-        >
-          <ArrowRight className="w-3.5 h-3.5" />
-          <span>العودة إلى تقرير النتائج</span>
-        </Link>
-
-        {properties.length >= 2 && (
-          <Link
-            href={`/case/${params.id}/compare`}
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] bg-[var(--paper)] hover:border-[var(--navy)] border border-[var(--mist)] px-4 py-2 rounded-full transition-all shadow-xs"
-          >
-            <Scale className="w-3.5 h-3.5 text-[var(--navy)]" />
-            <span>مقارنة الخيارات</span>
-            <span aria-hidden="true">←</span>
-          </Link>
-        )}
-      </div>
-
-      {/* Header card with architectural minimalism */}
-      <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
-            <ClipboardCheck className="w-3.5 h-3.5 text-[var(--navy)]" />
-            <span>قائمة المعاينة الميدانية</span>
+    <div className="w-full space-y-5 font-body text-[var(--navy)]" dir="rtl">
+      {/* Compact Editorial Header + Property Switcher directly on cream canvas */}
+      <header className="space-y-3.5 pb-4 border-b border-[var(--mist)]/70">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-[var(--dusty-blue)]">
+              {[
+                "قائمة المعاينة الميدانية",
+                `${items.length} بنود فحص`,
+                highPriorityCount > 0 ? `${highPriorityCount} عاجل` : null,
+              ]
+                .filter(Boolean)
+                .join("  ·  ")}
+            </p>
+            <h1 className="text-xl sm:text-2xl font-bold font-display text-[var(--navy)]">
+              فحص {getPropertyLabel(activeProperty, activeIdx)}
+            </h1>
           </div>
 
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] shadow-xs">
-            {items.length} بنود فحص موصى بها
-          </span>
-        </div>
+          <div className="flex items-center gap-2 self-start sm:self-end shrink-0">
+            <Link
+              href={`/case/${params.id}/results`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] bg-[var(--paper)] hover:border-[var(--navy)] border border-[var(--mist)] px-3.5 py-2 rounded-xl transition-all"
+            >
+              <ArrowRight className="w-3.5 h-3.5" />
+              <span>العودة للنتائج</span>
+            </Link>
 
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-bold font-display text-[var(--navy)] tracking-tight">
-            فحص {getPropertyLabel(activeProperty, 0)}
-          </h1>
-          <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-2xl leading-relaxed">
-            قائمة عملية مستهدفة لتسجيل شواهدك الميدانية لكل بند (سليم / مشكلة / لم أتحقق)، للمساعدة في حسم
-            النقاط غير المؤكدة قبل المضي في قرار الشراء.
-          </p>
-        </div>
-
-        {highPriorityCount > 0 && (
-          <div className="pt-2 flex items-center gap-2 text-xs font-medium text-[#A62626] bg-[#FDF1F0] border border-[#F6CBC8] px-3.5 py-2 rounded-2xl">
-            <span className="flex h-2 w-2 rounded-full bg-[#A62626] animate-pulse shrink-0" />
-            <span>يتضمن {highPriorityCount} نقاط عالية الأولوية يلزم حسمها أثناء الزيارة</span>
+            {properties.length >= 2 && (
+              <Link
+                href={`/case/${params.id}/compare`}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--navy)] bg-[var(--paper)] hover:border-[var(--navy)] border border-[var(--mist)] px-3.5 py-2 rounded-xl transition-all"
+              >
+                <span>مقارنة الخيارات</span>
+                <span aria-hidden="true">←</span>
+              </Link>
+            )}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Property Switcher Tabs (if 2+ properties exist) */}
-      {properties.length > 1 && (
-        <div className="space-y-2.5">
-          <label className="text-xs font-medium text-[var(--dusty-blue)] block">
-            اختر العقار لاستعراض وتسجيل قائمته:
-          </label>
+        {/* Property Switcher Tabs (if 2+ properties exist) */}
+        {properties.length > 1 && (
           <div
-            className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar"
+            className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1"
             role="tablist"
             aria-label="قوائم فحص العقارات"
           >
@@ -145,27 +134,21 @@ export default async function InspectionPage({
                   role="tab"
                   aria-selected={isActive}
                   className={cn(
-                    "px-4 py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all shrink-0 flex items-center gap-2 border shadow-xs",
+                    "px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 border",
                     isActive
-                      ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-sm"
-                      : "bg-[var(--paper)] text-[var(--navy)] hover:border-[var(--navy)] border-[var(--mist)]"
+                      ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)]"
+                      : "bg-[var(--paper)] text-[var(--dusty-blue)] hover:text-[var(--navy)] border-[var(--mist)]/80"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full",
-                      isActive ? "bg-[var(--cream)]" : "bg-[var(--dusty-blue)]"
-                    )}
-                  />
-                  <span>{label}</span>
+                  {label}
                 </Link>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </header>
 
-      {/* Interactive Inspection View (Checklist items + Finding recording + Sticky bottom bar) */}
+      {/* Interactive Inspection Checklist (Category Filter + 2-Column Grid) */}
       <InspectionView
         caseId={params.id}
         propertyId={activeProperty.id}

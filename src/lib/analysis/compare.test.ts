@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { resolveComparison, type PropertyAssessmentWithProperty } from "./compare";
+import {
+  resolveComparison,
+  computePoolFitScores,
+  type PropertyAssessmentWithProperty,
+} from "./compare";
 import type { RequirementsRow } from "./constraints";
 
 describe("Comparison Engine (compare.ts) - Acceptance 1", () => {
@@ -191,5 +195,52 @@ describe("Comparison Engine (compare.ts) - Acceptance 1", () => {
     expect(result.summaryAr).toBe("ترتيب تقديري — توجد معلومات حرجة غير محسومة قد تغير النتيجة");
     expect(result.items[0].property_id).toBe("prop-unk");
     expect(result.items[0].what_could_change_rank_ar).toContain("وجود مصعد");
+  });
+
+  it("Test 5: Evaluates and ranks all 5 properties so the 5th property can win Rank #1", () => {
+    const makeWeakProp = (idx: number): PropertyAssessmentWithProperty => ({
+      ...propertyB,
+      id: `asmt-w-${idx}`,
+      property_id: `prop-w-${idx}`,
+      property: {
+        ...propertyB.property!,
+        id: `prop-w-${idx}`,
+        title: `عقار مخالف ${idx}`,
+      },
+    });
+
+    const fiveProps = [
+      makeWeakProp(1),
+      makeWeakProp(2),
+      makeWeakProp(3),
+      makeWeakProp(4),
+      propertyA, // 5th property is the best candidate!
+    ];
+
+    const result = resolveComparison(fiveProps, sampleRequirements);
+    expect(result.items).toHaveLength(5);
+    expect(result.items[0].property_id).toBe("prop-a");
+    expect(result.items[0].rank).toBe(1);
+    expect(result.items[4].rank).toBe(5);
+  });
+
+  it("Test 6: computePoolFitScores assigns identical scores to identical properties without artificial -4% subtraction", () => {
+    const twinA: PropertyAssessmentWithProperty = {
+      ...propertyA,
+      id: "asmt-twin-1",
+      property_id: "prop-twin-1",
+    };
+    const twinB: PropertyAssessmentWithProperty = {
+      ...propertyA,
+      id: "asmt-twin-2",
+      property_id: "prop-twin-2",
+    };
+
+    const result = resolveComparison([twinA, twinB], sampleRequirements);
+    const scores = computePoolFitScores(result.items, sampleRequirements.max_budget_sar);
+
+    expect(scores).toHaveLength(2);
+    expect(scores[0]).toBe(scores[1]);
+    expect(scores[0]).toBeGreaterThanOrEqual(85);
   });
 });

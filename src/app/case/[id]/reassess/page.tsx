@@ -307,7 +307,7 @@ export default async function ReassessPage({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
             <span className="text-[var(--dusty-blue)] font-medium block mb-1">السعر المعروض</span>
-            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-display">
+            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {activeProperty.listing_price_sar
                 ? formatSAR(Number(activeProperty.listing_price_sar))
                 : "غير محدد"}
@@ -316,14 +316,14 @@ export default async function ReassessPage({
 
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
             <span className="text-[var(--dusty-blue)] font-medium block mb-1">المساحة</span>
-            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-display">
+            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {activeProperty.area_sqm ? `${activeProperty.area_sqm} م²` : "غير محددة"}
             </span>
           </div>
 
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
             <span className="text-[var(--dusty-blue)] font-medium block mb-1">سعر المتر المربع</span>
-            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-display">
+            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {currentAssessment?.price_per_sqm
                 ? `${formatSAR(Number(currentAssessment.price_per_sqm))} / م²`
                 : "غير متوفر"}
@@ -332,7 +332,7 @@ export default async function ReassessPage({
 
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
             <span className="text-[var(--dusty-blue)] font-medium block mb-1">نتائج الفحص المسجلة</span>
-            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-display">
+            <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {findingsCount || 0} شواهد
             </span>
           </div>
@@ -362,8 +362,13 @@ export default async function ReassessPage({
             </div>
           </div>
 
-          {/* Rating & Priority Transitions Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Rating, Priority & Competitive Rank Transitions Grid */}
+          <div
+            className={cn(
+              "grid grid-cols-1 gap-4",
+              diff.previousRank && diff.newRank ? "sm:grid-cols-3" : "sm:grid-cols-2"
+            )}
+          >
             {/* Fit Rating Diff Card */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2.5">
               <span className="text-xs font-bold text-[var(--navy)] block">
@@ -441,6 +446,54 @@ export default async function ReassessPage({
                   : "مستوى التوصية مستقر."}
               </p>
             </div>
+
+            {/* Competitive Rank Diff Card (when 2+ properties exist) */}
+            {diff.previousRank && diff.newRank && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2.5">
+                <span className="text-xs font-bold text-[var(--navy)] block">
+                  تغير الترتيب التنافسي بين الخيارات:
+                </span>
+                <div className="flex items-center gap-2.5 flex-wrap text-xs font-bold">
+                  <span className="px-3 py-1 rounded-full border bg-[var(--paper)] text-[var(--navy)] border-[var(--mist)]">
+                    {`المركز #${diff.previousRank}`}
+                  </span>
+
+                  <span className="text-[var(--dusty-blue)] text-sm font-bold" aria-hidden="true">
+                    ←
+                  </span>
+
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full border shadow-xs",
+                      diff.newRank > diff.previousRank
+                        ? "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]"
+                        : diff.newRank < diff.previousRank
+                        ? "bg-[#E9F4EE] text-[#1E6B43] border-[#C5E4D4]"
+                        : "bg-[var(--paper)] text-[var(--navy)] border-[var(--mist)]"
+                    )}
+                  >
+                    {`المركز #${diff.newRank}`}
+                  </span>
+                </div>
+
+                <p
+                  className={cn(
+                    "text-[11px] pt-1 font-medium",
+                    diff.newRank > diff.previousRank
+                      ? "text-[#A62626]"
+                      : diff.newRank < diff.previousRank
+                      ? "text-[#1E6B43]"
+                      : "text-[var(--dusty-blue)]"
+                  )}
+                >
+                  {diff.newRank > diff.previousRank
+                    ? `⚠️ تراجع ترتيب العقار من المركز #${diff.previousRank} إلى المركز #${diff.newRank} بعد المعاينة.`
+                    : diff.newRank < diff.previousRank
+                    ? `تقدم ترتيب العقار من المركز #${diff.previousRank} إلى المركز #${diff.newRank} بعد المعاينة.`
+                    : `حافظ العقار على المركز #${diff.newRank} بين خياراتك المقارنة.`}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Added Risks / Detected Problems */}
@@ -524,7 +577,7 @@ export default async function ReassessPage({
           <div className="pt-2">
             <Link
               href={`/case/${params.id}/inspection?propertyId=${activeProperty.id}`}
-              className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm shadow-sm transition-all"
+              className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm shadow-sm transition-all"
             >
               <span>الانتقال لقائمة الفحص الميداني</span>
               <span aria-hidden="true">←</span>
@@ -552,7 +605,7 @@ export default async function ReassessPage({
 
           <Link
             href={compareHref}
-            className="w-full sm:w-auto px-7 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm transition-all shadow-sm text-center inline-flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-7 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm transition-all shadow-sm text-center inline-flex items-center justify-center gap-2"
           >
             <Scale className="w-4 h-4 text-[var(--cream)]" />
             <span>{compareLabel}</span>

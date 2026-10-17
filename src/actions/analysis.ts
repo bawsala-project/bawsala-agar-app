@@ -419,6 +419,46 @@ export async function reassessPropertyAction(
     requirements
   );
 
+  // 7b. Compute before/after competitive rank across the case's property pool
+  try {
+    const { resolveComparison } = await import("@/lib/analysis/compare");
+    const { data: runAssessments } = await supabase
+      .from("property_assessments")
+      .select("*, properties(*, property_facts(*))")
+      .eq("run_id", latestRunId);
+
+    if (Array.isArray(runAssessments) && runAssessments.length >= 2) {
+      const beforeComp = resolveComparison(
+        runAssessments as unknown as import("@/lib/analysis/compare").PropertyAssessmentWithProperty[],
+        requirements
+      );
+      const afterPool = runAssessments.map((a) =>
+        a.property_id === propertyId
+          ? {
+              ...a,
+              ...newAssessment,
+            }
+          : a
+      );
+      const afterComp = resolveComparison(
+        afterPool as unknown as import("@/lib/analysis/compare").PropertyAssessmentWithProperty[],
+        requirements
+      );
+
+      const prevRankItem = beforeComp.items.find((i) => i.property_id === propertyId);
+      const newRankItem = afterComp.items.find((i) => i.property_id === propertyId);
+      if (prevRankItem?.rank && newRankItem?.rank) {
+        diff.previousRank = prevRankItem.rank;
+        diff.newRank = newRankItem.rank;
+        if (prevRankItem.rank !== newRankItem.rank) {
+          diff.explanationAr = `${diff.explanationAr} وتغير ترتيبه التنافسي بين الخيارات من المركز #${prevRankItem.rank} إلى المركز #${newRankItem.rank}.`;
+        }
+      }
+    }
+  } catch {
+    // Graceful fallback when running against single-property or mocked environments
+  }
+
   // 8. Atomic commit via PostgreSQL commit_reassessment RPC
   const { data: commitOutcome, error: rpcErr } = await adminSupabase.rpc(
     "commit_reassessment",

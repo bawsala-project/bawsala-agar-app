@@ -82,7 +82,8 @@ export async function getOrGenerateInspectionItems(
   const candidates: InspectionCandidateItem[] = generateInspectionCandidates(
     property,
     resolved.fields,
-    constraints
+    constraints,
+    requirements?.important_locations
   );
 
   // 8. Insert candidates via admin client (due to SELECT-only owner RLS)

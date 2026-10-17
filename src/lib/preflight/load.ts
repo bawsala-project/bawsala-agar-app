@@ -30,20 +30,29 @@ export async function loadPreflightData(
     .eq("case_id", caseId)
     .order("created_at", { ascending: true });
 
-  const formattedProperties: PreflightPropertyInput[] = (properties || []).map((p) => {
-    // Generate human-friendly label
-    let label = p.title || p.district || "";
+  const formattedProperties: PreflightPropertyInput[] = (properties || []).map((p, idx) => {
+    // Resolve facts first so we can use extracted district if column is empty
+    const resolved = resolveFacts((p.property_facts as PropertyFact[]) || []);
+    const resolvedDistrict =
+      resolved.fields.district.status === "known" &&
+      typeof resolved.fields.district.value === "string"
+        ? resolved.fields.district.value.trim()
+        : "";
+
+    // Generate human-friendly, unambiguous label per property
+    let label = p.title || p.district || (resolvedDistrict ? `حي ${resolvedDistrict}` : "");
     if (!label) {
       if (p.input_mode === "url" && p.source_url) {
         try {
-          label = new URL(p.source_url).hostname;
+          const host = new URL(p.source_url).hostname.replace(/^www\./, "");
+          label = `عقار #${idx + 1} (${host})`;
         } catch {
-          label = "رابط إلكتروني";
+          label = `عقار #${idx + 1} (رابط إلكتروني)`;
         }
       } else if (p.input_mode === "image") {
-        label = `صور العقار (${p.image_paths?.length || 0})`;
+        label = `عقار #${idx + 1} (صور العقار: ${p.image_paths?.length || 0})`;
       } else {
-        label = "عقار بدون عنوان";
+        label = `عقار #${idx + 1}`;
       }
     }
 
@@ -54,9 +63,6 @@ export async function loadPreflightData(
     const latestRun = runs[0]
       ? { status: runs[0].status, error_code: runs[0].error_code }
       : null;
-
-    // Resolve facts
-    const resolved = resolveFacts((p.property_facts as PropertyFact[]) || []);
 
     return {
       id: p.id,

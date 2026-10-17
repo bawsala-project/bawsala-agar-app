@@ -303,12 +303,12 @@ export function PropertyCard({
               <div className="flex flex-wrap items-baseline gap-3 mt-0.5">
                 {effectivePrice !== null && effectivePrice !== undefined && effectivePrice > 0 ? (
                   <>
-                    <span className="font-display font-black text-2xl sm:text-3xl text-[var(--buttercream)] tabular-nums tracking-tight">
+                    <span className="font-body font-extrabold text-2xl sm:text-3xl text-[var(--buttercream)] tabular-nums tracking-tight">
                       {formatSAR(effectivePrice)}
                     </span>
                     {assessment.price_per_sqm !== null && assessment.price_per_sqm > 0 && (
                       <span className="text-xs sm:text-sm font-bold text-[var(--mist)] bg-[rgba(28,46,74,0.6)] px-2.5 py-1 rounded-lg border border-[rgba(82,103,125,0.3)] tabular-nums">
-                        {Math.round(assessment.price_per_sqm).toLocaleString("ar-SA")} ر.س / م²
+                        {Math.round(assessment.price_per_sqm).toLocaleString("en-US")} ر.س / م²
                       </span>
                     )}
                   </>
@@ -332,14 +332,14 @@ export function PropertyCard({
             </span>
           </div>
 
-          {/* Key Numbers Grid in Display Font with Tabular Figures */}
+          {/* Key Numbers Grid in Body Font with Tabular Figures */}
           <div className="grid grid-cols-4 gap-2 text-center pt-1">
             <div className="bg-[rgba(28,46,74,0.55)] backdrop-blur-sm p-2 rounded-2xl border border-[rgba(82,103,125,0.25)]">
               <div className="flex items-center justify-center gap-1 text-[var(--mist)] text-[11px] font-medium">
                 <Layers className="w-3 h-3" />
                 <span>المساحة</span>
               </div>
-              <div className="font-display font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
+              <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
                 {area} م²
               </div>
             </div>
@@ -349,7 +349,7 @@ export function PropertyCard({
                 <BedDouble className="w-3 h-3" />
                 <span>الغرف</span>
               </div>
-              <div className="font-display font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
+              <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
                 {bedrooms}
               </div>
             </div>
@@ -359,7 +359,7 @@ export function PropertyCard({
                 <Bath className="w-3 h-3" />
                 <span>دورات</span>
               </div>
-              <div className="font-display font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
+              <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
                 {bathrooms}
               </div>
             </div>
@@ -369,7 +369,7 @@ export function PropertyCard({
                 <Building className="w-3 h-3" />
                 <span>الدور</span>
               </div>
-              <div className="font-display font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
+              <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
                 {floor === 0 ? "أرضي" : floor}
               </div>
             </div>

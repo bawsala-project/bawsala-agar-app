@@ -61,7 +61,7 @@ export function InstrumentChip({
       )}
 
       {/* Label */}
-      <span className="font-display">{label}</span>
+      <span className="font-body">{label}</span>
 
       {/* Optional Count */}
       {count !== undefined && (

@@ -1,18 +1,12 @@
 "use client";
 
 import React, { useState, useTransition, useEffect, useRef } from "react";
-import { Lightbulb, Search } from "lucide-react";
 import {
   saveFindingAction,
   type FindingResult,
   type InspectionItemRow,
 } from "@/actions/inspection";
-import {
-  TRIGGER_REASON_LABELS_AR,
-  ASSESSMENT_TYPE_LABELS_AR,
-  type InspectionPriority,
-  type InspectionTriggerReason,
-} from "@/lib/inspection/generate-items";
+import { type InspectionPriority } from "@/lib/inspection/generate-items";
 import { cn } from "@/lib/utils";
 
 export interface FindingItemProps {
@@ -41,6 +35,7 @@ export function FindingItem({
     initialFinding?.result ?? null
   );
   const [note, setNote] = useState<string>(initialFinding?.note ?? "");
+  const [showHint, setShowHint] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "saved" | "error">(
     "idle"
   );
@@ -53,7 +48,6 @@ export function FindingItem({
     note: initialFinding?.note ?? "",
   });
 
-  // Sync server action call
   const triggerSave = (newResult: FindingResult, newNote: string) => {
     setSyncStatus("saving");
     setErrorMessage(null);
@@ -73,25 +67,23 @@ export function FindingItem({
           lastSavedRef.current = { result: newResult, note: newNote };
           setTimeout(() => {
             setSyncStatus("idle");
-          }, 2000);
+          }, 1800);
         } else {
           setSyncStatus("error");
-          setErrorMessage(res.error || "تعذر حفظ النتيجة");
+          setErrorMessage(res.error || "تعذر الحفظ");
         }
       } catch (err: unknown) {
         setSyncStatus("error");
         setErrorMessage(
-          err instanceof Error ? err.message : "حدث خطأ أثناء حفظ الفحص"
+          err instanceof Error ? err.message : "خطأ في الحفظ"
         );
       }
     });
   };
 
   const handleResultSelect = (newResult: FindingResult) => {
-    // Instant optimistic client update
     setResult(newResult);
     onFindingChange?.(item.id, newResult, note);
-
     triggerSave(newResult, note);
   };
 
@@ -130,203 +122,170 @@ export function FindingItem({
   }, []);
 
   const priority = item.priority as InspectionPriority;
-  const triggerReason = item.trigger_reason as InspectionTriggerReason;
-  const triggerLabel = TRIGGER_REASON_LABELS_AR[triggerReason] || "تحقق ميداني";
-
   const showNoteInput = result === "good" || result === "problem";
 
   return (
     <article
-      className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-5 sm:p-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)] space-y-4"
+      className={cn(
+        "bg-[var(--paper)] rounded-[20px] border p-4 transition-all duration-200 flex flex-col justify-between gap-3",
+        result === "good"
+          ? "border-[#2D6A4F]/40"
+          : result === "problem"
+          ? "border-[#A62626]/45"
+          : "border-[var(--mist)]/80 hover:border-[var(--navy)]/30"
+      )}
       aria-labelledby={`item-q-${item.id}`}
     >
-      {/* Top Meta: Priority & Trigger Reason */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "px-3 py-0.5 rounded-full font-medium text-xs border",
-              priority === "high"
-                ? "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]"
-                : priority === "medium"
-                ? "bg-[#FFF9EC] text-[#9A6700] border-[#F9E2AF]"
-                : "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
-            )}
+      <div className="space-y-2">
+        {/* Compact Row 1: Priority Tag + Question + Hint Toggle */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2 min-w-0">
+            <span
+              className={cn(
+                "px-2 py-0.5 rounded-md font-bold text-[10px] border shrink-0 mt-0.5",
+                priority === "high"
+                  ? "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]"
+                  : priority === "medium"
+                  ? "bg-[#FFF9EC] text-[#9A6700] border-[#F9E2AF]"
+                  : "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
+              )}
+            >
+              {priority === "high" ? "عاجل" : priority === "medium" ? "مهم" : "إرشادي"}
+            </span>
+
+            <h3
+              id={`item-q-${item.id}`}
+              className="text-sm sm:text-[15px] font-bold text-[var(--navy)] leading-snug"
+            >
+              {item.question_ar}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowHint((v) => !v)}
+            aria-expanded={showHint}
+            className="shrink-0 text-[11px] font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] px-2 py-0.5 rounded-lg bg-[var(--cream)]/70 hover:bg-[var(--cream)] transition-colors"
           >
-            {priority === "high" ? "أولوية مرتفعة" : priority === "medium" ? "أولوية متوسطة" : "أولوية منخفضة"}
-          </span>
-
-          <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-[11px] font-medium">
-            {triggerLabel}
-          </span>
+            {showHint ? "إخفاء" : "؟ كيف أفحص"}
+          </button>
         </div>
 
-        {/* Affected Assessment Axes */}
-        {item.affected_assessment_types && item.affected_assessment_types.length > 0 && (
-          <div className="flex items-center gap-1.5 text-[11px] text-[var(--dusty-blue)] font-medium">
-            <span>يؤثر على:</span>
-            <div className="flex items-center gap-1">
-              {item.affected_assessment_types.map((axis) => (
-                <span
-                  key={axis}
-                  className="px-2 py-0.5 rounded-md bg-[var(--cream)] text-[var(--navy)] font-medium text-[10px] border border-[var(--mist)]"
-                >
-                  {ASSESSMENT_TYPE_LABELS_AR[axis] || axis}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Question Text */}
-      <h3
-        id={`item-q-${item.id}`}
-        className="text-base sm:text-lg font-bold font-display text-[var(--navy)] leading-snug"
-      >
-        {item.question_ar}
-      </h3>
-
-      {/* Why it matters box */}
-      <div className="bg-[var(--cream)] border border-[var(--mist)] rounded-2xl p-3.5 text-xs text-[var(--navy)] space-y-1">
-        <div className="flex items-center gap-1.5 font-bold text-[#9A6700]">
-          <Lightbulb className="w-3.5 h-3.5 text-[#9A6700]" />
-          <span>سبب الأهمية:</span>
-        </div>
-        <p className="leading-relaxed pr-5 font-normal text-[var(--dusty-blue)]">{item.why_it_matters_ar}</p>
-      </div>
-
-      {/* How to check box */}
-      <div className="bg-[var(--cream)] border border-[var(--mist)] rounded-2xl p-3.5 text-xs text-[var(--navy)] space-y-1">
-        <div className="flex items-center gap-1.5 font-bold text-[var(--navy)]">
-          <Search className="w-3.5 h-3.5 text-[var(--navy)]" />
-          <span>طريقة الفحص الميداني:</span>
-        </div>
-        <p className="leading-relaxed pr-5 font-medium text-[var(--dusty-blue)]">
-          {item.how_to_check_ar}
-        </p>
-      </div>
-
-      {/* Interactive Finding Buttons (3 Segmented Radios) */}
-      <div className="pt-3 border-t border-[var(--mist)] space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-[var(--navy)] block">
-            تسجيل نتيجة الفحص:
-          </span>
-
-          {/* Sync indicator */}
-          <div className="text-[11px] font-medium flex items-center gap-1.5">
-            {isPending || syncStatus === "saving" ? (
-              <span className="text-[var(--dusty-blue)] flex items-center gap-1 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)]" />
-                <span>جاري الحفظ...</span>
-              </span>
-            ) : syncStatus === "saved" ? (
-              <span className="text-[#1E6B43] flex items-center gap-1 font-medium">
-                <span>✓</span>
-                <span>تم الحفظ</span>
-              </span>
-            ) : syncStatus === "error" ? (
-              <span className="text-[#A62626] flex items-center gap-1 font-medium">
-                <span>⚠</span>
-                <span>{errorMessage || "فشل الحفظ"}</span>
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        {/* 3 Segmented Radio Buttons */}
+        {/* Progressive Disclosure Hint Drawer (Hidden by default to prevent UI fatigue) */}
         <div
-          role="radiogroup"
-          aria-label={`نتيجة فحص: ${item.question_ar}`}
-          className="grid grid-cols-3 gap-2 sm:gap-2.5"
+          className={cn(
+            "rounded-xl bg-[var(--cream)]/70 border border-[var(--mist)]/60 p-3 text-xs space-y-1.5 text-[var(--dusty-blue)] leading-relaxed",
+            showHint ? "block" : "hidden"
+          )}
         >
-          {/* Button 1: good (سليم / مطابق) */}
-          <button
-            type="button"
-            role="radio"
-            aria-checked={result === "good"}
-            onClick={() => handleResultSelect("good")}
-            className={cn(
-              "px-3 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs cursor-pointer",
-              result === "good"
-                ? "bg-[#1E6B43] text-[var(--cream)] border-[#1E6B43] shadow-sm"
-                : "bg-[var(--paper)] text-[var(--navy)] hover:border-[#1E6B43] border-[var(--mist)]"
-            )}
-          >
-            <span aria-hidden="true">✓</span>
-            <span>سليم / مطابق</span>
-          </button>
+          <p>
+            <strong className="text-[var(--navy)]">طريقة الفحص: </strong>
+            {item.how_to_check_ar}
+          </p>
+          <p>
+            <strong className="text-[#9A6700]">الأهمية: </strong>
+            {item.why_it_matters_ar}
+          </p>
+        </div>
+      </div>
 
-          {/* Button 2: problem (مشكلة / مخالف) */}
-          <button
-            type="button"
-            role="radio"
-            aria-checked={result === "problem"}
-            onClick={() => handleResultSelect("problem")}
-            className={cn(
-              "px-3 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs cursor-pointer",
-              result === "problem"
-                ? "bg-[#A62626] text-[var(--cream)] border-[#A62626] shadow-sm"
-                : "bg-[var(--paper)] text-[var(--navy)] hover:border-[#A62626] border-[var(--mist)]"
-            )}
+      {/* Compact Row 2: 3-Button Segmented Pill + Sync Status */}
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center gap-2">
+          <div
+            role="radiogroup"
+            aria-label={`نتيجة فحص: ${item.question_ar}`}
+            className="flex-1 grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[var(--cream)]/70 border border-[var(--mist)]/60"
           >
-            <span aria-hidden="true">⚠</span>
-            <span>مشكلة / مخالف</span>
-          </button>
+            {/* 1: good */}
+            <button
+              type="button"
+              role="radio"
+              aria-label="سليم / مطابق"
+              aria-checked={result === "good"}
+              onClick={() => handleResultSelect("good")}
+              className={cn(
+                "py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                result === "good"
+                  ? "bg-[#2D6A4F] text-white shadow-xs"
+                  : "text-[var(--navy)] hover:bg-[var(--paper)]"
+              )}
+            >
+              <span aria-hidden="true">✓</span>
+              <span>سليم</span>
+            </button>
 
-          {/* Button 3: not_checked (لم أتحقق) */}
-          <button
-            type="button"
-            role="radio"
-            aria-checked={result === "not_checked"}
-            onClick={() => handleResultSelect("not_checked")}
-            className={cn(
-              "px-3 py-3 rounded-full text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] border shadow-xs cursor-pointer",
-              result === "not_checked"
-                ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-sm"
-                : "bg-[var(--paper)] text-[var(--navy)] hover:border-[var(--navy)] border-[var(--mist)]"
-            )}
-          >
-            <span aria-hidden="true">—</span>
-            <span>لم أتحقق</span>
-          </button>
+            {/* 2: problem */}
+            <button
+              type="button"
+              role="radio"
+              aria-label="مشكلة / مخالف"
+              aria-checked={result === "problem"}
+              onClick={() => handleResultSelect("problem")}
+              className={cn(
+                "py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer",
+                result === "problem"
+                  ? "bg-[#A62626] text-white shadow-xs"
+                  : "text-[var(--navy)] hover:bg-[var(--paper)]"
+              )}
+            >
+              <span aria-hidden="true">✕</span>
+              <span>مشكلة</span>
+            </button>
+
+            {/* 3: not_checked */}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={result === "not_checked"}
+              onClick={() => handleResultSelect("not_checked")}
+              className={cn(
+                "py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer",
+                result === "not_checked"
+                  ? "bg-[var(--navy)] text-[var(--cream)] shadow-xs"
+                  : "text-[var(--dusty-blue)] hover:text-[var(--navy)] hover:bg-[var(--paper)]"
+              )}
+            >
+              <span>لم أتحقق</span>
+            </button>
+          </div>
+
+          {/* Subtle inline sync indicator */}
+          {(isPending || syncStatus !== "idle") && (
+            <span className="text-[10px] font-medium shrink-0">
+              {isPending || syncStatus === "saving" ? (
+                <span className="text-[var(--dusty-blue)]">حفظ...</span>
+              ) : syncStatus === "saved" ? (
+                <span className="text-[#2D6A4F]">✓</span>
+              ) : (
+                <span className="text-[#A62626]" title={errorMessage || ""}>!</span>
+              )}
+            </span>
+          )}
         </div>
 
-        {/* Auto-expanded optional note input when good or problem is selected */}
+        {/* Slim Note Input (Only when good or problem is selected) */}
         {showNoteInput && (
-          <div className="pt-2 space-y-2 animate-fadeIn">
-            <div className="flex items-center justify-between text-xs">
-              <label
-                htmlFor={`note-${item.id}`}
-                className="font-medium text-[var(--navy)] flex items-center gap-1.5"
-              >
-                <span>ملاحظات إضافية (اختياري)</span>
-                {result === "problem" && (
-                  <span className="text-[#A62626] text-[11px] font-medium">
-                    - يُفضل توثيق تفاصيل المشكلة
-                  </span>
-                )}
+          <div className="space-y-1 pt-0.5">
+            <div className="flex items-center justify-between text-[11px] text-[var(--dusty-blue)]">
+              <label htmlFor={`note-${item.id}`} className="font-medium">
+                ملاحظات إضافية (اختياري)
               </label>
-              <span
-                className={cn(
-                  "text-[10px] font-mono",
-                  note.length >= 280 ? "text-[#9A6700]" : "text-[var(--dusty-blue)]"
-                )}
-              >
-                {note.length}/300
-              </span>
+              <span className="tabular-nums text-[10px]">{note.length}/300</span>
             </div>
-
             <textarea
               id={`note-${item.id}`}
               value={note}
               onChange={handleNoteChange}
               onBlur={handleNoteBlur}
-              rows={2}
+              rows={1}
               maxLength={300}
-              placeholder="دوّن تفاصيل أو شواهد رأيتها أثناء الزيارة..."
-              className="w-full text-xs sm:text-sm p-3.5 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 bg-[var(--cream)] focus:bg-[var(--paper)] resize-none transition-colors"
+              placeholder={
+                result === "problem"
+                  ? "صف المشكلة باختصار (مثال: تسريب، ضعف ضغط المياه)..."
+                  : "أضف ملاحظة سريعة..."
+              }
+              className="w-full text-xs py-2 px-3 rounded-xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 bg-[var(--cream)]/50 focus:bg-[var(--paper)] resize-none transition-colors"
             />
           </div>
         )}

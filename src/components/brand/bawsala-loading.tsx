@@ -43,7 +43,7 @@ export function BawsalaLoading({
 
       {/* Message & Submessage */}
       {message && (
-        <h4 className="font-display font-bold text-sm sm:text-base text-[var(--navy)] tracking-tight">
+        <h4 className="font-body font-bold text-sm sm:text-base text-[var(--navy)] tracking-tight">
           {message}
         </h4>
       )}

@@ -35,6 +35,7 @@ export default async function PreflightPage({ params }: PreflightPageProps) {
       evaluation={evaluation}
       isPaid={isPaid}
       propertyCount={preflightData.properties.length}
+      properties={preflightData.properties}
     />
   );
 }

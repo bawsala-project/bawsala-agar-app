@@ -215,4 +215,33 @@ describe("generateInspectionCandidates (Pure Generator)", () => {
     expect(items.some((i) => i.category === "building_services")).toBe(true);
     expect(items.some((i) => i.category === "unit_specs")).toBe(true);
   });
+
+  it("generates peak-hour daily location check when importantLocations or daily_location constraint is present", () => {
+    const property: PropertyInput = { id: "prop-loc", floor_no: 2 };
+    const resolvedFacts: Record<string, ResolvedField> = {
+      elevator: makeResolvedKnown(true),
+      private_parking: makeResolvedKnown(true),
+      area_sqm: makeResolvedKnown(140),
+      listing_price_sar: makeResolvedKnown(800000),
+      bedrooms: makeResolvedKnown(3),
+      district: makeResolvedKnown("النرجس"),
+    };
+    const constraints: ConstraintResult[] = [
+      {
+        key: "daily_location",
+        labelAr: "القرب من المواقع المهمة (مقر العمل)",
+        result: "unknown",
+        detailAr: "العقار في حي (النرجس) بينما (مقر العمل) في (حي العليا)؛ يلزم التحقق الميداني وقت الذروة",
+      },
+    ];
+
+    const items = generateInspectionCandidates(property, resolvedFacts, constraints);
+    const locItem = items.find(
+      (i) => i.category === "neighborhood" && i.question_ar.includes("المواقع اليومية")
+    );
+    expect(locItem).toBeDefined();
+    expect(locItem?.priority).toBe("high");
+    expect(locItem?.trigger_reason).toBe("constraint_verification");
+    expect(locItem?.affected_assessment_types).toEqual(["fit", "daily_life"]);
+  });
 });

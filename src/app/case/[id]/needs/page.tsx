@@ -3,8 +3,10 @@ import { NeedsForm } from "./needs-form";
 
 export default async function NeedsPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { typology?: string; intent?: string; title?: string };
 }) {
   const supabase = createClient();
 
@@ -26,6 +28,11 @@ export default async function NeedsPage({
       caseId={params.id}
       initialData={requirements}
       city={caseData?.city ?? null}
+      initialContext={{
+        typology: searchParams?.typology,
+        intent: searchParams?.intent,
+        title: searchParams?.title,
+      }}
     />
   );
 }

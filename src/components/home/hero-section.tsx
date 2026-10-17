@@ -30,20 +30,20 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
     <section
       ref={containerRef}
       dir="rtl"
-      className={`relative bg-[var(--cream)] pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-16 md:pb-24 lg:pb-32 overflow-visible select-none z-20 ${className}`}
+      className={`relative bg-[var(--cream)] pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-14 sm:pb-16 md:pb-20 lg:pb-24 overflow-visible select-none z-20 ${className}`}
     >
-      {/* Giant Faint 4% Navy Rotating Compass Watermark behind the hero */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none -z-0">
-        <HeroCompassWatermark
-          size={820}
-          className="opacity-100"
-        />
-      </div>
-
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 relative z-20 min-h-[580px] lg:min-h-[660px] xl:min-h-[700px] flex flex-col justify-between">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 relative z-20 min-h-[520px] lg:min-h-[460px] xl:min-h-[480px] flex flex-col lg:block">
         
-        {/* TEXT & CTAS: Top Right on Desktop, Headline Sits Above the House */}
-        <div className="w-full lg:max-w-[620px] lg:mr-0 lg:ml-auto space-y-6 sm:space-y-8 text-right relative z-30">
+        {/* Giant Faint 4% Navy Rotating Compass Watermark behind the hero image and next to the title */}
+        <div className="absolute top-[48%] lg:top-[46%] xl:top-[45%] left-1/2 lg:left-[26%] xl:left-[24%] -translate-x-1/2 -translate-y-1/2 pointer-events-none -z-10">
+          <HeroCompassWatermark
+            size={840}
+            className="opacity-100"
+          />
+        </div>
+        
+        {/* TEXT & CTAS: Centered on Mobile, Top Right on Desktop */}
+        <div className="w-full lg:max-w-[560px] xl:max-w-[620px] lg:mr-0 lg:ml-auto space-y-6 sm:space-y-8 text-center lg:text-right relative z-30">
           {/* Headline: Navy Display Font on 3 Comfortable Lines with Masked Rise */}
           <div className="space-y-1 sm:space-y-2">
             {/* Line 1: اتخذ قرار شراء مسكنك */}
@@ -52,7 +52,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
                 initial={{ y: "115%", opacity: 0 }}
                 animate={{ y: "0%", opacity: 1 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-                className="font-display font-black text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.3]"
+                className="font-display font-black text-[38px] sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.25] sm:leading-[1.3]"
               >
                 اتخذ قرار شراء مسكنك
               </motion.h1>
@@ -64,7 +64,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
                 initial={{ y: "115%", opacity: 0 }}
                 animate={{ y: "0%", opacity: 1 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
-                className="font-display font-black text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.3]"
+                className="font-display font-black text-[38px] sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.25] sm:leading-[1.3]"
               >
                 بأرقام قطعية وتدقيق
               </motion.div>
@@ -76,7 +76,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
                 initial={{ y: "115%", opacity: 0 }}
                 animate={{ y: "0%", opacity: 1 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-                className="font-display font-black text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--midnight)] tracking-tight leading-[1.3]"
+                className="font-display font-black text-[38px] sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--midnight)] tracking-tight leading-[1.25] sm:leading-[1.3]"
               >
                 {kashidaPhrase}
               </motion.div>
@@ -88,7 +88,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[var(--dusty-blue)] text-base sm:text-lg leading-[1.8] max-w-[52ch] font-normal"
+            className="text-[var(--dusty-blue)] text-base sm:text-lg leading-[1.8] max-w-[52ch] font-normal mx-auto lg:mx-0"
           >
             نكشف الفوارق الخفية بين المساحات الترويجية والواقع الفعلي للصك ومخطط البناء، ونزن تكاليف التشغيل المخفية قبل دفع أي عربون أو توقيع تمويل عقاري.
           </motion.p>
@@ -98,7 +98,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="pt-1 flex flex-wrap items-center gap-4"
+            className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-4"
           >
             {/* Primary CTA (Navy Fill, Cream Text: ابدأ دراسة قرار جديدة) */}
             <MagneticButton
@@ -127,7 +127,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
         */}
         <motion.div
           style={{ y: houseParallaxY }}
-          className="relative z-20 w-full lg:w-[58%] xl:w-[60%] lg:absolute lg:bottom-[-48px] xl:bottom-[-56px] lg:left-[-32px] xl:left-[-48px] md:w-[70%] md:mx-auto md:relative md:left-auto md:bottom-[-40px] md:mt-10 mt-8 sm:mt-10 will-change-transform pointer-events-auto"
+          className="relative z-20 w-full lg:w-[54%] xl:w-[58%] lg:absolute lg:top-0 xl:top-0 lg:bottom-auto xl:bottom-auto lg:left-[-24px] xl:left-[-40px] lg:mt-0 md:w-[70%] md:mx-auto md:relative md:left-auto md:bottom-auto md:mt-10 mt-8 sm:mt-10 will-change-transform pointer-events-auto"
         >
           <motion.div
             initial={{ y: 60, opacity: 0 }}

@@ -410,4 +410,51 @@ describe("Constraint Engine (Acceptance 1)", () => {
       expect(pricePerSqm(resolved)).toBeNull();
     });
   });
+
+  describe("Important Daily Locations (daily_location)", () => {
+    const req = makeRequirements({
+      important_locations: [
+        { label: "مقر العمل", address_text: "حي العليا، الرياض", frequency: "daily" },
+      ],
+    });
+
+    it("passes when property district matches an important location without fabricating commute minutes", () => {
+      const resolved = makeEmptyResolved();
+      resolved.fields.district = {
+        status: "known",
+        value: "العليا",
+        certainty: "reported",
+        factIds: ["d1"],
+      };
+      const res = evaluateConstraints(req, resolved);
+      const locRes = res.find((r) => r.key === "daily_location");
+      expect(locRes).toBeDefined();
+      expect(locRes?.result).toBe("pass");
+      expect(locRes?.detailAr).toContain("نفس نطاق");
+      expect(locRes?.detailAr).not.toMatch(/\d+\s*دقائق/);
+    });
+
+    it("returns unknown (requiring peak-hour check) when property is in a different known district", () => {
+      const resolved = makeEmptyResolved();
+      resolved.fields.district = {
+        status: "known",
+        value: "النرجس",
+        certainty: "reported",
+        factIds: ["d1"],
+      };
+      const res = evaluateConstraints(req, resolved);
+      const locRes = res.find((r) => r.key === "daily_location");
+      expect(locRes).toBeDefined();
+      expect(locRes?.result).toBe("unknown");
+      expect(locRes?.detailAr).toContain("النرجس");
+      expect(locRes?.detailAr).toContain("وقت الذروة");
+      expect(locRes?.detailAr).not.toMatch(/\d+\s*دقائق/);
+    });
+
+    it("does not fabricate a commute constraint when property district is unknown", () => {
+      const resolved = makeEmptyResolved();
+      const res = evaluateConstraints(req, resolved);
+      expect(res.find((r) => r.key === "daily_location")).toBeUndefined();
+    });
+  });
 });

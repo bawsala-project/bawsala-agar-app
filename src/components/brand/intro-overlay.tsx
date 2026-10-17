@@ -4,40 +4,33 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BawsalaCompass } from "./bawsala-compass";
 
-const WORDMARK_LETTERS = ["B", "A", "W", "S", "A", "L", "A"];
+const ARABIC_WORDS = ["بوصلة", "العقار"];
 
 interface IntroOverlayProps {
   onIntroComplete?: () => void;
-  /** Force play even if already seen in current session (e.g. for testing / styleguide) */
+  /** Force play even if already seen (kept for backwards compatibility) */
   forcePlay?: boolean;
 }
 
 /**
- * Opening Intro Animation (plays once per session, stored in sessionStorage, skippable):
- * - Full-screen cream screen (#F3EFE7).
- * - 0.0-1.0s: "BAWSALA" rises from behind mask line, letter by letter with soft blur-to-sharp in navy ink.
- * - 1.0-2.2s: Navy thin-line compass appears beside it and spins smoothly, needle overshoots and settles with a spring.
- * - 2.2-3.0s: Logo flies (shared-element) into the navbar while cream screen fades away.
- * - Total duration: ~3.0s (under 3.5 seconds).
- * - Skippable with clean "تخطي" button.
+ * Brand Splash Screen (plays on every website refresh via RootLayout):
+ * - Full-screen editorial cream canvas (#F3EFE7) with Navy ink (#0F1A2B).
+ * - 0.0s - 0.9s: Animated Horological Compass spins & calibrates while "بوصلة العقار"
+ *   rises word-by-word from behind a mask line with soft blur-to-sharp reveal.
+ * - 0.9s - 1.7s: Compass needle overshoots and settles at 15° with a spring;
+ *   hairline divider expands to reveal the brand tagline.
+ * - 1.7s - 2.3s: Smooth editorial curtain fade-out into the active page.
  */
-export function IntroOverlay({
-  onIntroComplete,
-  forcePlay = false,
-}: IntroOverlayProps) {
-  const [mounted, setMounted] = useState(false);
-  const [stage, setStage] = useState<"initial" | "letters" | "compass" | "settle" | "travel" | "done">("initial");
+export function IntroOverlay({ onIntroComplete }: IntroOverlayProps) {
+  const [mounted, setMounted] = useState(true);
+  const [stage, setStage] = useState<
+    "enter" | "calibrate" | "settle" | "exit" | "done"
+  >("enter");
   const hasFinishedRef = useRef(false);
 
   const finishIntro = useCallback(() => {
     if (hasFinishedRef.current) return;
     hasFinishedRef.current = true;
-
-    try {
-      sessionStorage.setItem("bawsala_intro_seen", "true");
-    } catch {
-      // Ignore storage errors
-    }
 
     setStage("done");
     if (onIntroComplete) {
@@ -45,7 +38,7 @@ export function IntroOverlay({
     }
     setTimeout(() => {
       setMounted(false);
-    }, 200);
+    }, 150);
   }, [onIntroComplete]);
 
   const handleSkip = useCallback(
@@ -57,49 +50,31 @@ export function IntroOverlay({
   );
 
   useEffect(() => {
-    if (!forcePlay) {
-      try {
-        const seen = sessionStorage.getItem("bawsala_intro_seen");
-        if (seen === "true") {
-          if (onIntroComplete) onIntroComplete();
-          return;
-        }
-      } catch {
-        // Fallback
-      }
-    }
-
     const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setMounted(true);
-
     if (reducedQuery.matches) {
-      const t1 = setTimeout(() => finishIntro(), 800);
+      const t1 = setTimeout(() => finishIntro(), 600);
       return () => clearTimeout(t1);
     }
 
-    // Sequence Timetable (Total < 3.2s)
-    // 0.0s: Stage 'letters' - letters emerge from behind mask line
-    setStage("letters");
+    // 0.15s: Compass calibrates & Arabic wordmark rises
+    const tCalibrate = setTimeout(() => {
+      setStage("calibrate");
+    }, 150);
 
-    // 0.9s: Stage 'compass' - compass appears, spins, needle springs
-    const tCompass = setTimeout(() => {
-      setStage("compass");
-    }, 900);
-
-    // 1.9s: Stage 'settle' - needle locks into place
+    // 1.05s: Needle locks in & tagline reveals
     const tSettle = setTimeout(() => {
       setStage("settle");
-    }, 1900);
+    }, 1050);
 
-    // 2.3s: Stage 'travel' - logo flies into navbar and screen fades away
-    const tTravel = setTimeout(() => {
-      setStage("travel");
-    }, 2300);
+    // 1.85s: Smooth editorial fade out
+    const tExit = setTimeout(() => {
+      setStage("exit");
+    }, 1850);
 
-    // 3.1s: Done
+    // 2.4s: Unmount overlay
     const tDone = setTimeout(() => {
       finishIntro();
-    }, 3100);
+    }, 2400);
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === " " || e.key === "Enter") {
@@ -109,135 +84,166 @@ export function IntroOverlay({
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      clearTimeout(tCompass);
+      clearTimeout(tCalibrate);
       clearTimeout(tSettle);
-      clearTimeout(tTravel);
+      clearTimeout(tExit);
       clearTimeout(tDone);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [finishIntro, forcePlay, handleSkip, onIntroComplete]);
+  }, [finishIntro, handleSkip]);
 
   if (!mounted || stage === "done") {
     return null;
   }
 
+  const isNeedleSettled = stage === "settle" || stage === "exit";
+
   return (
     <AnimatePresence>
       <motion.div
-        key="intro-backdrop"
+        key="bawsala-splash"
+        dir="rtl"
         initial={{ opacity: 1 }}
-        animate={{ opacity: stage === "travel" ? 0 : 1 }}
+        animate={{ opacity: stage === "exit" ? 0 : 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         onClick={() => handleSkip()}
-        className={`fixed inset-0 z-[100] flex items-center justify-center bg-[var(--cream)] text-[var(--navy)] select-none cursor-pointer overflow-hidden ${
-          stage === "travel" ? "pointer-events-none" : "pointer-events-auto"
+        className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[var(--cream)] text-[var(--navy)] select-none cursor-pointer overflow-hidden ${
+          stage === "exit" ? "pointer-events-none" : "pointer-events-auto"
         }`}
-        aria-label="تخطي شاشة البداية"
+        aria-label="شاشة البداية - بوصلة العقار"
         role="button"
         tabIndex={0}
       >
-        {/* Skippable "تخطي" Button */}
-        <div className="absolute top-6 left-6 z-30">
-          <button
-            onClick={handleSkip}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium text-[var(--dusty-blue)] bg-[var(--paper)] hover:bg-[var(--cream)] border border-[var(--mist)] hover:text-[var(--navy)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] transition-all cursor-pointer"
-          >
-            <span>تخطي</span>
-            <span className="text-[10px] opacity-60">Esc</span>
-          </button>
-        </div>
+        {/* Subtle radial architectural halo */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 46%, rgba(15, 26, 43, 0.05) 0%, rgba(15, 26, 43, 0.015) 38%, transparent 68%)",
+          }}
+        />
 
-        {/* Center Lockup Container with Travel (FLIP) Animation */}
+        {/* Center Brand Lockup */}
         <motion.div
           animate={
-            stage === "travel"
-              ? {
-                  y: -window.innerHeight * 0.42,
-                  x: window.innerWidth > 640 ? window.innerWidth * 0.38 : 0,
-                  scale: 0.52,
-                  opacity: 0,
-                }
-              : {
-                  y: 0,
-                  x: 0,
-                  scale: 1,
-                  opacity: 1,
-                }
+            stage === "exit"
+              ? { y: -14, scale: 0.97, opacity: 0 }
+              : { y: 0, scale: 1, opacity: 1 }
           }
-          transition={{
-            duration: 0.7,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="relative flex items-center justify-center gap-6"
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          className="relative z-10 flex flex-col items-center text-center px-6"
         >
-          {/* Compass Unit (Fades in beside the wordmark and spins) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={
-              stage !== "initial" && stage !== "letters"
-                ? { opacity: 1, scale: 1 }
-                : { opacity: 0, scale: 0.8 }
-            }
-            transition={{
-              duration: 0.6,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="relative flex items-center justify-center text-[var(--navy)]"
-          >
+          {/* 1. Animated Horological Compass with Expanding Ring Pulse */}
+          <div className="relative mb-6 flex items-center justify-center">
             <motion.div
-              animate={
-                stage === "compass" || stage === "settle" || stage === "travel"
-                  ? { rotate: [-240, 0] }
-                  : { rotate: -240 }
-              }
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{
+                scale: isNeedleSettled ? 1.35 : 1.05,
+                opacity: isNeedleSettled ? 0 : 0.25,
+              }}
+              transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute w-24 h-24 rounded-full border border-[var(--navy)] pointer-events-none"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.78, rotate: -160 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                rotate: 0,
+              }}
               transition={{
-                duration: 1.2,
+                duration: 1.15,
                 ease: [0.22, 1, 0.36, 1],
               }}
+              className="text-[var(--navy)]"
             >
               <BawsalaCompass
-                size={68}
-                needleRotation={stage === "compass" ? 42 : 15}
+                size={76}
+                dialRotation={stage === "enter" ? -90 : 0}
+                needleRotation={
+                  stage === "enter" ? -45 : stage === "calibrate" ? 38 : 15
+                }
               />
             </motion.div>
-          </motion.div>
+          </div>
 
-          {/* Wordmark "BAWSALA" with Mask Line & Staggered Letter Rise */}
-          <div className="overflow-hidden py-2 px-1">
-            <motion.div
-              initial={{ letterSpacing: "0.55em" }}
-              animate={{
-                letterSpacing:
-                  stage !== "initial" && stage !== "letters" ? "0.35em" : "0.45em",
-              }}
-              transition={{
-                duration: 0.9,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="flex items-center"
-            >
-              {WORDMARK_LETTERS.map((letter, index) => (
+          {/* 2. Arabic Brand Name "بوصلة العقار" — Word-by-Word Masked Rise */}
+          <div className="overflow-hidden py-1.5 px-2">
+            <h1 className="flex items-center justify-center gap-3 sm:gap-4 font-display font-bold text-4xl sm:text-5xl md:text-6xl text-[var(--navy)] tracking-normal leading-tight">
+              {ARABIC_WORDS.map((word, idx) => (
                 <motion.span
-                  key={index}
-                  initial={{ y: 50, opacity: 0, filter: "blur(8px)" }}
-                  animate={
-                    stage !== "initial"
-                      ? { y: 0, opacity: 1, filter: "blur(0px)" }
-                      : { y: 50, opacity: 0, filter: "blur(8px)" }
-                  }
+                  key={word}
+                  initial={{ y: 42, opacity: 0, filter: "blur(8px)" }}
+                  animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
                   transition={{
-                    duration: 0.7,
-                    delay: index * 0.05,
+                    duration: 0.75,
+                    delay: 0.1 + idx * 0.12,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  className="wordmark-latin text-3xl sm:text-4xl lg:text-5xl font-light text-[var(--navy)] leading-none select-none inline-block"
+                  className="inline-block"
                 >
-                  {letter}
+                  {word}
                 </motion.span>
               ))}
-            </motion.div>
+            </h1>
           </div>
+
+          {/* 3. Expanding Architectural Hairline & Diamond */}
+          <div className="w-48 sm:w-60 my-3.5 flex items-center justify-center gap-2.5">
+            <motion.span
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{
+                scaleX: stage !== "enter" ? 1 : 0,
+                opacity: stage !== "enter" ? 0.45 : 0,
+              }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1 h-[1px] bg-[var(--navy)] origin-left"
+            />
+            <motion.span
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: stage !== "enter" ? 1 : 0,
+                opacity: stage !== "enter" ? 0.7 : 0,
+              }}
+              transition={{ duration: 0.5, delay: 0.35 }}
+              className="w-1.5 h-1.5 rotate-45 bg-[var(--navy)]"
+            />
+            <motion.span
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{
+                scaleX: stage !== "enter" ? 1 : 0,
+                opacity: stage !== "enter" ? 0.45 : 0,
+              }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1 h-[1px] bg-[var(--navy)] origin-right"
+            />
+          </div>
+
+          {/* 4. Editorial Subtitle & Correct LTR Sub-mark */}
+          <motion.p
+            initial={{ y: 12, opacity: 0 }}
+            animate={{
+              y: stage !== "enter" ? 0 : 12,
+              opacity: stage !== "enter" ? 1 : 0,
+            }}
+            transition={{ duration: 0.65, delay: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            className="text-xs sm:text-sm font-medium text-[var(--dusty-blue)]"
+          >
+            فحص فني وهندسي مستقل لقرار التملك
+          </motion.p>
+
+          <motion.span
+            dir="ltr"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isNeedleSettled ? 0.45 : 0 }}
+            transition={{ duration: 0.5 }}
+            className="mt-2.5 text-[10px] font-wordmark uppercase tracking-[0.42em] text-[var(--navy)]"
+          >
+            BAWSALA
+          </motion.span>
         </motion.div>
       </motion.div>
     </AnimatePresence>

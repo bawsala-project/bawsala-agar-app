@@ -93,7 +93,8 @@ export interface PropertyInput {
 export function generateInspectionCandidates(
   property: PropertyInput,
   resolvedFacts: Record<string, ResolvedField> | ResolveFactsResult,
-  constraints: ConstraintResult[] = []
+  constraints: ConstraintResult[] = [],
+  importantLocations?: unknown
 ): InspectionCandidateItem[] {
   // Extract resolved field map safely
   const facts: Record<string, ResolvedField> =
@@ -257,13 +258,45 @@ export function generateInspectionCandidates(
     });
   }
 
+  // Check 5b: Important Daily Locations (peak-hour commute & access check)
+  const dailyLocationConstraint = constraints.find((c) => c.key === "daily_location");
+  const parsedImportantLocations = Array.isArray(importantLocations)
+    ? (importantLocations as Array<{ label?: string; address_text?: string; district?: string }>)
+        .map((loc) => ({
+          label: (loc?.label || "موقع يومي").trim(),
+          addressText: (loc?.address_text || loc?.district || "").trim(),
+        }))
+        .filter((loc) => loc.addressText.length > 0)
+    : [];
+
+  if (dailyLocationConstraint || parsedImportantLocations.length > 0) {
+    const locSummary =
+      dailyLocationConstraint?.detailAr ||
+      `حددت مواقع يومية مهمة (${parsedImportantLocations
+        .map((l) => `${l.label}: ${l.addressText}`)
+        .join("، ")})؛ يلزم تجربة المسار الفعلي لعدم افتراض دقائق تنقل نظرية.`;
+
+    addItem({
+      category: "neighborhood",
+      question_ar:
+        "كيف يبدو زمن وسهولة الوصول الفعلي من العقار إلى المواقع اليومية المهمة في وقت الذروة؟",
+      why_it_matters_ar: locSummary,
+      how_to_check_ar:
+        "تجربة القيادة أو التنقل الفعلي من موقع العقار إلى المواقع اليومية المهمة في أوقات الذروة الصباحية والمسائية",
+      priority: "high",
+      trigger_reason: "constraint_verification",
+      affected_assessment_types: ["fit", "daily_life"],
+    });
+  }
+
   // Check other unverified hard constraints
   for (const c of constraints) {
     if (
       c.result === "unknown" &&
       c.key !== "elevator_required" &&
       c.key !== "private_parking" &&
-      c.key !== "new_building_only"
+      c.key !== "new_building_only" &&
+      c.key !== "daily_location"
     ) {
       addItem({
         category: "unit_specs",

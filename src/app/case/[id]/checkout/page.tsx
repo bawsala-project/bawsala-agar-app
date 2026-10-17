@@ -84,7 +84,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-1">
             <span className="text-xs font-medium text-[var(--dusty-blue)] block">المبلغ الإجمالي المستحق:</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-display font-bold text-[var(--navy)] tabular-nums tracking-tight">10.00</span>
+              <span className="text-3xl font-body font-extrabold text-[var(--navy)] tabular-nums tracking-tight">10.00</span>
               <span className="text-sm font-medium text-[var(--dusty-blue)]">ر.س</span>
             </div>
             <p className="text-xs text-[var(--dusty-blue)] pt-1 tabular-nums">

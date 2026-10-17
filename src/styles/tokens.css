@@ -66,11 +66,11 @@
      Shared Button Styles (Contrast Ratio > 15:1 WCAG AAA Compliant)
      --------------------------------------------------------------------------- */
   --btn-primary-bg: #0F1A2B;
-  --btn-primary-text: #F3EFE7;
+  --btn-primary-text: #FFFFFF;
   --btn-primary-hover-bg: #1C2E4A;
-  --btn-primary-hover-text: #F3EFE7;
+  --btn-primary-hover-text: #FFFFFF;
   --btn-primary-disabled-bg: #0F1A2B;
-  --btn-primary-disabled-text: rgba(243, 239, 231, 0.7);
+  --btn-primary-disabled-text: rgba(255, 255, 255, 0.7);
   --btn-ghost-bg: transparent;
   --btn-ghost-text: #0F1A2B;
   --btn-ghost-border: #0F1A2B;
@@ -120,10 +120,10 @@
   --shadow-float: 0 20px 60px rgba(15, 26, 43, 0.08);
 
   /* ---------------------------------------------------------------------------
-     3. TYPOGRAPHY (Thmanyah font family strictly)
+     3. TYPOGRAPHY (Display: Thmanyah for Titles/Headers; Body: Almarai for Calm UI)
      --------------------------------------------------------------------------- */
   --font-display: 'Thmanyah Serif Display', 'Thmanyah Sans', serif;
-  --font-body: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif;
+  --font-body: var(--font-almarai), 'Almarai', sans-serif;
   --font-heading: 'Thmanyah Serif Display', 'Thmanyah Sans', serif;
   --font-wordmark: 'Cinzel', 'Trajan Pro', Georgia, serif;
 

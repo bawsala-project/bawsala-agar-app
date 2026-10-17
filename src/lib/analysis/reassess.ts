@@ -24,6 +24,8 @@ export interface ReassessmentDiff {
   newFitRating: FitRating;
   previousVisitPriority: VisitPriority;
   newVisitPriority: VisitPriority;
+  previousRank?: number | null;
+  newRank?: number | null;
   addedRisks: string[];
   resolvedUnknowns: string[];
   explanationAr: string;
@@ -112,6 +114,12 @@ export function reassessProperty(
     const isDeedArea =
       item.category === "unit_specs" &&
       (item.how_to_check_ar.includes("الصك") || item.question_ar.includes("الصك"));
+
+    const isDailyLocation =
+      item.category === "neighborhood" &&
+      (item.question_ar.includes("المواقع اليومية") ||
+        item.how_to_check_ar.includes("المواقع اليومية") ||
+        item.question_ar.includes("وقت الذروة"));
 
     // --- CASE A: ELEVATOR ---
     if (isElevator) {
@@ -228,6 +236,44 @@ export function reassessProperty(
       } else if (finding.result === "good") {
         removeFromUnknowns("المساحة");
         resolvedUnknowns.push("مطابقة مساحة الصك المعتمد مع المخطط");
+      }
+      continue;
+    }
+
+    // --- CASE D2: DAILY LOCATION / PEAK-HOUR COMMUTE CHECK ---
+    if (isDailyLocation) {
+      const locConstraint = ensureConstraint(
+        "daily_location",
+        "القرب من المواقع اليومية المهمة"
+      );
+      if (finding.result === "problem") {
+        locConstraint.result = "fail";
+        locConstraint.detailAr = finding.note?.trim()
+          ? `صعوبة الوصول للمواقع اليومية المهمة ميدانياً: ${finding.note.trim()}`
+          : "تبين ميدانياً بعد المسافة أو شدة الازدحام نحو المواقع اليومية المهمة وقت الذروة";
+
+        hardConstraintFailed = true;
+
+        const riskDesc = finding.note?.trim()
+          ? `مشكلة في المسافة أو طريق الوصول اليومي: ${finding.note.trim()}`
+          : "بعد المسافة أو صعوبة الوصول الفعلي للمواقع اليومية المهمة وقت الذروة";
+
+        if (!newRisks.includes(riskDesc)) {
+          newRisks.push(riskDesc);
+        }
+        addedRisks.push(riskDesc);
+        removeFromUnknowns("المواقع");
+        removeFromUnknowns("الذروة");
+      } else if (finding.result === "good") {
+        locConstraint.result = "pass";
+        locConstraint.detailAr = finding.note?.trim()
+          ? `تم التأكد ميدانياً من سهولة الوصول: ${finding.note.trim()}`
+          : "تم التحقق ميدانياً من مناسبة المسافة وسهولة الوصول للمواقع اليومية المهمة";
+
+        removeFromUnknowns("المواقع");
+        removeFromUnknowns("الذروة");
+        resolvedUnknowns.push("التحقق الميداني من سهولة الوصول للمواقع اليومية المهمة");
+        newStrengths.push("سهولة الوصول الميداني إلى المواقع اليومية المهمة");
       }
       continue;
     }

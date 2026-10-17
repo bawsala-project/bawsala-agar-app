@@ -25,25 +25,37 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
   const run = useCallback(async () => {
     setBusy(true);
     setError(null);
-    const result = await startAnalysis(caseId);
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const result = await startAnalysis(caseId);
+      if (result?.error) {
+        setError(result.error);
+      }
+    } catch {
+      // Next.js redirect() from server action is handled by router; trigger refresh as fallback
+    } finally {
+      setBusy(false);
+      startTransition(() => {
+        router.refresh();
+      });
     }
-    setBusy(false);
-    startTransition(() => {
-      router.refresh();
-    });
   }, [caseId, router]);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && !window.location.pathname.endsWith("/results")) {
+      window.location.replace(`/case/${caseId}/results`);
+      return;
+    }
     if (mode === "start" && !started.current) {
       started.current = true;
       void run();
     }
-  }, [mode, run]);
+  }, [caseId, mode, run]);
 
   useEffect(() => {
     if (mode === "failed") return;
+    if (typeof window !== "undefined" && !window.location.pathname.endsWith("/results")) {
+      return;
+    }
     const timer = setInterval(() => {
       startTransition(() => {
         router.refresh();

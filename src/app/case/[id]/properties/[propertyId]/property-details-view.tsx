@@ -3,7 +3,6 @@
 import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  ShieldCheck,
   AlertTriangle,
   ArrowRight,
   ArrowLeft,
@@ -16,9 +15,11 @@ import {
   Building2,
   Home,
   Sparkles,
-  ChevronDown,
+  ExternalLink,
+  CheckCircle2,
+  X,
+  Plus,
 } from "lucide-react";
-import { formatSAR } from "@/lib/utils";
 import { FIELD_REGISTRY, FieldKey, ResolvableFieldKey } from "@/lib/evidence/fields";
 import { ResolveFactsResult, PropertyFact } from "@/lib/evidence/resolve";
 import { submitCorrection } from "@/actions/evidence";
@@ -48,13 +49,20 @@ function getSourceLabel(source: string): string {
   }
 }
 
+function getShortLabel(field: FieldKey): string {
+  return FIELD_REGISTRY[field].label
+    .replace(" (ريال)", "")
+    .replace(" (م²)", "")
+    .replace(" (سنوات)", "");
+}
+
 function formatFieldValue(field: FieldKey, value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (field === "listing_price_sar" && typeof value === "number") {
-    return formatSAR(value);
+    return `${value.toLocaleString("en-US")} ر.س`;
   }
   if (field === "area_sqm") {
-    return `${value} م²`;
+    return `${Number(value).toLocaleString("en-US")} م²`;
   }
   if (typeof value === "boolean") {
     return value ? "متوفر" : "غير متوفر";
@@ -65,10 +73,58 @@ function formatFieldValue(field: FieldKey, value: unknown): string {
     return `الدور ${value}`;
   }
   if (field === "property_age_years") {
-    if (value === 0) return "جديد (0 سنة)";
+    if (value === 0) return "جديد";
     return `${value} سنوات`;
   }
   return String(value);
+}
+
+function QuickSelectPill({
+  caseId,
+  propertyId,
+  field,
+  value,
+  label,
+  active,
+  onSuccess,
+}: {
+  caseId: string;
+  propertyId: string;
+  field: FieldKey;
+  value: string;
+  label: string;
+  active?: boolean;
+  onSuccess?: () => void;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  const handleClick = () => {
+    startTransition(async () => {
+      const res = await submitCorrection(caseId, propertyId, {
+        field,
+        value,
+      });
+      if (!res?.errors) {
+        onSuccess?.();
+      }
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={handleClick}
+      className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer active:scale-[0.97] disabled:opacity-50 ${
+        active
+          ? "bg-[var(--navy)] text-[var(--cream)] border border-[var(--navy)] shadow-xs"
+          : "bg-[var(--paper)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] hover:border-[var(--navy)]"
+      }`}
+    >
+      {pending ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+      <span>{label}</span>
+    </button>
+  );
 }
 
 function AdoptCandidateButton({
@@ -99,12 +155,12 @@ function AdoptCandidateButton({
   };
 
   return (
-    <div className="flex flex-col items-start gap-1">
+    <div className="flex flex-col items-start gap-1 w-full">
       <button
         type="button"
         disabled={pending}
         onClick={handleAdopt}
-        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] disabled:opacity-50 text-[var(--cream)] text-xs font-display font-medium transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+        className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--navy)] hover:bg-[var(--midnight)] disabled:opacity-50 text-[var(--cream)] text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
       >
         {pending ? (
           <>
@@ -130,6 +186,7 @@ function InlineCorrectionForm({
   label,
   placeholder,
   buttonLabel = "حفظ",
+  compact = false,
   onSuccess,
 }: {
   caseId: string;
@@ -138,11 +195,14 @@ function InlineCorrectionForm({
   label: string;
   placeholder?: string;
   buttonLabel?: string;
+  compact?: boolean;
   onSuccess?: () => void;
 }) {
   const [val, setVal] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const def = FIELD_REGISTRY[field];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,36 +223,58 @@ function InlineCorrectionForm({
     });
   };
 
+  // Render 1-Tap Boolean Selector for boolean fields
+  if (def.valueType === "boolean") {
+    return (
+      <div className="flex items-center gap-2 pt-1">
+        <QuickSelectPill
+          caseId={caseId}
+          propertyId={propertyId}
+          field={field}
+          value="متوفر"
+          label="✓ متوفر"
+          onSuccess={onSuccess}
+        />
+        <QuickSelectPill
+          caseId={caseId}
+          propertyId={propertyId}
+          field={field}
+          value="غير متوفر"
+          label="✕ غير متوفر"
+          onSuccess={onSuccess}
+        />
+      </div>
+    );
+  }
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row gap-2 items-start sm:items-center mt-2 w-full"
-    >
-      <div className="flex-1 w-full">
+    <form onSubmit={handleSubmit} className="w-full space-y-1.5">
+      <div className="flex items-center gap-1.5 w-full">
         <input
           id={`corr-${field}`}
           name="value"
           value={val}
           onChange={(e) => setVal(e.target.value)}
           placeholder={placeholder || `أدخل ${label}...`}
-          className="w-full px-3.5 py-2.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-xs text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 focus:bg-[var(--paper)] focus:outline-none focus:border-[var(--navy)] transition-all font-medium"
+          className={`flex-1 min-w-0 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 focus:outline-none focus:border-[var(--navy)] transition-all font-medium ${
+            compact ? "px-3 py-1.5" : "px-3.5 py-2"
+          }`}
         />
-        {error && <p className="text-[11px] text-[#A62626] font-medium mt-1">{error}</p>}
-      </div>
-      <button
-        type="submit"
-        disabled={pending || !val.trim()}
-        className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] disabled:opacity-50 text-[var(--cream)] text-xs font-display font-medium transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
-      >
-        {pending ? (
-          <>
+        <button
+          type="submit"
+          disabled={pending || !val.trim()}
+          className={`shrink-0 rounded-xl bg-[var(--navy)] hover:bg-[var(--midnight)] disabled:opacity-40 text-[var(--cream)] text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer active:scale-[0.98] ${
+            compact ? "px-3 py-1.5" : "px-4 py-2"
+          }`}
+        >
+          {pending ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            <span>جارٍ الحفظ...</span>
-          </>
-        ) : (
-          <span>{buttonLabel}</span>
-        )}
-      </button>
+          ) : (
+            <span>{buttonLabel}</span>
+          )}
+        </button>
+      </div>
+      {error && <p className="text-[11px] text-[#A62626] font-medium">{error}</p>}
     </form>
   );
 }
@@ -205,11 +287,34 @@ export function PropertyDetailsView({
   resolved,
 }: PropertyDetailsViewProps) {
   const [editingField, setEditingField] = useState<FieldKey | null>(null);
+  const [expandedConflictManual, setExpandedConflictManual] = useState<Record<string, boolean>>({});
+  const [expandedUnknownField, setExpandedUnknownField] = useState<FieldKey | null>(null);
+  const [expandedQuoteField, setExpandedQuoteField] = useState<FieldKey | null>(null);
+  const [activeClaimTab, setActiveClaimTab] = useState<"all" | "unit" | "building" | "neighborhood">("all");
+
+  // Build a human-friendly title using resolved district/city when property.title is missing
+  const resolvedDistrict =
+    resolved.fields.district?.status === "known"
+      ? String(resolved.fields.district.value)
+      : property.district;
+
+  const urlHost = property.source_url
+    ? (() => {
+        try {
+          return new URL(property.source_url).hostname.replace(/^www\./, "");
+        } catch {
+          return null;
+        }
+      })()
+    : null;
 
   const displayName =
     property.title ||
-    property.district ||
-    (property.source_url ? new URL(property.source_url).hostname : "تفاصيل العقار");
+    (resolvedDistrict
+      ? `عقار في حي ${resolvedDistrict}${city ? ` — ${city}` : ""}`
+      : city
+      ? `عقار سكني — ${city}`
+      : urlHost || "تفاصيل العقار");
 
   // Partition fields into conflicting, unknown, and known
   const resolvableKeys = Object.keys(resolved.fields) as ResolvableFieldKey[];
@@ -226,39 +331,50 @@ export function PropertyDetailsView({
       return bCrit - aCrit;
     });
 
+  const criticalUnknownFields = unknownFields.filter((k) => FIELD_REGISTRY[k].isCritical);
+
   const knownFields = resolvableKeys.filter(
     (k) => resolved.fields[k].status === "known"
   );
 
-  return (
-    <div className="space-y-8">
-      {/* Top Navigation & Breadcrumb */}
-      <div>
-        <Link
-          href={`/case/${caseId}/properties`}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] hover:border-[var(--navy)] transition-all shadow-xs mb-4"
-        >
-          <ArrowRight className="w-3.5 h-3.5" />
-          <span>العودة لقائمة العقارات المرشحة</span>
-        </Link>
+  const allClaims = [
+    ...resolved.claims.unit.map((c) => ({ ...c, bucket: "الوحدة" })),
+    ...resolved.claims.building.map((c) => ({ ...c, bucket: "المبنى" })),
+    ...resolved.claims.neighborhood.map((c) => ({ ...c, bucket: "الحي" })),
+  ];
 
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-8 shadow-[0_20px_60px_rgba(15,26,43,0.04)] flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+  const displayedClaims =
+    activeClaimTab === "all"
+      ? allClaims
+      : activeClaimTab === "unit"
+      ? resolved.claims.unit.map((c) => ({ ...c, bucket: "الوحدة" }))
+      : activeClaimTab === "building"
+      ? resolved.claims.building.map((c) => ({ ...c, bucket: "المبنى" }))
+      : resolved.claims.neighborhood.map((c) => ({ ...c, bucket: "الحي" }));
+
+  const totalFieldsCount = resolvableKeys.length;
+
+  return (
+    <div className="space-y-5">
+      {/* 1. FULL-WIDTH HORIZONTAL HEADER BAR */}
+      <div className="bg-[var(--paper)] rounded-[24px] border border-[var(--mist)] p-5 sm:p-6 shadow-[0_12px_40px_rgba(15,26,43,0.03)]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Right: Title & Context Badges */}
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] text-xs font-medium">
-                <ShieldCheck className="w-3.5 h-3.5 text-[var(--navy)]" />
-                <span>تدقيق الحقائق والأدلة</span>
-              </span>
-              {city && (
-                <span className="px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
-                  {city}
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
+              <Link
+                href={`/case/${caseId}/properties`}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] hover:border-[var(--navy)] text-xs font-medium transition-all"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+                <span>العقارات المرشحة</span>
+              </Link>
+
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
                 {property.input_mode === "url" ? (
                   <>
                     <Globe className="w-3.5 h-3.5 text-[var(--navy)]" />
-                    <span>رابط إلكتروني</span>
+                    <span>{urlHost || "رابط إلكتروني"}</span>
                   </>
                 ) : property.input_mode === "image" ? (
                   <>
@@ -272,82 +388,116 @@ export function PropertyDetailsView({
                   </>
                 )}
               </span>
+
+              {property.source_url && (
+                <a
+                  href={property.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--cream)] hover:border-[var(--navy)] text-[var(--navy)] border border-[var(--mist)] text-xs font-medium transition-all"
+                >
+                  <span>فتح الإعلان الأصلي</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+
+              {/* Readiness Pill */}
+              {conflictingFields.length > 0 ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8] text-xs font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#A62626] animate-pulse" />
+                  <span>{conflictingFields.length} تعارض يحتاج حسم</span>
+                </span>
+              ) : criticalUnknownFields.length > 0 ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF] text-xs font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#9A6700]" />
+                  <span>ينقصه {criticalUnknownFields.length} بيانات أساسية</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4] text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#1E6B43]" />
+                  <span>مكتمل البيانات الأساسية ({knownFields.length}/{totalFieldsCount})</span>
+                </span>
+              )}
             </div>
 
-            <h1 className="text-xl sm:text-3xl font-bold text-[var(--navy)] tracking-tight font-display">
+            <h1 className="text-xl sm:text-2xl font-bold text-[var(--navy)] tracking-tight font-display">
               {displayName}
             </h1>
-            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed">
-              مراجعة وتدقيق الحقائق المستخرجة من الإعلانات وفض التعارضات بناءً على الصك ومخطط البناء
-            </p>
           </div>
 
-          <div className="flex items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-[var(--mist)]">
-            <div className="text-right">
-              <div className="text-[11px] text-[var(--dusty-blue)]">إجمالي الحقائق</div>
-              <div className="text-sm font-bold text-[var(--navy)] font-display tabular-nums">
-                {facts.length} معلومة مسجلة
-              </div>
-            </div>
+          {/* Left: Primary Next Step CTA */}
+          <div className="flex items-center gap-3 shrink-0">
+            <Link href={`/case/${caseId}/preflight`} className="w-full md:w-auto">
+              <button
+                type="button"
+                className="w-full md:w-auto px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
+              >
+                <span>المتابعة للفحص المبدئي</span>
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Group A: Conflicting Fields */}
+      {/* 2. GROUP A: CONFLICTING FIELDS (Full-Width Horizontal Grid, Only If Conflicts Exist) */}
       {conflictingFields.length > 0 && (
-        <section className="bg-[var(--paper)] rounded-[28px] border border-[#F6CBC8] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
+        <section className="bg-[var(--paper)] rounded-[24px] border border-[#F6CBC8] shadow-[0_12px_40px_rgba(15,26,43,0.03)] p-5 sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#A62626] animate-pulse" />
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] flex items-center gap-2 font-display">
-                  <span>معلومات متعارضة تتطلب فض النزاع</span>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8]">
-                    {conflictingFields.length}
-                  </span>
-                </h2>
-                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  رُصدت أرقام متضاربة من مصادر مختلفة (مثل اختلاف المساحة في الرابط عن صورة المخطط)
-                </p>
-              </div>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#A62626] animate-pulse" />
+              <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
+                <span>معلومات متعارضة تتطلب الحسم</span>
+                <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8]">
+                  {conflictingFields.length}
+                </span>
+              </h2>
             </div>
+            <span className="inline-flex items-center gap-1.5 text-xs text-[#A62626] bg-[#FDF1F0] px-3 py-1 rounded-full border border-[#F6CBC8] font-medium">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              <span>قاعدة عدم المتوسط: اختر الرقم المطابق للصك</span>
+            </span>
           </div>
 
-          {/* Principle explanation */}
-          <div className="bg-[#FDF1F0] border border-[#F6CBC8] rounded-2xl p-4 flex items-start gap-3 text-xs text-[#A62626] leading-relaxed font-medium">
-            <AlertTriangle className="w-4 h-4 text-[#A62626] shrink-0 mt-0.5" />
-            <div>
-              <span className="font-bold">قاعدة بوصلة العقار القطعية (Zero Averaging):</span> لا
-              نقوم بحساب المتوسط الحسابي للأرقام المتضاربة مطلقاً. يجب أن تعتمد القيمة الرسمية
-              المطابقة للصك أو إدخال القيمة الحقيقية لمنع القرارات المضللة.
-            </div>
-          </div>
-
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {conflictingFields.map((field) => {
               const res = resolved.fields[field];
               if (res.status !== "conflicting") return null;
               const def = FIELD_REGISTRY[field];
+              const isManualOpen = !!expandedConflictManual[field];
 
               return (
                 <div
                   key={field}
-                  className="p-5 bg-[var(--cream)] rounded-2xl border border-[var(--mist)] space-y-4"
+                  className="p-4 bg-[var(--cream)] rounded-2xl border border-[var(--mist)] space-y-3"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm sm:text-base font-bold text-[var(--navy)] flex items-center gap-2 font-display">
-                      <span>{def.label}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-[var(--navy)] font-body">
+                        {def.label}
+                      </h3>
                       {def.isCritical && (
                         <span className="text-[10px] font-semibold text-[#A62626] bg-[#FDF1F0] border border-[#F6CBC8] px-2 py-0.5 rounded-full">
                           شرط حتمي
                         </span>
                       )}
-                    </h3>
-                    <span className="text-xs text-[var(--dusty-blue)]">اختر القيمة الصحيحة</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedConflictManual((prev) => ({
+                          ...prev,
+                          [field]: !prev[field],
+                        }))
+                      }
+                      className="text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>{isManualOpen ? "إغلاق الإدخال اليدوي" : "إدخال قيمة أخرى من الصك"}</span>
+                    </button>
                   </div>
 
-                  {/* Candidate Options */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {res.candidates.map((cand, idx) => {
                       const candFacts = facts.filter((f) => cand.factIds.includes(f.id));
                       const quotes = candFacts
@@ -357,11 +507,11 @@ export function PropertyDetailsView({
                       return (
                         <div
                           key={idx}
-                          className="bg-[var(--paper)] p-4 rounded-2xl border border-[var(--mist)] flex flex-col justify-between gap-3 shadow-xs hover:border-[var(--navy)] transition-colors"
+                          className="bg-[var(--paper)] p-3.5 rounded-xl border border-[var(--mist)] flex flex-col justify-between gap-3 hover:border-[var(--navy)] transition-colors"
                         >
-                          <div>
+                          <div className="space-y-1.5">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-base font-bold text-[var(--navy)] font-display tabular-nums">
+                              <span className="text-base font-bold text-[var(--navy)] font-body tabular-nums">
                                 {formatFieldValue(field, cand.value)}
                               </span>
                               <div className="flex gap-1 flex-wrap">
@@ -377,187 +527,153 @@ export function PropertyDetailsView({
                             </div>
 
                             {quotes.length > 0 && (
-                              <blockquote className="text-xs text-[var(--dusty-blue)] italic mt-2 p-2 bg-[var(--cream)] rounded-xl border-r-2 border-[var(--navy)] line-clamp-2">
+                              <p className="text-[11px] text-[var(--dusty-blue)] italic bg-[var(--cream)] px-2.5 py-1.5 rounded-lg border-r-2 border-[var(--navy)] line-clamp-2">
                                 &quot;{quotes[0]}&quot;
-                              </blockquote>
+                              </p>
                             )}
                           </div>
 
-                          <div className="pt-2 border-t border-[var(--mist)]">
-                            <AdoptCandidateButton
-                              caseId={caseId}
-                              propertyId={property.id}
-                              field={field}
-                              value={cand.value}
-                            />
-                          </div>
+                          <AdoptCandidateButton
+                            caseId={caseId}
+                            propertyId={property.id}
+                            field={field}
+                            value={cand.value}
+                          />
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Manual Override Alternative */}
-                  <div className="pt-3 border-t border-[var(--mist)]">
-                    <p className="text-xs font-medium text-[var(--navy)] mb-1">
-                      أو أدخل القيمة الفعلية المعتمدة وفق الصك:
-                    </p>
-                    <InlineCorrectionForm
-                      caseId={caseId}
-                      propertyId={property.id}
-                      field={field}
-                      label={def.label}
-                      buttonLabel="اعتماد القيمة البديلة"
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Group B: Missing / Unknown Fields */}
-      {unknownFields.length > 0 && (
-        <section className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
-          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#9A6700]" />
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] flex items-center gap-2 font-display">
-                  <span>معلومات ناقصة ومطلوبة للتقييم</span>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF]">
-                    {unknownFields.length}
-                  </span>
-                </h2>
-                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  لم يتم العثور على هذه الحقائق في الإعلان. يمكنك إدخالها يدوياً لرفع دقة التقييم والمقارنة.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {unknownFields.map((field) => {
-              const def = FIELD_REGISTRY[field];
-
-              return (
-                <div
-                  key={field}
-                  className="p-4 sm:p-5 bg-[var(--cream)] rounded-2xl border border-[var(--mist)] space-y-2 hover:border-[var(--navy)] transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-medium text-[var(--navy)]">{def.label}</span>
-                    {def.isCritical ? (
-                      <span className="text-[10px] font-semibold text-[#9A6700] bg-[#FFF9EC] border border-[#F9E2AF] px-2 py-0.5 rounded-full">
-                        مهم للمقارنة
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-[var(--dusty-blue)]">غير متوفر</span>
-                    )}
-                  </div>
-
-                  <InlineCorrectionForm
-                    caseId={caseId}
-                    propertyId={property.id}
-                    field={field}
-                    label={def.label}
-                    placeholder={`أدخل ${def.label}...`}
-                    buttonLabel="حفظ"
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Group C: Known Fields */}
-      <section className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
-        <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#1E6B43]" />
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] flex items-center gap-2 font-display">
-                <span>حقائق مؤكدة ومدققة</span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]">
-                  {knownFields.length}
-                </span>
-              </h2>
-              <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                بيانات تم التحقق من مصدرها وتثبيتها للاستخدام في محرك المقارنة والتقييم
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {knownFields.length === 0 ? (
-          <div className="text-center py-8 bg-[var(--cream)] rounded-2xl border border-dashed border-[var(--mist)]">
-            <p className="text-xs font-medium text-[var(--navy)]">لم يتم تأكيد أي معلومات بعد</p>
-            <p className="text-[11px] text-[var(--dusty-blue)] mt-1">
-              قم بفض التعارضات أو إدخال المعلومات الناقصة أعلاه
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[var(--mist)] rounded-2xl border border-[var(--mist)] overflow-hidden bg-[var(--paper)]">
-            {knownFields.map((field) => {
-              const res = resolved.fields[field];
-              if (res.status !== "known") return null;
-              const def = FIELD_REGISTRY[field];
-              const isEditing = editingField === field;
-
-              // Find evidence quote from facts
-              const relatedFacts = facts.filter((f) => res.factIds.includes(f.id));
-              const evidenceQuote = relatedFacts.find((f) => f.evidence_text)?.evidence_text;
-
-              return (
-                <div key={field} className="p-4 sm:p-5 space-y-2 hover:bg-[var(--cream)]/40 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-[var(--dusty-blue)]">{def.label}:</span>
-                      <span className="text-sm sm:text-base font-bold text-[var(--navy)] font-display tabular-nums">
-                        {formatFieldValue(field, res.value)}
-                      </span>
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          res.certainty === "user_stated"
-                            ? "bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]"
-                            : "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]"
-                        }`}
-                      >
-                        {res.certainty === "user_stated" ? "إدخال شخصي" : "مستخرج من الإعلان"}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setEditingField(isEditing ? null : field)}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--navy)] hover:text-[var(--midnight)] self-start sm:self-center px-3 py-1 rounded-full border border-[var(--mist)] hover:border-[var(--navy)] bg-[var(--cream)] transition-colors cursor-pointer"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>{isEditing ? "إلغاء التعديل" : "تصحيح"}</span>
-                    </button>
-                  </div>
-
-                  {evidenceQuote && (
-                    <details className="text-xs text-[var(--dusty-blue)] pt-1 group">
-                      <summary className="cursor-pointer text-[var(--dusty-blue)] hover:text-[var(--navy)] select-none inline-flex items-center gap-1 font-medium">
-                        <span>عرض نص الدليل المقتبس</span>
-                        <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
-                      </summary>
-                      <blockquote className="mt-2 p-3 bg-[var(--cream)] rounded-xl border-r-2 border-[var(--navy)] text-[var(--navy)] italic">
-                        &quot;{evidenceQuote}&quot;
-                      </blockquote>
-                    </details>
-                  )}
-
-                  {isEditing && (
-                    <div className="pt-3 border-t border-[var(--mist)] mt-2">
+                  {isManualOpen && (
+                    <div className="pt-2.5 border-t border-[var(--mist)]">
                       <InlineCorrectionForm
                         caseId={caseId}
                         propertyId={property.id}
                         field={field}
                         label={def.label}
-                        buttonLabel="تحديث القيمة"
+                        placeholder={`أدخل ${def.label} المعتمد في الصك...`}
+                        buttonLabel="اعتماد"
+                        compact
+                        onSuccess={() =>
+                          setExpandedConflictManual((prev) => ({
+                            ...prev,
+                            [field]: false,
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 3. GROUP C: CONFIRMED FACTS (Full-Width Horizontal Multi-Column Responsive Grid) */}
+      <section className="bg-[var(--paper)] rounded-[24px] border border-[var(--mist)] shadow-[0_12px_40px_rgba(15,26,43,0.03)] p-5 sm:p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--mist)]">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#1E6B43]" />
+            <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
+              <span>حقائق مؤكدة ومدققة</span>
+              <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]">
+                {knownFields.length}
+              </span>
+            </h2>
+          </div>
+          <span className="text-xs text-[var(--dusty-blue)]">
+            بيانات موثقة تدخل مباشرة في محرك المقارنة والتقييم
+          </span>
+        </div>
+
+        {knownFields.length === 0 ? (
+          <div className="text-center py-6 bg-[var(--cream)] rounded-2xl border border-dashed border-[var(--mist)]">
+            <p className="text-xs font-medium text-[var(--navy)]">
+              لم يتم تأكيد أي معلومات بعد
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {knownFields.map((field) => {
+              const res = resolved.fields[field];
+              if (res.status !== "known") return null;
+              const def = FIELD_REGISTRY[field];
+              const isEditing = editingField === field;
+              const isQuoteOpen = expandedQuoteField === field;
+
+              const relatedFacts = facts.filter((f) => res.factIds.includes(f.id));
+              const evidenceQuote = relatedFacts.find((f) => f.evidence_text)?.evidence_text;
+
+              return (
+                <div
+                  key={field}
+                  className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 transition-all ${
+                    isEditing
+                      ? "sm:col-span-2 md:col-span-3 lg:col-span-2 bg-[var(--cream)] border-[var(--navy)]"
+                      : "bg-[var(--cream)]/60 hover:bg-[var(--cream)] border-[var(--mist)]"
+                  }`}
+                >
+                  <div className="space-y-1.5">
+                    {/* Top Row: Label + Edit Icon */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-[var(--dusty-blue)] font-medium whitespace-nowrap">
+                        {getShortLabel(field)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingField(isEditing ? null : field)}
+                        title={isEditing ? "إلغاء التعديل" : "تصحيح القيمة"}
+                        className="p-1.5 rounded-lg bg-[var(--paper)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] transition-colors cursor-pointer shrink-0"
+                      >
+                        {isEditing ? (
+                          <X className="w-3.5 h-3.5" />
+                        ) : (
+                          <Edit3 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Middle Row: Full Untruncated Value */}
+                    <div className="text-base sm:text-lg font-extrabold text-[var(--navy)] font-body tabular-nums leading-snug whitespace-nowrap">
+                      {formatFieldValue(field, res.value)}
+                    </div>
+                  </div>
+
+                  {/* Bottom Row: Source Pill + Quote Toggle */}
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--mist)]/70">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)] font-medium">
+                      {res.certainty === "user_stated" ? "مؤكد يدوياً" : "تلقائي"}
+                    </span>
+
+                    {evidenceQuote && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedQuoteField(isQuoteOpen ? null : field)
+                        }
+                        className="text-[11px] font-medium text-[var(--navy)] hover:underline cursor-pointer"
+                      >
+                        {isQuoteOpen ? "إخفاء الدليل" : "عرض الدليل"}
+                      </button>
+                    )}
+                  </div>
+
+                  {isQuoteOpen && evidenceQuote && (
+                    <blockquote className="p-2.5 bg-[var(--paper)] rounded-xl border-r-2 border-[var(--navy)] text-[11px] text-[var(--navy)] italic leading-relaxed">
+                      &quot;{evidenceQuote}&quot;
+                    </blockquote>
+                  )}
+
+                  {isEditing && (
+                    <div className="pt-2 border-t border-[var(--mist)]">
+                      <InlineCorrectionForm
+                        caseId={caseId}
+                        propertyId={property.id}
+                        field={field}
+                        label={def.label}
+                        buttonLabel="حفظ"
+                        compact
                         onSuccess={() => setEditingField(null)}
                       />
                     </div>
@@ -569,120 +685,286 @@ export function PropertyDetailsView({
         )}
       </section>
 
-      {/* Group D: Listing Claims */}
-      <section className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6 relative overflow-hidden">
-        <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
-                مميزات وادعاءات تسويقية (غير مدققة رسمياً)
+      {/* 4. GROUP B: MISSING / UNKNOWN FIELDS (Full-Width Horizontal 3-Column Grid) */}
+      {unknownFields.length > 0 && (
+        <section className="bg-[var(--paper)] rounded-[24px] border border-[var(--mist)] shadow-[0_12px_40px_rgba(15,26,43,0.03)] p-5 sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--mist)]">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#9A6700]" />
+              <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
+                <span>بيانات غير مذكورة في الإعلان</span>
+                <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF]">
+                  {unknownFields.length}
+                </span>
               </h2>
-              <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                نصوص وادعاءات منسوخة من وصف المسوق لم تخضع بعد للتحقق الميداني
-              </p>
             </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Unit Claims */}
-          <div className="bg-[var(--cream)] p-5 rounded-2xl border border-[var(--mist)] space-y-3">
-            <div className="flex items-center justify-between border-b border-[var(--mist)] pb-2">
-              <h3 className="text-xs font-medium text-[var(--navy)] flex items-center gap-1.5">
-                <Home className="w-3.5 h-3.5 text-[var(--navy)]" />
-                <span>مواصفات الوحدة</span>
-              </h3>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
-                {resolved.claims.unit.length}
-              </span>
-            </div>
-            {resolved.claims.unit.length === 0 ? (
-              <p className="text-xs text-[var(--dusty-blue)] italic">لا توجد ادعاءات مسجلة</p>
-            ) : (
-              <ul className="text-xs text-[var(--navy)] space-y-2">
-                {resolved.claims.unit.map((c) => (
-                  <li key={c.id} className="flex items-start gap-2">
-                    <span className="text-[var(--navy)] font-bold mt-0.5">•</span>
-                    <span className="leading-relaxed">{c.raw_text || String(c.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <span className="text-xs text-[var(--dusty-blue)]">
+              يمكنك تحديد المتاح منها بنقرة سريعة لرفع دقة المقارنة
+            </span>
           </div>
 
-          {/* Building Claims */}
-          <div className="bg-[var(--cream)] p-5 rounded-2xl border border-[var(--mist)] space-y-3">
-            <div className="flex items-center justify-between border-b border-[var(--mist)] pb-2">
-              <h3 className="text-xs font-medium text-[var(--navy)] flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[var(--navy)]" />
-                <span>مواصفات المبنى</span>
-              </h3>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
-                {resolved.claims.building.length}
-              </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {unknownFields.map((field) => {
+              const def = FIELD_REGISTRY[field];
+              const isExpanded = expandedUnknownField === field || def.isCritical;
+
+              // Boolean fields render direct 1-click pills horizontally
+              if (def.valueType === "boolean") {
+                return (
+                  <div
+                    key={field}
+                    className="p-3.5 bg-[var(--cream)]/70 rounded-2xl border border-[var(--mist)] flex items-center justify-between gap-3"
+                  >
+                    <span className="text-xs sm:text-sm font-bold text-[var(--navy)]">
+                      {def.label}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <QuickSelectPill
+                        caseId={caseId}
+                        propertyId={property.id}
+                        field={field}
+                        value="متوفر"
+                        label="✓ متوفر"
+                      />
+                      <QuickSelectPill
+                        caseId={caseId}
+                        propertyId={property.id}
+                        field={field}
+                        value="غير متوفر"
+                        label="✕ لا يوجد"
+                      />
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={field}
+                  className={`p-3.5 rounded-2xl border transition-all ${
+                    def.isCritical
+                      ? "bg-[#FFF9EC]/50 border-[#F9E2AF] space-y-2.5"
+                      : "bg-[var(--cream)]/70 border-[var(--mist)] space-y-2.5"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-[var(--navy)]">
+                        {def.label}
+                      </span>
+                      {def.isCritical && (
+                        <span className="text-[10px] font-semibold text-[#9A6700] bg-[#FFF9EC] border border-[#F9E2AF] px-2 py-0.5 rounded-full">
+                          أساسي
+                        </span>
+                      )}
+                    </div>
+
+                    {!def.isCritical && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedUnknownField(
+                            expandedUnknownField === field ? null : field
+                          )
+                        }
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[var(--paper)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <X className="w-3 h-3" />
+                            <span>إلغاء</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3 h-3" />
+                            <span>إضافة</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {isExpanded && (
+                    <div className="space-y-2 pt-1 border-t border-[var(--mist)]/70">
+                      {field === "bedrooms" && (
+                        <div className="flex flex-wrap gap-1">
+                          {["2", "3", "4", "5", "6"].map((num) => (
+                            <QuickSelectPill
+                              key={num}
+                              caseId={caseId}
+                              propertyId={property.id}
+                              field={field}
+                              value={num}
+                              label={`${num} غرف`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {field === "floor_no" && (
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { label: "أرضي", val: "0" },
+                            { label: "الأول", val: "1" },
+                            { label: "الثاني", val: "2" },
+                            { label: "الثالث", val: "3" },
+                          ].map((preset) => (
+                            <QuickSelectPill
+                              key={preset.val}
+                              caseId={caseId}
+                              propertyId={property.id}
+                              field={field}
+                              value={preset.val}
+                              label={preset.label}
+                              onSuccess={() => setExpandedUnknownField(null)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {field === "property_age_years" && (
+                        <div className="flex flex-wrap gap-1">
+                          {[
+                            { label: "جديد (0)", val: "0" },
+                            { label: "سنة واحدة", val: "1" },
+                            { label: "3 سنوات", val: "3" },
+                            { label: "5 سنوات", val: "5" },
+                          ].map((preset) => (
+                            <QuickSelectPill
+                              key={preset.val}
+                              caseId={caseId}
+                              propertyId={property.id}
+                              field={field}
+                              value={preset.val}
+                              label={preset.label}
+                              onSuccess={() => setExpandedUnknownField(null)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {field === "bathrooms" && (
+                        <div className="flex flex-wrap gap-1">
+                          {["2", "3", "4", "5"].map((num) => (
+                            <QuickSelectPill
+                              key={num}
+                              caseId={caseId}
+                              propertyId={property.id}
+                              field={field}
+                              value={num}
+                              label={num}
+                              onSuccess={() => setExpandedUnknownField(null)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <InlineCorrectionForm
+                        caseId={caseId}
+                        propertyId={property.id}
+                        field={field}
+                        label={def.label}
+                        placeholder={`أدخل ${def.label}...`}
+                        buttonLabel="حفظ"
+                        compact
+                        onSuccess={() => setExpandedUnknownField(null)}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* 5. GROUP D: MARKETING CLAIMS (Full-Width Horizontal Grid with Inline Filter Pills) */}
+      {allClaims.length > 0 && (
+        <section className="bg-[var(--paper)] rounded-[24px] border border-[var(--mist)] shadow-[0_12px_40px_rgba(15,26,43,0.03)] p-5 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--mist)]">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--navy)]" />
+              <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
+                <span>ادعاءات ومميزات تسويقية</span>
+                <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] tabular-nums">
+                  {allClaims.length}
+                </span>
+              </h2>
             </div>
-            {resolved.claims.building.length === 0 ? (
-              <p className="text-xs text-[var(--dusty-blue)] italic">لا توجد ادعاءات مسجلة</p>
-            ) : (
-              <ul className="text-xs text-[var(--navy)] space-y-2">
-                {resolved.claims.building.map((c) => (
-                  <li key={c.id} className="flex items-start gap-2">
-                    <span className="text-[var(--navy)] font-bold mt-0.5">•</span>
-                    <span className="leading-relaxed">{c.raw_text || String(c.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+
+            {/* Inline Filter Pills (Only shows non-empty categories when helpful) */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveClaimTab("all")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  activeClaimTab === "all"
+                    ? "bg-[var(--navy)] text-[var(--cream)]"
+                    : "bg-[var(--cream)] text-[var(--dusty-blue)] hover:text-[var(--navy)] border border-[var(--mist)]"
+                }`}
+              >
+                الكل ({allClaims.length})
+              </button>
+              {resolved.claims.unit.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveClaimTab("unit")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 transition-all cursor-pointer ${
+                    activeClaimTab === "unit"
+                      ? "bg-[var(--navy)] text-[var(--cream)]"
+                      : "bg-[var(--cream)] text-[var(--dusty-blue)] hover:text-[var(--navy)] border border-[var(--mist)]"
+                  }`}
+                >
+                  <Home className="w-3 h-3" />
+                  <span>الوحدة ({resolved.claims.unit.length})</span>
+                </button>
+              )}
+              {resolved.claims.building.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveClaimTab("building")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 transition-all cursor-pointer ${
+                    activeClaimTab === "building"
+                      ? "bg-[var(--navy)] text-[var(--cream)]"
+                      : "bg-[var(--cream)] text-[var(--dusty-blue)] hover:text-[var(--navy)] border border-[var(--mist)]"
+                  }`}
+                >
+                  <Building2 className="w-3 h-3" />
+                  <span>المبنى ({resolved.claims.building.length})</span>
+                </button>
+              )}
+              {resolved.claims.neighborhood.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveClaimTab("neighborhood")}
+                  className={`px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1 transition-all cursor-pointer ${
+                    activeClaimTab === "neighborhood"
+                      ? "bg-[var(--navy)] text-[var(--cream)]"
+                      : "bg-[var(--cream)] text-[var(--dusty-blue)] hover:text-[var(--navy)] border border-[var(--mist)]"
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>الحي ({resolved.claims.neighborhood.length})</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Neighborhood Claims */}
-          <div className="bg-[var(--cream)] p-5 rounded-2xl border border-[var(--mist)] space-y-3">
-            <div className="flex items-center justify-between border-b border-[var(--mist)] pb-2">
-              <h3 className="text-xs font-medium text-[var(--navy)] flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--navy)]" />
-                <span>الحي والخدمات</span>
-              </h3>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
-                {resolved.claims.neighborhood.length}
-              </span>
-            </div>
-            {resolved.claims.neighborhood.length === 0 ? (
-              <p className="text-xs text-[var(--dusty-blue)] italic">لا توجد ادعاءات مسجلة</p>
-            ) : (
-              <ul className="text-xs text-[var(--navy)] space-y-2">
-                {resolved.claims.neighborhood.map((c) => (
-                  <li key={c.id} className="flex items-start gap-2">
-                    <span className="text-[var(--navy)] font-bold mt-0.5">•</span>
-                    <span className="leading-relaxed">{c.raw_text || String(c.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {displayedClaims.map((c) => (
+              <div
+                key={c.id}
+                className="px-3.5 py-2.5 rounded-xl bg-[var(--cream)]/70 border border-[var(--mist)] flex items-center justify-between gap-2 text-xs text-[var(--navy)]"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] shrink-0" />
+                  <span className="leading-snug">{c.raw_text || String(c.value)}</span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)] shrink-0">
+                  {c.bucket}
+                </span>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
-
-      {/* Bottom Action Footer */}
-      <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <Link
-          href={`/case/${caseId}/properties`}
-          className="inline-flex items-center gap-2 text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] transition-colors"
-        >
-          <ArrowRight className="w-4 h-4" />
-          <span>العودة لحصر العقارات</span>
-        </Link>
-
-        <Link href={`/case/${caseId}/preflight`} className="w-full sm:w-auto">
-          <button
-            type="button"
-            className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
-          >
-            <span>المتابعة إلى بوابة الفحص المبدئي</span>
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-        </Link>
-      </div>
+        </section>
+      )}
     </div>
   );
 }
+

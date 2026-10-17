@@ -426,6 +426,14 @@ describe("Block 1: Requirements & constraint enforcement (T01, T02, T06, T07, T1
     const constraints = evaluateConstraints(stored, await loadResolved(propertyId));
     expect(constraints.map((c) => c.key).filter((k) => /commute|location/i.test(k))).toEqual([]);
 
+    // When district is known, daily_location is evaluated without fabricating commute minutes
+    await seedFacts(propertyId, [{ field: "district", value: "العليا" }]);
+    const constraintsWithDistrict = evaluateConstraints(stored, await loadResolved(propertyId));
+    const dailyLoc = constraintsWithDistrict.find((c) => c.key === "daily_location");
+    expect(dailyLoc).toBeDefined();
+    expect(dailyLoc?.result).toBe("pass");
+    expect(dailyLoc?.detailAr).not.toMatch(/\d+\s*دقائق/);
+
     const payload = buildAIAnalysisPayload(stored, [], {});
     expect(payload.requirements).not.toHaveProperty("important_locations");
   });
@@ -461,7 +469,7 @@ describe("Block 1: Requirements & constraint enforcement (T01, T02, T06, T07, T1
     ).toEqual(propertyBefore);
   });
 
-  it("T07: changing important locations commits atomically and keeps existing facts intact", async () => {
+  it("T07: changing important locations commits atomically, updates daily_location evaluation, and keeps existing facts intact", async () => {
     const caseId = await createCase(guestAId, "draft");
     await saveRequirementsAs(caseId, {
       max_budget_sar: 900000,
@@ -471,9 +479,16 @@ describe("Block 1: Requirements & constraint enforcement (T01, T02, T06, T07, T1
     await seedFacts(propertyId, [
       { field: "listing_price_sar", value: 700000 },
       { field: "area_sqm", value: 110 },
+      { field: "district", value: "العليا" },
     ]);
     const factsBefore = await loadFacts(propertyId);
     const versionBefore = (await getCase(caseId)).state_version;
+    const resolved = await loadResolved(propertyId);
+    expect(
+      evaluateConstraints(await getRequirements(caseId), resolved).find(
+        (c) => c.key === "daily_location"
+      )?.result
+    ).toBe("pass");
 
     const updated = [
       { label: "مقر العمل", address_text: "حي الملقا", frequency: "daily" },
@@ -486,6 +501,9 @@ describe("Block 1: Requirements & constraint enforcement (T01, T02, T06, T07, T1
     expect(Number(stored.max_budget_sar)).toBe(900000);
     expect((await getCase(caseId)).state_version).toBeGreaterThan(versionBefore);
     expect(await loadFacts(propertyId)).toEqual(factsBefore);
+    expect(
+      evaluateConstraints(stored, resolved).find((c) => c.key === "daily_location")?.result
+    ).toBe("unknown");
   });
 
   it("T10: when every property violates a hard constraint none is rated strong and none passes all constraints", async () => {

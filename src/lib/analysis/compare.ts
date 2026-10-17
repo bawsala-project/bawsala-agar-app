@@ -91,12 +91,104 @@ const FIT_SCORES: Record<string, number> = {
   insufficient_evidence: 1,
 };
 
+/**
+ * Computes honest, deterministic engineering fit scores (percentage 45..96)
+ * for a pool of RankedItems based strictly on constraint compliance, fit rating,
+ * visit priority, price-per-sqm efficiency, and budget compliance — without
+ * any artificial rank-subtraction penalty.
+ */
+export function computePoolFitScores(
+  items: RankedItem[],
+  maxBudget?: number | null
+): number[] {
+  const validPpsqm = items
+    .map((i) => i.price_per_sqm)
+    .filter((v): v is number => v !== null && v > 0);
+  const minPpsqm = validPpsqm.length > 0 ? Math.min(...validPpsqm) : null;
+  const maxPpsqm = validPpsqm.length > 0 ? Math.max(...validPpsqm) : null;
+
+  const validPrices = items
+    .map((i) => i.price)
+    .filter((v): v is number => v !== null && v > 0);
+  const minPrice = validPrices.length > 0 ? Math.min(...validPrices) : null;
+  const maxPrice = validPrices.length > 0 ? Math.max(...validPrices) : null;
+
+  return items.map((item) => {
+    const { pass, fail, unknown } = item.constraint_summary;
+    const totalConstraints = pass + fail + unknown;
+
+    const constraintPts =
+      totalConstraints > 0
+        ? Math.round(
+            ((pass * 1.0 + unknown * 0.58 + fail * 0.15) / totalConstraints) * 38
+          )
+        : 26;
+
+    const fitBase =
+      item.fit_rating === "strong"
+        ? 30
+        : item.fit_rating === "partial"
+        ? 22
+        : item.fit_rating === "weak"
+        ? 15
+        : 12;
+
+    const priorityBonus =
+      item.visit_priority === "high"
+        ? 4
+        : item.visit_priority === "medium"
+        ? 2
+        : 0;
+
+    let ppsqmPts = 10;
+    if (
+      item.price_per_sqm &&
+      minPpsqm !== null &&
+      maxPpsqm !== null &&
+      maxPpsqm > minPpsqm
+    ) {
+      const eff = 1 - (item.price_per_sqm - minPpsqm) / (maxPpsqm - minPpsqm);
+      ppsqmPts = Math.round(7 + eff * 9);
+    } else if (
+      item.price_per_sqm &&
+      minPpsqm !== null &&
+      item.price_per_sqm === minPpsqm
+    ) {
+      ppsqmPts = 14;
+    }
+
+    let pricePts = 8;
+    if (item.price && maxBudget && maxBudget > 0) {
+      if (item.price <= maxBudget) {
+        const savingsRatio = Math.min(1, (maxBudget - item.price) / maxBudget);
+        pricePts = Math.round(8 + savingsRatio * 4);
+      } else {
+        const overRatio = (item.price - maxBudget) / maxBudget;
+        pricePts = Math.max(2, Math.round(7 - overRatio * 14));
+      }
+    } else if (
+      item.price &&
+      minPrice !== null &&
+      maxPrice !== null &&
+      maxPrice > minPrice
+    ) {
+      const priceEff = 1 - (item.price - minPrice) / (maxPrice - minPrice);
+      pricePts = Math.round(6 + priceEff * 6);
+    }
+
+    return Math.min(
+      96,
+      Math.max(45, constraintPts + fitBase + priorityBonus + ppsqmPts + pricePts)
+    );
+  });
+}
+
 export function resolveComparison(
   assessments: PropertyAssessmentWithProperty[],
   requirements?: RequirementsRow | null
 ): ComparisonResult {
-  // 1. Eligibility: max 3 properties from current run
-  const pool = (assessments || []).slice(0, 3);
+  // 1. Eligibility: up to 5 properties from current run
+  const pool = (assessments || []).slice(0, 5);
 
   // If < 2 properties: mode = 'insufficient'
   if (pool.length < 2) {

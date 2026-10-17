@@ -6,7 +6,6 @@ import { HeroSection } from "@/components/home/hero-section";
 import { HeroConsultationWrapper } from "@/components/home/hero-consultation-wrapper";
 import { BawsalaNavbar } from "@/components/layout/bawsala-navbar";
 import {
-  IntroOverlay,
   CompassDivider,
   BawsalaWordmark,
   BawsalaCompass,
@@ -54,9 +53,6 @@ export default async function HomePage() {
       lang="ar"
       className="min-h-screen bg-[var(--cream)] text-[var(--navy)] font-body antialiased selection:bg-[var(--mist)] selection:text-[var(--navy)] relative overflow-x-hidden"
     >
-      {/* Opening Intro Animation Overlay (plays once per session) */}
-      <IntroOverlay />
-
       {/* Floating Centered Island Navbar */}
       <BawsalaNavbar
         latestCaseId={latestCaseId}
@@ -108,7 +104,7 @@ export default async function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] text-[var(--navy)] mx-auto flex items-center justify-center border border-[var(--mist)]">
                 <Inbox className="w-6 h-6 text-[var(--dusty-blue)]" />
               </div>
-              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+              <h3 className="text-base font-body font-bold text-[var(--navy)]">
                 لا توجد جلسات دراسة سابقة
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
@@ -166,7 +162,7 @@ export default async function HomePage() {
                         </span>
                       </div>
 
-                      <h3 className="text-base font-display font-bold text-[var(--navy)]">
+                      <h3 className="text-base font-body font-bold text-[var(--navy)]">
                         دراسة قرار شراء عقار في {c.city}
                       </h3>
 
@@ -218,7 +214,7 @@ export default async function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
                 <Scale className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+              <h3 className="text-base font-body font-bold text-[var(--navy)]">
                 حياد استشاري 100%
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
@@ -231,7 +227,7 @@ export default async function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
                 <ShieldCheck className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+              <h3 className="text-base font-body font-bold text-[var(--navy)]">
                 كشف تضارب المساحات والصكوك
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
@@ -244,7 +240,7 @@ export default async function HomePage() {
               <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-display font-bold text-[var(--navy)]">
+              <h3 className="text-base font-body font-bold text-[var(--navy)]">
                 تحليل تكلفة الامتلاك (TCO)
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">

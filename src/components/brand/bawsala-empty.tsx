@@ -32,7 +32,7 @@ export function BawsalaEmptyState({
         <BawsalaCompass size={iconSize} needleRotation={15} />
       </div>
 
-      <h3 className="font-display font-black text-lg sm:text-xl text-[var(--navy)] mb-2 tracking-tight">
+      <h3 className="font-body font-bold text-lg sm:text-xl text-[var(--navy)] mb-2 tracking-tight">
         {title}
       </h3>
 

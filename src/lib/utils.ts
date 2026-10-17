@@ -6,9 +6,5 @@ export function cn(...inputs: ClassValue[]): string {
 }
 
 export function formatSAR(value: number): string {
-  return new Intl.NumberFormat("ar-SA", {
-    style: "currency",
-    currency: "SAR",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return `${Math.round(value).toLocaleString("en-US")} ر.س`;
 }

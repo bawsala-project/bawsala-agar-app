@@ -343,5 +343,78 @@ export function evaluateConstraints(
     }
   }
 
+  // 5. Important Daily Locations (neighborhood alignment & peak-hour verification without fabricating commute minutes)
+  if (
+    requirements.important_locations &&
+    Array.isArray(requirements.important_locations) &&
+    requirements.important_locations.length > 0
+  ) {
+    const rawLocations = requirements.important_locations as Array<{
+      label?: string;
+      address_text?: string;
+      district?: string;
+      frequency?: string;
+    }>;
+
+    const validLocations = rawLocations
+      .map((loc) => ({
+        label: (loc?.label || "موقع يومي").trim(),
+        addressText: (loc?.address_text || loc?.district || "").trim(),
+      }))
+      .filter((loc) => loc.addressText.length > 0);
+
+    const districtField = resolved.fields.district;
+
+    if (validLocations.length > 0 && districtField) {
+      const normalizeLocToken = (s: string) =>
+        s
+          .trim()
+          .replace(/^حي\s+/, "")
+          .replace(/[أإآ]/g, "ا")
+          .replace(/ة/g, "ه")
+          .toLowerCase();
+
+      if (districtField.status === "conflicting") {
+        results.push({
+          key: "daily_location",
+          labelAr: `القرب من المواقع المهمة (${validLocations[0].label})`,
+          result: "unknown",
+          detailAr:
+            "يوجد تعارض في اسم حي العقار يمنع التحقق المبدئي من قربه للمواقع اليومية المهمة",
+        });
+      } else if (districtField.status === "known") {
+        const propDistrict = String(districtField.value || "").trim();
+        const normPropDistrict = normalizeLocToken(propDistrict);
+
+        if (normPropDistrict.length > 0) {
+          const matchedLoc = validLocations.find((loc) => {
+            const normLoc = normalizeLocToken(loc.addressText);
+            return (
+              normLoc.length > 0 &&
+              (normLoc.includes(normPropDistrict) || normPropDistrict.includes(normLoc))
+            );
+          });
+
+          if (matchedLoc) {
+            results.push({
+              key: "daily_location",
+              labelAr: `القرب من المواقع المهمة (${matchedLoc.label})`,
+              result: "pass",
+              detailAr: `يقع العقار في نفس نطاق (${matchedLoc.label} - ${matchedLoc.addressText})؛ يُنصح بتجربة المسار وقت الذروة`,
+            });
+          } else {
+            const primaryLoc = validLocations[0];
+            results.push({
+              key: "daily_location",
+              labelAr: `القرب من المواقع المهمة (${primaryLoc.label})`,
+              result: "unknown",
+              detailAr: `العقار في حي (${propDistrict}) بينما (${primaryLoc.label}) في (${primaryLoc.addressText})؛ لم تُفترض دقائق تنقل ويلزم التحقق الميداني من المسافة وزمن الوصول وقت الذروة`,
+            });
+          }
+        }
+      }
+    }
+  }
+
   return results;
 }

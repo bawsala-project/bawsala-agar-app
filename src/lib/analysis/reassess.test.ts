@@ -202,4 +202,45 @@ describe("Reassessment Engine - Acceptance 1", () => {
     expect(assessment.constraint_results[0]).toEqual(sampleAssessment.constraint_results[0]);
     expect(assessment.constraint_results[1]).toEqual(sampleAssessment.constraint_results[1]);
   });
+
+  it("Daily Location check: problem finding flips daily_location to fail and drops fit_rating to weak", () => {
+    const locItem: InspectionItemRow = {
+      id: "item-loc",
+      property_id: "prop-1",
+      category: "neighborhood",
+      question_ar:
+        "كيف يبدو زمن وسهولة الوصول الفعلي من العقار إلى المواقع اليومية المهمة في وقت الذروة؟",
+      why_it_matters_ar: "التحقق من المسافة وقت الذروة",
+      how_to_check_ar:
+        "تجربة القيادة أو التنقل الفعلي من موقع العقار إلى المواقع اليومية المهمة في أوقات الذروة الصباحية والمسائية",
+      priority: "high",
+      trigger_reason: "constraint_verification",
+      affected_assessment_types: ["fit", "daily_life"],
+      created_at: new Date().toISOString(),
+    };
+    const locFinding: InspectionFindingRow = {
+      id: "f-loc",
+      inspection_item_id: "item-loc",
+      property_id: "prop-1",
+      result: "problem",
+      note: "ازدحام شديد جداً على المخرج يستغرق أكثر من ساعة",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const targetFindings = resolveAffectedTargets([{ item: locItem, finding: locFinding }]);
+    const { assessment, diff } = reassessProperty(
+      sampleAssessment,
+      targetFindings,
+      { floor_no: 1 },
+      {}
+    );
+
+    const locConstraint = assessment.constraint_results.find((c) => c.key === "daily_location");
+    expect(locConstraint).toBeDefined();
+    expect(locConstraint?.result).toBe("fail");
+    expect(assessment.fit_rating).toBe("weak");
+    expect(diff.newFitRating).toBe("weak");
+    expect(diff.addedRisks[0]).toContain("ازدحام شديد");
+  });
 });

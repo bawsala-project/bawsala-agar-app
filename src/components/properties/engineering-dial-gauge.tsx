@@ -135,7 +135,7 @@ export function EngineeringDialGauge({
       {/* Center count-up score */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         <span
-          className="font-display font-extrabold text-[var(--navy)] tabular-nums tracking-tighter"
+          className="font-body font-extrabold text-[var(--navy)] tabular-nums tracking-tighter"
           style={{ fontSize: `${Math.round(size * 0.32)}px`, lineHeight: 1 }}
         >
           {displayNumber}

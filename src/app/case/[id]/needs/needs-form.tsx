@@ -50,6 +50,163 @@ interface NeedsFormProps {
   caseId: string;
   initialData: RequirementsRow | null;
   city?: string | null;
+  initialContext?: {
+    typology?: string;
+    intent?: string;
+    title?: string;
+  };
+}
+
+const TYPOLOGY_LABELS: Record<string, string> = {
+  apt: "شقة تمليك",
+  villa: "فيلا مستقلة / دوبلكس",
+  townhouse: "تاون هاوس",
+};
+
+const INTENT_LABELS: Record<string, string> = {
+  family: "سكن عائلي أول",
+  upgrade: "ترقية مسكن",
+  invest: "استثمار عقاري",
+};
+
+export interface ParsedArabicNeeds {
+  budget?: number;
+  purchaseMethod?: "cash" | "mortgage" | "undecided";
+  householdSize?: number;
+  minBedrooms?: number;
+  minAreaSqm?: number;
+  hasElevator?: boolean;
+  hasParking?: boolean;
+  hasNewBuilding?: boolean;
+  maxFloor?: number;
+  districtOrLocation?: string;
+  matchedFieldsAr: string[];
+}
+
+function normalizeDigits(input: string): string {
+  const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
+  let out = input;
+  for (let i = 0; i < 10; i++) {
+    out = out.split(arabicIndic[i]).join(String(i));
+  }
+  return out;
+}
+
+export function parseArabicNeedsDescription(rawText: string): ParsedArabicNeeds {
+  const text = normalizeDigits(rawText).replace(/،/g, " ").replace(/,/g, "");
+  const result: ParsedArabicNeeds = { matchedFieldsAr: [] };
+
+  // 1. Budget extraction (e.g., "1.2 مليون", "مليون و 200 ألف", "مليون ونصف", "900 ألف", "850000")
+  const millionWithThousands = text.match(/مليون\s*و\s*(\d{2,3})\s*(?:ألف|الف)/);
+  const decimalMillion = text.match(/(\d+(?:\.\d+)?)\s*مليون/);
+  const millionHalf = /مليون\s*و\s*(?:نصف|نص)/.test(text);
+  const singleMillion = /(?:ميزانية|بسعر|حدود)\s*مليون(?!\s*و)/.test(text);
+  const thousandsMatch = text.match(/(\d{3,4})\s*(?:ألف|الف)/);
+  const explicitLargeNum = text.match(/\b(\d{6,7})\b/);
+
+  if (millionWithThousands) {
+    result.budget = 1_000_000 + Number(millionWithThousands[1]) * 1_000;
+    result.matchedFieldsAr.push("الميزانية القصوى");
+  } else if (millionHalf) {
+    result.budget = 1_500_000;
+    result.matchedFieldsAr.push("الميزانية القصوى");
+  } else if (decimalMillion) {
+    result.budget = Math.round(Number(decimalMillion[1]) * 1_000_000);
+    result.matchedFieldsAr.push("الميزانية القصوى");
+  } else if (singleMillion) {
+    result.budget = 1_000_000;
+    result.matchedFieldsAr.push("الميزانية القصوى");
+  } else if (thousandsMatch) {
+    result.budget = Number(thousandsMatch[1]) * 1_000;
+    result.matchedFieldsAr.push("الميزانية القصوى");
+  } else if (explicitLargeNum) {
+    result.budget = Number(explicitLargeNum[1]);
+    result.matchedFieldsAr.push("الميزانية القصوى");
+  }
+
+  // 2. Purchase Method
+  if (/(?:كاش|نقد|نقداً|نقدا)/.test(text)) {
+    result.purchaseMethod = "cash";
+    result.matchedFieldsAr.push("الدفع كاش");
+  } else if (/(?:تمويل|بنك|عقاري|رهن|أقساط|اقساط)/.test(text)) {
+    result.purchaseMethod = "mortgage";
+    result.matchedFieldsAr.push("تمويل عقاري");
+  }
+
+  // 3. Bedrooms
+  const bedroomsNum = text.match(/(\d+)\s*(?:غرف|غرفة)/);
+  if (bedroomsNum) {
+    result.minBedrooms = Number(bedroomsNum[1]);
+    result.matchedFieldsAr.push("عدد الغرف");
+  } else if (/غرفتين/.test(text)) {
+    result.minBedrooms = 2;
+    result.matchedFieldsAr.push("عدد الغرف");
+  } else if (/(?:ثلاث|ثلاثة)\s*غرف/.test(text)) {
+    result.minBedrooms = 3;
+    result.matchedFieldsAr.push("عدد الغرف");
+  } else if (/(?:أربع|اربع|أربعة|اربعة)\s*غرف/.test(text)) {
+    result.minBedrooms = 4;
+    result.matchedFieldsAr.push("عدد الغرف");
+  } else if (/(?:خمس|خمسة)\s*غرف/.test(text)) {
+    result.minBedrooms = 5;
+    result.matchedFieldsAr.push("عدد الغرف");
+  }
+
+  // 4. Area (sqm)
+  const areaMatch = text.match(/(\d{2,4})\s*(?:متر|م2|م²)/);
+  if (areaMatch) {
+    result.minAreaSqm = Number(areaMatch[1]);
+    result.matchedFieldsAr.push("المساحة الدنيا");
+  }
+
+  // 5. Household size
+  const familyMatch = text.match(/(?:أسرة|اسرة|عائلة|افراد|أفراد|أشخاص|اشخاص)\s*(?:من\s*)?(\d+)/) ||
+    text.match(/(\d+)\s*(?:أفراد|افراد|أشخاص|اشخاص)/);
+  if (familyMatch) {
+    result.householdSize = Number(familyMatch[1]);
+    result.matchedFieldsAr.push("حجم الأسرة");
+  }
+
+  // 6. Hard constraints
+  if (/مصعد/.test(text)) {
+    result.hasElevator = true;
+    result.matchedFieldsAr.push("شرط المصعد");
+  }
+  if (/(?:موقف|بايكة|باركنج)/.test(text)) {
+    result.hasParking = true;
+    result.matchedFieldsAr.push("شرط الموقف الخاص");
+  }
+  if (/(?:جديد|جديدة|أول ساكن|اول ساكن)/.test(text)) {
+    result.hasNewBuilding = true;
+    result.matchedFieldsAr.push("مبنى جديد");
+  }
+  if (/(?:دور أرضي|دور ارضي|الأرضي|الارضي)/.test(text)) {
+    result.maxFloor = 0;
+    result.matchedFieldsAr.push("الحد الأعلى للدور");
+  } else if (/(?:الدور الأول|الدور الاول|دور اول|دور أول)/.test(text)) {
+    result.maxFloor = 1;
+    result.matchedFieldsAr.push("الحد الأعلى للدور");
+  } else {
+    const floorMatch = text.match(/(?:دور|الدور)\s*(\d+)/);
+    if (floorMatch) {
+      result.maxFloor = Number(floorMatch[1]);
+      result.matchedFieldsAr.push("الحد الأعلى للدور");
+    }
+  }
+
+  // 7. Important daily location / district
+  const districtMatch = text.match(/حي\s+([\u0600-\u06FF]+(?:\s+[\u0600-\u06FF]+)?)/);
+  if (districtMatch) {
+    const cleaned = districtMatch[1]
+      .replace(/\s+(?:مع|أو|او|و|بمساحة|بميزانية|كاش|تمويل).*$/, "")
+      .trim();
+    if (cleaned) {
+      result.districtOrLocation = `حي ${cleaned}`;
+      result.matchedFieldsAr.push("الموقع اليومي المهم");
+    }
+  }
+
+  return result;
 }
 
 function SubmitButton() {
@@ -76,10 +233,14 @@ function SubmitButton() {
   );
 }
 
-export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
+export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFormProps) {
   const saveActionWithId = saveRequirements.bind(null, caseId);
   const initialState: RequirementsFormState = { errors: {} };
   const [state, formAction] = useActionState(saveActionWithId, initialState);
+
+  // Quick Natural-Language Needs Helper State
+  const [freeTextNeeds, setFreeTextNeeds] = useState("");
+  const [parsedFeedback, setParsedFeedback] = useState<string[] | null>(null);
 
   // Section 1: Budget and purchase method
   const [budget, setBudget] = useState(
@@ -140,16 +301,29 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
   const [customConstraints, setCustomConstraints] =
     useState<CustomConstraintItem[]>(initialCustom);
 
-  // Section 4: Preferences (weighted)
+  // Section 4: Preferences (weighted) — seeded with landing-page purchase intent when new
+  const defaultIntentPref: PreferenceItem[] =
+    initialContext?.intent === "invest"
+      ? [
+          { id: "p-intent", label: "عائد تأجيري مرتفع وسهولة إعادة التأجير", weight: "high" },
+          { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" },
+        ]
+      : initialContext?.intent === "upgrade"
+      ? [
+          { id: "p-intent", label: "جودة تشطيبات عالية وتصميم معماري حديث", weight: "high" },
+          { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" },
+        ]
+      : [
+          { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" },
+          { id: "p-1", label: "قرب من المسجد والحديقة", weight: "high" },
+        ];
+
   const initialPrefs = Array.isArray(initialData?.preferences)
     ? (initialData?.preferences as Array<{
         label: string;
         weight: PreferenceWeight;
       }>).map((p, i) => ({ id: `p-${i}`, label: p.label, weight: p.weight }))
-    : [
-        { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" as PreferenceWeight },
-        { id: "p-1", label: "قرب من المسجد والحديقة", weight: "high" as PreferenceWeight },
-      ];
+    : defaultIntentPref;
   const [preferences, setPreferences] = useState<PreferenceItem[]>(initialPrefs);
 
   // Section 5: Important locations
@@ -166,6 +340,48 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
       }))
     : [{ id: "l-0", label: "مقر العمل الرئيسي", address_text: "", frequency: "daily" as LocationFrequency }];
   const [locations, setLocations] = useState<LocationItem[]>(initialLocs);
+
+  const handleSmartParseNeeds = () => {
+    if (!freeTextNeeds.trim()) return;
+    const parsed = parseArabicNeedsDescription(freeTextNeeds);
+    if (parsed.budget !== undefined) setBudget(String(parsed.budget));
+    if (parsed.purchaseMethod) setPurchaseMethod(parsed.purchaseMethod);
+    if (parsed.householdSize !== undefined) setHouseholdSize(String(parsed.householdSize));
+    if (parsed.minBedrooms !== undefined) setMinBedrooms(String(parsed.minBedrooms));
+    if (parsed.minAreaSqm !== undefined) setMinAreaSqm(String(parsed.minAreaSqm));
+    if (parsed.hasElevator) setHasElevator(true);
+    if (parsed.hasParking) setHasParking(true);
+    if (parsed.hasNewBuilding) setHasNewBuilding(true);
+    if (parsed.maxFloor !== undefined) {
+      setHasMaxFloor(true);
+      setMaxFloorValue(String(parsed.maxFloor));
+    }
+    if (parsed.districtOrLocation) {
+      setLocations((prev) => {
+        if (prev.length === 0) {
+          return [
+            {
+              id: "l-0",
+              label: "مقر العمل / الوجهة اليومية",
+              address_text: parsed.districtOrLocation!,
+              frequency: "daily",
+            },
+          ];
+        }
+        const next = [...prev];
+        next[0] = {
+          ...next[0],
+          address_text: parsed.districtOrLocation!,
+        };
+        return next;
+      });
+    }
+    setParsedFeedback(
+      parsed.matchedFieldsAr.length > 0
+        ? parsed.matchedFieldsAr
+        : ["لم يتم رصد أرقام صريحة — يمكنك استكمال الحقول أدناه مباشرة"]
+    );
+  };
 
   // Constraint handlers
   const handleAddCustomConstraint = () => {
@@ -302,7 +518,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
     <div className="space-y-10" dir="rtl">
       {/* Hero / Page Intro */}
       <section className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium shadow-xs">
+        <div className="inline-flex flex-wrap items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium shadow-xs">
           <ShieldCheck className="w-4 h-4 text-[var(--navy)]" />
           <span>المرحلة الأولى • صياغة المعايير الهندسية والمالية</span>
           {city && (
@@ -311,9 +527,27 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               <span className="font-bold text-[var(--navy)]">{city}</span>
             </>
           )}
+          {initialContext?.typology && TYPOLOGY_LABELS[initialContext.typology] && (
+            <>
+              <span className="text-[var(--mist)]">•</span>
+              <span className="font-bold text-[var(--navy)]">
+                {TYPOLOGY_LABELS[initialContext.typology]}
+              </span>
+            </>
+          )}
+          {initialContext?.intent && INTENT_LABELS[initialContext.intent] && (
+            <>
+              <span className="text-[var(--mist)]">•</span>
+              <span className="font-bold text-[var(--navy)]">
+                {INTENT_LABELS[initialContext.intent]}
+              </span>
+            </>
+          )}
         </div>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-[var(--navy)] tracking-tight leading-[1.3] font-display">
-          محددات واحتياجات قرار الشراء
+          {initialContext?.title?.trim()
+            ? initialContext.title.trim()
+            : "محددات واحتياجات قرار الشراء"}
         </h1>
         <p className="text-xs sm:text-sm text-[var(--dusty-blue)] font-normal leading-relaxed max-w-2xl mx-auto">
           تحدد هذه المعايير خوارزمية الفرز والتقييم الحتمي. أي عقار يتجاوز ميزانيتك القصوى أو يخالف شروطك الحتمية سيتم استبعاده فوراً من المنافسة.
@@ -337,6 +571,65 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
           name="important_locations"
           value={JSON.stringify(serializedLocations)}
         />
+
+        {/* ============================================================== */}
+        {/* Section 0: التعبئة الذكية السريعة (اوصف احتياجك بكلماتك) */}
+        {/* ============================================================== */}
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--mist)]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[var(--cream)] border border-[var(--mist)] flex items-center justify-center text-[var(--navy)]">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-bold text-[var(--navy)] font-display">
+                  التعبئة الذكية السريعة (اوصف احتياجك بكلماتك)
+                </h2>
+                <p className="text-[11px] text-[var(--dusty-blue)] mt-0.5">
+                  اكتب مواصفات الشقة وميزانيتك وشروطك بجملة واحدة ليقوم النظام باستخلاص المعايير وتعبئة الحقول تلقائياً
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setFreeTextNeeds(
+                  "أبحث عن شقة جديدة 4 غرف بمساحة 150 متر وميزانية 900 ألف كاش لأسرة من 4 أفراد مع مصعد وموقف خاص قريبة من حي الملقا"
+                )
+              }
+              className="self-start sm:self-center text-[11px] font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] underline underline-offset-4 cursor-pointer"
+            >
+              تجربة مثال جاهز
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <textarea
+              value={freeTextNeeds}
+              onChange={(e) => setFreeTextNeeds(e.target.value)}
+              rows={2}
+              placeholder="مثال: أريد شقة 4 غرف بمساحة 150 متر وميزانية 900 ألف كاش مع مصعد وموقف خاص قريبة من عملي في حي العليا..."
+              className="w-full px-4 py-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-xs sm:text-sm text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all resize-none"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleSmartParseNeeds}
+                className="px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>تحليل وتعبئة الحقول تلقائياً</span>
+              </button>
+
+              {parsedFeedback && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E9F4EE] border border-[#C5E4D4] text-[#1E6B43] text-[11px] font-bold">
+                  <Check className="w-3.5 h-3.5 shrink-0" />
+                  <span>تم استخلاص وتعبئة: {parsedFeedback.join(" • ")}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* ============================================================== */}
         {/* Section 1: الميزانية وطريقة الشراء */}
@@ -376,7 +669,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
               />
 
               {showBudgetPreview && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] text-xs font-bold mt-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] text-xs font-body font-bold tabular-nums mt-1">
                   <Coins className="w-3.5 h-3.5 text-[var(--navy)]" />
                   <span>المبلغ المعتمد: {formatSAR(parsedBudget)}</span>
                 </div>

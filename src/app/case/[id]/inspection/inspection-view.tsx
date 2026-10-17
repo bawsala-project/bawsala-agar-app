@@ -2,13 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
 import { FindingItem } from "./finding-item";
 import {
   CATEGORY_LABELS_AR,
   type InspectionCategory,
 } from "@/lib/inspection/generate-items";
-import type { InspectionItemRow, InspectionFindingRow, FindingResult } from "@/actions/inspection";
+import type {
+  InspectionItemRow,
+  InspectionFindingRow,
+  FindingResult,
+} from "@/actions/inspection";
 import { cn } from "@/lib/utils";
 
 interface InspectionViewProps {
@@ -25,20 +28,14 @@ const CATEGORY_ORDER: InspectionCategory[] = [
   "neighborhood",
 ];
 
-const CATEGORY_ICONS: Record<InspectionCategory, string> = {
-  building_services: "🏢",
-  unit_specs: "📐",
-  parking_access: "🚗",
-  neighborhood: "📍",
-};
-
 export function InspectionView({
   caseId,
   propertyId,
   items,
   initialFindings,
 }: InspectionViewProps) {
-  // Initialize findings map from initial server-provided findings
+  const [activeCategory, setActiveCategory] = useState<InspectionCategory | "all">("all");
+
   const [findingsMap, setFindingsMap] = useState<
     Record<string, { result: FindingResult; note: string | null }>
   >(() => {
@@ -63,7 +60,7 @@ export function InspectionView({
     }));
   };
 
-  // Group items by category
+  // Group items by category & sort high priority first
   const priorityWeights: Record<string, number> = { high: 3, medium: 2, low: 1 };
   const groupedItems: Record<InspectionCategory, InspectionItemRow[]> = {
     building_services: [],
@@ -88,6 +85,10 @@ export function InspectionView({
     );
   }
 
+  const availableCategories = CATEGORY_ORDER.filter(
+    (cat) => groupedItems[cat] && groupedItems[cat].length > 0
+  );
+
   // Live statistics
   const totalItems = items.length;
   const recordedEntries = Object.values(findingsMap);
@@ -98,45 +99,132 @@ export function InspectionView({
   const goodCount = recordedEntries.filter((f) => f.result === "good").length;
   const hasAtLeastOneFinding = recordedEntries.length > 0;
 
-  const progressPercent = totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
+  const progressPercent =
+    totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
 
   return (
-    <div className="space-y-8 pb-32">
-      {/* Category Sections */}
-      <div className="space-y-8">
-        {CATEGORY_ORDER.map((category) => {
-          const categoryItems = groupedItems[category];
-          if (!categoryItems || categoryItems.length === 0) return null;
+    <div className="space-y-4">
+      {/* 1. Integrated Top Control Bar: Live Progress + Category Filter Tabs + Reassess CTA */}
+      <div className="bg-[var(--paper)] rounded-[22px] border border-[var(--mist)]/80 p-4 sm:p-5 space-y-3.5 shadow-[0_8px_28px_rgba(15,26,43,0.03)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Progress Summary */}
+          <div className="space-y-1.5 flex-1">
+            <div className="flex flex-wrap items-center gap-2.5 text-xs">
+              <span className="font-bold text-[var(--navy)] tabular-nums">
+                تم فحص {checkedCount} من {totalItems} بنود ({problemCount} مشاكل مسجلة)
+              </span>
 
-          const categoryTitle = CATEGORY_LABELS_AR[category];
-          const icon = CATEGORY_ICONS[category];
+              {goodCount > 0 && (
+                <span className="text-[11px] font-bold text-[#2D6A4F] bg-[#E9F4EE] px-2 py-0.5 rounded-md tabular-nums">
+                  {goodCount} مطابق
+                </span>
+              )}
+            </div>
+
+            <div className="w-full sm:max-w-xs h-1.5 bg-[var(--cream)] rounded-full overflow-hidden border border-[var(--mist)]/60">
+              <div
+                className={cn(
+                  "h-full transition-all duration-300 rounded-full",
+                  problemCount > 0 ? "bg-[#9A6700]" : "bg-[#2D6A4F]"
+                )}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Primary Action Button (No Sparkles, clean Navy CTA) */}
+          <div className="shrink-0">
+            {hasAtLeastOneFinding ? (
+              <Link
+                href={`/case/${caseId}/reassess?propertyId=${propertyId}`}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-bold text-xs transition-all"
+              >
+                <span>تحديث التقييم بناءً على الزيارة</span>
+                <span aria-hidden="true">←</span>
+              </Link>
+            ) : (
+              <span className="text-[11px] text-[var(--dusty-blue)]">
+                سجّل نتيجة بند واحد على الأقل لتحديث التقييم
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Category Filter Pills (Mobile-First Zero-Scroll Switching) */}
+        {availableCategories.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-[var(--mist)]/50 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setActiveCategory("all")}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 cursor-pointer",
+                activeCategory === "all"
+                  ? "bg-[var(--navy)] text-[var(--cream)]"
+                  : "bg-[var(--cream)]/70 text-[var(--dusty-blue)] hover:text-[var(--navy)]"
+              )}
+            >
+              الكل ({totalItems})
+            </button>
+
+            {availableCategories.map((category) => {
+              const catItems = groupedItems[category];
+              const catChecked = catItems.filter((i) => {
+                const r = findingsMap[i.id]?.result;
+                return r === "good" || r === "problem";
+              }).length;
+              const isSelected = activeCategory === category;
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setActiveCategory(category)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 cursor-pointer",
+                    isSelected
+                      ? "bg-[var(--navy)] text-[var(--cream)]"
+                      : "bg-[var(--cream)]/70 text-[var(--dusty-blue)] hover:text-[var(--navy)]"
+                  )}
+                >
+                  <span>{CATEGORY_LABELS_AR[category]}</span>
+                  <span className="text-[10px] opacity-75 tabular-nums" dir="ltr">
+                    ({catChecked}/{catItems.length})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 2. Horizontal 2-Column Checklist Grid on Desktop / Filtered Category on Mobile */}
+      <div className="space-y-5">
+        {availableCategories.map((category) => {
+          const categoryItems = groupedItems[category];
+          const isHidden =
+            activeCategory !== "all" && activeCategory !== category;
 
           return (
             <section
               key={category}
-              className="space-y-4"
               aria-labelledby={`cat-title-${category}`}
+              className={cn("space-y-2.5", isHidden ? "hidden" : "block")}
             >
-              {/* Category Header */}
-              <div className="flex items-center justify-between border-b border-[var(--mist)] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xl" aria-hidden="true">
-                    {icon}
-                  </span>
-                  <h2
-                    id={`cat-title-${category}`}
-                    className="text-base sm:text-lg font-display font-bold text-[var(--navy)]"
-                  >
-                    {categoryTitle}
-                  </h2>
-                </div>
-                <span className="text-xs font-medium px-3 py-1 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
+              {/* Quiet Editorial Section Header (No Cartoon Emojis) */}
+              <div className="flex items-center justify-between px-1">
+                <h2
+                  id={`cat-title-${category}`}
+                  className="text-sm font-display font-bold text-[var(--navy)]"
+                >
+                  {CATEGORY_LABELS_AR[category]}
+                </h2>
+                <span className="text-[11px] text-[var(--dusty-blue)]">
                   {categoryItems.length} بنود
                 </span>
               </div>
 
-              {/* Items List */}
-              <div className="grid grid-cols-1 gap-4">
+              {/* 2-Column Horizontal Grid on Desktop */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                 {categoryItems.map((item) => {
                   const initialFinding = findingsMap[item.id] || null;
 
@@ -156,58 +244,6 @@ export function InspectionView({
           );
         })}
       </div>
-
-      {/* Floating / Sticky Bottom Summary & Completion Banner */}
-      <aside
-        aria-label="شريط ملخص نتائج المعاينة"
-        className="fixed bottom-16 md:bottom-0 inset-x-0 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.08)] z-30 p-3 sm:p-4"
-      >
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Real-time Counter & Progress */}
-          <div className="w-full sm:w-auto space-y-1.5">
-            <div className="flex items-center justify-between sm:justify-start gap-3">
-              <span className="text-xs sm:text-sm font-medium text-[var(--navy)] tabular-nums">
-                تم فحص {checkedCount} من {totalItems} بنود ({problemCount} ملاحظات مسجلة)
-              </span>
-
-              {goodCount > 0 && (
-                <span className="text-[11px] font-medium text-[#1E6B43] bg-[#E9F4EE] px-2.5 py-0.5 rounded-full border border-[#C5E4D4] tabular-nums">
-                  {goodCount} مطابق
-                </span>
-              )}
-            </div>
-
-            {/* Visual Progress Bar */}
-            <div className="w-full sm:w-72 h-1.5 bg-[var(--cream)] rounded-full overflow-hidden border border-[var(--mist)]">
-              <div
-                className={cn(
-                  "h-full transition-all duration-300 rounded-full",
-                  problemCount > 0 ? "bg-[#9A6700]" : "bg-[#1E6B43]"
-                )}
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Actions: Primary CTA when >= 1 finding is recorded */}
-          <div className="w-full sm:w-auto flex items-center justify-end gap-2">
-            {hasAtLeastOneFinding ? (
-              <Link
-                href={`/case/${caseId}/reassess?propertyId=${propertyId}`}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-display font-medium text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98]"
-              >
-                <Sparkles className="w-4 h-4 text-[var(--cream)]" />
-                <span>تحديث التقييم بناءً على الزيارة</span>
-                <span aria-hidden="true">←</span>
-              </Link>
-            ) : (
-              <span className="text-xs text-[var(--dusty-blue)] font-medium hidden sm:inline-block">
-                اختر نتيجة فحص بند واحد على الأقل لتفعيل إعادة التقييم
-              </span>
-            )}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
