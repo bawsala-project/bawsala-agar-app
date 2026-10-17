@@ -78,7 +78,6 @@ export default async function CaseLayout({
             <span>•</span>
             <span>منظومة استشارية هندسية ومالية مستقلة</span>
           </div>
-          <div>متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة</div>
         </div>
 
         {/* Large Faint Footer Wordmark in Navy Ink */}

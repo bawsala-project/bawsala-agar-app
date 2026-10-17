@@ -262,9 +262,6 @@ export default async function HomePage() {
             <span>•</span>
             <span>منظومة استشارية وهندسية مستقلة</span>
           </div>
-          <div className="text-[var(--dusty-blue)] font-normal">
-            متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة
-          </div>
         </div>
 
         {/* Large Faint Footer Wordmark in Navy Ink */}

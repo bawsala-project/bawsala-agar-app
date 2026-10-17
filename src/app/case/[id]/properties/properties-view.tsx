@@ -14,9 +14,6 @@ import {
   Plus,
   Trash2,
   Loader2,
-  Bookmark,
-  Copy,
-  Check,
   AlertCircle,
   AlertTriangle,
   RefreshCw,
@@ -258,81 +255,6 @@ function QuickPasteModal({
   );
 }
 
-function BookmarkletBanner({ caseId }: { caseId: string }) {
-  const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
-  }, []);
-
-  const bookmarkletCode = `javascript:(function(){var d=document;var u=window.location.href;var t=d.title;var b=d.body?d.body.innerText:'';var f=d.createElement('form');f.method='POST';f.action='${origin}/case/${caseId}/clip';f.target='_blank';var addField=function(n,v){var i=d.createElement('input');i.type='hidden';i.name=n;i.value=v||'';f.appendChild(i);};addField('url',u);addField('title',t);addField('pageText',b.substring(0,80000));d.body.appendChild(f);f.submit();d.body.removeChild(f);})();`;
-
-  const copyCode = () => {
-    navigator.clipboard.writeText(bookmarkletCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  return (
-    <div className="bg-[var(--paper)] text-[var(--navy)] rounded-[28px] p-6 sm:p-7 relative overflow-hidden shadow-[0_20px_60px_rgba(15,26,43,0.04)] flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border border-[var(--mist)]">
-      <div className="space-y-1.5 max-w-xl">
-        <div className="flex items-center gap-2 font-body font-bold text-[var(--navy)] text-sm sm:text-base">
-          <Bookmark className="w-4 h-4 text-[var(--navy)]" />
-          <span>كليبر المتصفح المباشر (تجاوز حظر المنصات العقارية)</span>
-        </div>
-        <p className="text-xs text-[var(--dusty-blue)] leading-relaxed">
-          لتجاوز حظر المنصات العقارية: اسحب الزر أدناه إلى{" "}
-          <strong className="text-[var(--navy)] font-bold">شريط الإشارات (Bookmarks Bar)</strong> في متصفحك.
-          عند تصفح أي عقار، اضغطه فقط ليتم استيراد كافة المواصفات والأسعار تلقائياً إلى جلستك!
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
-        <a
-          href={bookmarkletCode}
-          draggable="true"
-          onClick={(e) => {
-            if (e.isTrusted && !e.defaultPrevented) {
-              window.open(
-                `${origin}/case/${caseId}/clip`,
-                "bawsala_clipper",
-                "width=520,height=650"
-              );
-              e.preventDefault();
-            }
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] rounded-full text-xs font-body font-bold shadow-sm cursor-grab active:cursor-grabbing transition-colors"
-          title="اسحب هذا الزر إلى شريط إشارات المتصفح"
-        >
-          <Bookmark className="w-3.5 h-3.5" />
-          <span>اسحب لإشارات المتصفح</span>
-        </a>
-
-        <button
-          type="button"
-          onClick={copyCode}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] hover:border-[var(--navy)] rounded-full text-xs font-medium transition-colors cursor-pointer"
-        >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-[#1E6B43]" />
-              <span>تم النسخ</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
-              <span>نسخ الكود</span>
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function PropertiesView({
   caseId,
   userId,
@@ -360,10 +282,14 @@ export function PropertiesView({
   // Image Tab state
   const [imageState, imageAction] = useActionState(addActionWithId, initialActionState);
   const imageFormRef = useRef<HTMLFormElement>(null);
-  const [uploadedPaths, setUploadedPaths] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedImages, setUploadedImages] = useState<
+    Array<{ path: string; name: string; previewUrl: string }>
+  >([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadSuccessCount, setUploadSuccessCount] = useState(0);
+
+  const uploadedPaths = uploadedImages.map((img) => img.path);
 
   // Reset forms on success
   useEffect(() => {
@@ -382,8 +308,7 @@ export function PropertiesView({
   useEffect(() => {
     if (imageState?.success) {
       imageFormRef.current?.reset();
-      setUploadedPaths([]);
-      setUploadSuccessCount(0);
+      setUploadedImages([]);
       setUploadError(null);
     }
   }, [imageState]);
@@ -394,13 +319,30 @@ export function PropertiesView({
     setDeletingId(null);
   };
 
+  const handleRemoveUploadedImage = (pathToRemove: string) => {
+    setUploadedImages((prev) => prev.filter((img) => img.path !== pathToRemove));
+    setUploadError(null);
+  };
+
   const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    if (files.length > 4) {
-      setUploadError("الحد الأقصى هو 4 صور");
+    const remainingSlots = 4 - uploadedImages.length;
+    if (remainingSlots <= 0) {
+      setUploadError("الحد الأقصى هو 4 صور لكل عقار. احذف صورة إذا أردت استبدالها.");
+      e.target.value = "";
+      return;
+    }
+
+    if (files.length > remainingSlots) {
+      setUploadError(
+        `الحد الأقصى هو 4 صور لكل عقار (متبقي ${remainingSlots} ${
+          remainingSlots === 1 ? "صورة" : "صور"
+        } فقط).`
+      );
+      e.target.value = "";
       return;
     }
 
@@ -409,28 +351,38 @@ export function PropertiesView({
       const validation = validateImageFile(file);
       if (!validation.valid) {
         setUploadError(validation.error);
+        e.target.value = "";
         return;
       }
     }
 
-    // Upload to Supabase bucket
+    // Upload to Supabase bucket and append to existing uploadedImages
     setIsUploading(true);
     const supabase = createClient();
-    const paths: string[] = [];
+    const newlyUploaded: Array<{ path: string; name: string; previewUrl: string }> = [];
 
     for (const file of files) {
       const res = await uploadPropertyImage(supabase, userId, caseId, file);
       if ("error" in res) {
         setUploadError(res.error);
         setIsUploading(false);
+        e.target.value = "";
         return;
       }
-      paths.push(res.path);
+      const previewUrl =
+        typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
+          ? URL.createObjectURL(file)
+          : "";
+      newlyUploaded.push({
+        path: res.path,
+        name: file.name,
+        previewUrl,
+      });
     }
 
-    setUploadedPaths(paths);
-    setUploadSuccessCount(paths.length);
+    setUploadedImages((prev) => [...prev, ...newlyUploaded]);
     setIsUploading(false);
+    e.target.value = "";
   };
 
   const isMaxReached = properties.length >= 5;
@@ -461,9 +413,6 @@ export function PropertiesView({
           أدخل العقارات عبر الروابط المباشرة أو الصور أو الإدخال اليدوي. نقوم باستخراج مواصفات كل عقار وتحويلها إلى بيانات قطعية دون أي تزييف إعلاني.
         </p>
       </section>
-
-      {/* Bookmarklet Clipper Banner */}
-      <BookmarkletBanner caseId={caseId} />
 
       {/* Properties List */}
       <div className="space-y-4">
@@ -847,23 +796,86 @@ export function PropertiesView({
                 value={JSON.stringify(uploadedPaths)}
               />
 
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-[var(--navy)]">
-                  رفع صور العقار أو لقطات شاشة الإعلان (1 إلى 4 صور)
-                </label>
-                <div className="p-6 rounded-2xl border-2 border-dashed border-[var(--mist)] bg-[var(--cream)] hover:bg-[var(--paper)] transition-colors text-center cursor-pointer">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={handleFilesSelect}
-                    disabled={isUploading}
-                    className="w-full text-xs text-[var(--dusty-blue)] file:me-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-[var(--navy)] file:text-[var(--cream)] hover:file:bg-[var(--midnight)] cursor-pointer"
-                  />
-                  <p className="text-[11px] text-[var(--dusty-blue)] mt-2">
-                    الصيغ المدعومة: JPEG, PNG, WebP (بحد أقصى 8 ميجابايت لكل صورة)
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-[var(--navy)]">
+                    رفع صور العقار أو لقطات شاشة الإعلان (1 إلى 4 صور)
+                  </label>
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
+                    {uploadedImages.length} / 4 صور مرفوعة
+                  </span>
                 </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFilesSelect}
+                  disabled={isUploading || uploadedImages.length >= 4}
+                  className="hidden"
+                />
+
+                {uploadedImages.length < 4 && (
+                  <div
+                    onClick={() => {
+                      if (!isUploading && uploadedImages.length < 4) {
+                        fileInputRef.current?.click();
+                      }
+                    }}
+                    className="p-6 rounded-2xl border-2 border-dashed border-[var(--mist)] bg-[var(--cream)] hover:bg-[var(--paper)] hover:border-[var(--navy)] transition-all text-center cursor-pointer space-y-2.5"
+                  >
+                    <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-bold shadow-xs transition-colors">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>
+                        {uploadedImages.length === 0
+                          ? "اختر صور الإعلان (من 1 إلى 4 صور دفعة واحدة أو متتالية)"
+                          : `إضافة صورة أخرى (متبقي ${4 - uploadedImages.length} من 4)`}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--dusty-blue)]">
+                      الصيغ المدعومة: JPEG, PNG, WebP (بحد أقصى 8 ميجابايت لكل صورة)
+                    </p>
+                  </div>
+                )}
+
+                {uploadedImages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                    {uploadedImages.map((img, idx) => (
+                      <div
+                        key={img.path}
+                        className="relative rounded-2xl border border-[var(--mist)] bg-[var(--cream)] p-2.5 flex flex-col gap-2 group"
+                      >
+                        <div className="relative w-full h-24 rounded-xl overflow-hidden bg-[var(--paper)] border border-[var(--mist)] flex items-center justify-center">
+                          {img.previewUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={img.previewUrl}
+                              alt={img.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Camera className="w-6 h-6 text-[var(--dusty-blue)]" />
+                          )}
+                          <span className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full bg-[var(--navy)]/85 text-[var(--cream)] text-[10px] font-bold">
+                            {`صورة #${idx + 1}`}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveUploadedImage(img.path)}
+                            className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8] flex items-center justify-center hover:bg-[#A62626] hover:text-white transition-colors cursor-pointer"
+                            title="حذف الصورة"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <span className="text-[11px] text-[var(--navy)] font-medium truncate px-1">
+                          {img.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {isUploading && (
                   <div className="flex items-center gap-2 text-xs text-[var(--navy)]">
@@ -872,10 +884,12 @@ export function PropertiesView({
                   </div>
                 )}
 
-                {uploadSuccessCount > 0 && !isUploading && (
+                {uploadedImages.length > 0 && !isUploading && (
                   <div className="flex items-center gap-2 text-xs text-[#1E6B43]">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>تم رفع {uploadSuccessCount} صور بنجاح وجاهزة للتحليل</span>
+                    <span>
+                      تم رفع {uploadedImages.length} من 4 صور بنجاح وجاهزة للتحليل
+                    </span>
                   </div>
                 )}
 
