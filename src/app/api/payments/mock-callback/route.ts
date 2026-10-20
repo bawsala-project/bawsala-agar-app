@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     return rateLimitResponse(limit);
   }
 
-  // Security Gate (C1): Mock callback is strictly forbidden in production or when mock payments are disabled.
-  if (process.env.NODE_ENV === "production" || process.env.ENABLE_MOCK_PAYMENTS !== "true") {
+  // Security Gate (C1): Mock callback is strictly forbidden in production unless mock payments are explicitly enabled.
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_MOCK_PAYMENTS !== "true") {
     return NextResponse.json({ error: "Mock payment callback is disabled in this environment" }, { status: 403 });
   }
 
