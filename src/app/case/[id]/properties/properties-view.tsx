@@ -191,8 +191,8 @@ function QuickPasteModal({
               <h3 className="text-base font-body font-bold text-[var(--navy)]">
                 استيراد سريع لبيانات الإعلان
               </h3>
-              <p className="text-xs text-[var(--dusty-blue)]">
-                تجاوز فوري لأي قيود حماية وتدقيق النص مباشرة
+              <p className="text-sm text-[var(--dusty-blue)]">
+                الصق نص الإعلان مباشرة
               </p>
             </div>
           </div>
@@ -205,8 +205,8 @@ function QuickPasteModal({
           </button>
         </div>
 
-        <p className="text-xs text-[var(--dusty-blue)] leading-relaxed bg-[var(--cream)] border border-[var(--mist)] p-3.5 rounded-2xl">
-          افتح صفحة الإعلان في متصفحك، حدد الكل (<kbd className="bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--mist)] font-mono text-[11px] text-[var(--navy)]">Ctrl+A</kbd> أو <kbd className="bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--mist)] font-mono text-[11px] text-[var(--navy)]">⌘+A</kbd>)، ثم انسخ والصق النص هنا مباشرة.
+        <p className="text-sm text-[var(--dusty-blue)] leading-relaxed bg-[var(--cream)] border border-[var(--mist)] p-3.5 rounded-2xl">
+          افتح الإعلان، حدد الكل (<kbd className="bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--mist)] font-mono text-[11px] text-[var(--navy)]">Ctrl+A</kbd> أو <kbd className="bg-[var(--paper)] px-1.5 py-0.5 rounded border border-[var(--mist)] font-mono text-[11px] text-[var(--navy)]">⌘+A</kbd>)، ثم الصق هنا.
         </p>
 
         <div className="space-y-2">
@@ -243,10 +243,10 @@ function QuickPasteModal({
             {pending ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>جارٍ المعالجة والتدقيق...</span>
+                <span>جارٍ قراءة بيانات الشقة...</span>
               </>
             ) : (
-              <span>بدء التدقيق الفوري ←</span>
+              <span>إضافة الشقة المرشحة ←</span>
             )}
           </button>
         </div>
@@ -395,7 +395,7 @@ export function PropertiesView({
       <section className="text-center max-w-3xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-[var(--navy)]" />
-          <span>المرحلة الثانية • حصر وتدقيق العقارات المرشحة</span>
+          <span>المرحلة الثانية</span>
           {city && (
             <>
               <span>•</span>
@@ -404,13 +404,13 @@ export function PropertiesView({
           )}
         </div>
         <h1 className="text-2xl sm:text-4xl font-bold font-display text-[var(--navy)] tracking-tight leading-[1.3]">
-          حصر العقارات للمقارنة الهندسية <br className="hidden sm:block" />
+          أضف الشقق المرشحة <br className="hidden sm:block" />
           <span className="text-[var(--midnight)]">
-            من 2 إلى 5 خيارات للمفاضلة
+            من 1 إلى 5 شقق
           </span>
         </h1>
-        <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed max-w-2xl mx-auto">
-          أدخل العقارات عبر الروابط المباشرة أو الصور أو الإدخال اليدوي. نقوم باستخراج مواصفات كل عقار وتحويلها إلى بيانات قطعية دون أي تزييف إعلاني.
+        <p className="text-sm text-[var(--dusty-blue)] leading-relaxed max-w-2xl mx-auto">
+          برابط، أو صور، أو يدوياً.
         </p>
       </section>
 
@@ -420,7 +420,7 @@ export function PropertiesView({
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
             <h2 className="text-base sm:text-lg font-bold font-display text-[var(--navy)]">
-              العقارات المضافة قيد الدراسة
+              العقارات المضافة
             </h2>
           </div>
           <span className="text-xs font-medium px-3 py-1 rounded-full bg-[var(--paper)] text-[var(--dusty-blue)] border border-[var(--mist)]">
@@ -434,9 +434,9 @@ export function PropertiesView({
               <BawsalaCompass size={32} animateHover />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-[var(--navy)] font-body">لم تقم بإضافة أي عقار حتى الآن</h3>
-              <p className="text-xs text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
-                أضف أول عقار باستخدام النموذج أدناه عبر رابط الإعلان أو الصور أو المواصفات اليدوية لبدء التدقيق الهندسي المستقل.
+              <h3 className="text-base font-bold text-[var(--navy)] font-body">لا عقارات بعد</h3>
+              <p className="text-sm text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
+                أضف أول شقة من النموذج أدناه.
               </p>
             </div>
           </div>
@@ -557,7 +557,7 @@ export function PropertiesView({
                       })()}
 
                       {p.notes && p.input_mode !== "image" && (
-                        <p className="text-xs text-[var(--dusty-blue)] truncate max-w-md">{p.notes}</p>
+                        <p className="text-sm text-[var(--dusty-blue)] truncate max-w-md">{p.notes}</p>
                       )}
 
                       {/* Extraction Status & Conflict Counts */}
@@ -585,7 +585,7 @@ export function PropertiesView({
                               {latestRun?.status === "running" && (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] animate-pulse" />
-                                  جارٍ الاستخراج والتدقيق...
+                                  جارٍ قراءة بيانات الشقة...
                                 </span>
                               )}
 
@@ -621,8 +621,8 @@ export function PropertiesView({
 
                             {latestRun?.status === "failed" && p.input_mode === "url" && (
                               <div className="space-y-2 bg-[#FFF9EC] border border-[#F9E2AF] rounded-2xl p-3">
-                                <p className="text-xs text-[var(--navy)] leading-relaxed font-medium">
-                                  منصة الإعلان تفرض حماية وتمنع الجلب الخارجي المباشر.
+                                <p className="text-sm text-[var(--navy)] leading-relaxed font-medium">
+                                  المنصة تمنع الجلب الآلي.
                                 </p>
                                 <button
                                   type="button"
@@ -648,7 +648,7 @@ export function PropertiesView({
                       href={`/case/${caseId}/properties/${p.id}`}
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--navy)] text-[var(--cream)] hover:bg-[var(--midnight)] text-xs font-body font-bold transition-colors cursor-pointer"
                     >
-                      <span>تدقيق وتفاصيل</span>
+                      <span>مراجعة البيانات</span>
                       <ArrowLeft className="w-3.5 h-3.5" />
                     </Link>
 
@@ -683,8 +683,8 @@ export function PropertiesView({
                 <h2 className="text-base sm:text-lg font-bold font-display text-[var(--navy)]">
                   إضافة عقار مرشح جديد
                 </h2>
-                <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  أدخل بيانات العقار للاستخراج الآلي والتدقيق الهندسي
+                <p className="text-sm text-[var(--dusty-blue)] mt-0.5">
+                  نستخرج البيانات ونتحقق منها
                 </p>
               </div>
             </div>
@@ -781,7 +781,7 @@ export function PropertiesView({
               )}
 
               <div className="pt-2">
-                <FormSubmitButton>إضافة العقار والبدء بالاستخراج</FormSubmitButton>
+                <FormSubmitButton>إضافة العقار</FormSubmitButton>
               </div>
             </form>
           )}
@@ -799,7 +799,7 @@ export function PropertiesView({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-medium text-[var(--navy)]">
-                    رفع صور العقار أو لقطات شاشة الإعلان (1 إلى 4 صور)
+                    صور الإعلان (1–4)
                   </label>
                   <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
                     {uploadedImages.length} / 4 صور مرفوعة
@@ -829,12 +829,12 @@ export function PropertiesView({
                       <Camera className="w-3.5 h-3.5" />
                       <span>
                         {uploadedImages.length === 0
-                          ? "اختر صور الإعلان (من 1 إلى 4 صور دفعة واحدة أو متتالية)"
+                          ? "اختر حتى 4 صور"
                           : `إضافة صورة أخرى (متبقي ${4 - uploadedImages.length} من 4)`}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[var(--dusty-blue)]">
-                      الصيغ المدعومة: JPEG, PNG, WebP (بحد أقصى 8 ميجابايت لكل صورة)
+                    <p className="text-sm text-[var(--dusty-blue)]">
+                      JPEG أو PNG أو WebP • حتى 8MB
                     </p>
                   </div>
                 )}
@@ -880,7 +880,7 @@ export function PropertiesView({
                 {isUploading && (
                   <div className="flex items-center gap-2 text-xs text-[var(--navy)]">
                     <Loader2 className="w-4 h-4 animate-spin text-[var(--navy)]" />
-                    <span>جاري رفع ومعالجة الصور المحددة...</span>
+                    <span>جارٍ رفع الصور...</span>
                   </div>
                 )}
 
@@ -907,7 +907,7 @@ export function PropertiesView({
 
               <div className="space-y-2">
                 <label htmlFor="image_notes" className="block text-xs font-medium text-[var(--navy)]">
-                  ملاحظات أو تعليق على الصور (اختياري)
+                  ملاحظات (اختياري)
                 </label>
                 <input
                   id="image_notes"
@@ -930,7 +930,7 @@ export function PropertiesView({
 
               <div className="pt-2">
                 <FormSubmitButton disabled={isUploading || uploadedPaths.length === 0}>
-                  إضافة الصور واستخراج البيانات الهندسية
+                  إضافة الصور
                 </FormSubmitButton>
               </div>
             </form>
@@ -944,7 +944,7 @@ export function PropertiesView({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="manual_title" className="block text-xs font-medium text-[var(--navy)]">
-                    عنوان أو وصف العقار المختصر <span className="text-[#A62626]">*</span>
+                    عنوان العقار <span className="text-[#A62626]">*</span>
                   </label>
                   <input
                     id="manual_title"
@@ -974,7 +974,7 @@ export function PropertiesView({
                     className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-xs sm:text-sm text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/60 focus:bg-[var(--paper)] focus:outline-none focus:border-[var(--navy)] transition-all tabular-nums"
                   />
                   {showPricePreview && (
-                    <p className="text-[11px] text-[var(--navy)] font-body font-bold tabular-nums">
+                    <p className="text-sm text-[var(--navy)] font-body font-bold tabular-nums">
                       المبلغ: {parsedManualPrice.toLocaleString("en-US")} ر.س
                     </p>
                   )}
@@ -1056,7 +1056,7 @@ export function PropertiesView({
 
               <div className="space-y-2">
                 <label htmlFor="manual_notes" className="block text-xs font-medium text-[var(--navy)]">
-                  ملاحظات ومميزات أخرى (اختياري)
+                  ملاحظات (اختياري)
                 </label>
                 <input
                   id="manual_notes"
@@ -1078,14 +1078,14 @@ export function PropertiesView({
               )}
 
               <div className="pt-2">
-                <FormSubmitButton>حفظ العقار وتدقيق البيانات</FormSubmitButton>
+                <FormSubmitButton>حفظ العقار</FormSubmitButton>
               </div>
             </form>
           )}
         </section>
       ) : (
         <div className="bg-[var(--paper)] border border-[var(--mist)] rounded-[28px] p-6 text-center text-xs sm:text-sm font-medium text-[var(--dusty-blue)]">
-          تم الوصول إلى الحد الأقصى للمقارنة المعتمد (5 عقارات). يمكنك حذف أي عقار لإضافة خيار بديل.
+          وصلت للحد الأقصى (5). احذف عقاراً لإضافة بديل.
         </div>
       )}
 
@@ -1095,8 +1095,8 @@ export function PropertiesView({
           <ShieldCheck className="w-4 h-4 text-[#1E6B43] shrink-0" />
           <span>
             {properties.length === 0
-              ? "أضف عقاراً واحداً على الأقل للمتابعة إلى بوابة الفحص المبدئي"
-              : `جاهز للمتابعة (${properties.length} عقارات مضافة)`}
+              ? "أضف عقاراً واحداً للمتابعة"
+              : properties.length === 1 ? "جاهز للفحص المجاني (عقار واحد)" : `جاهز للفحص المجاني (${properties.length} شقق)`}
           </span>
         </div>
 
@@ -1106,7 +1106,7 @@ export function PropertiesView({
               type="button"
               className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
             >
-              <span>متابعة إلى بوابة الفحص المبدئي</span>
+              <span>متابعة للفحص المبدئي</span>
               <ArrowLeft className="w-4 h-4" />
             </button>
           </Link>
@@ -1116,7 +1116,7 @@ export function PropertiesView({
             disabled
             className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] font-body font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 cursor-not-allowed opacity-60"
           >
-            <span>متابعة إلى بوابة الفحص المبدئي</span>
+            <span>متابعة للفحص المبدئي</span>
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}

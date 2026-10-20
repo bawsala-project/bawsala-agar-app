@@ -9,6 +9,7 @@ import {
   Sparkles,
   ClipboardList,
   MapPin,
+  ShieldCheck,
 } from "lucide-react";
 import { requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -19,13 +20,17 @@ import type {
   FitRating,
   VisitPriority,
 } from "@/lib/analysis/reassess";
+import type { ConfidenceLevel } from "@/lib/analysis/axes";
 
 interface ReassessPageProps {
   params: { id: string };
   searchParams?: { propertyId?: string };
 }
 
-const FIT_RATING_LABELS: Record<FitRating, { label: string; badgeClasses: string }> = {
+const FIT_RATING_LABELS: Record<
+  FitRating,
+  { label: string; badgeClasses: string }
+> = {
   strong: {
     label: "توافق قوي",
     badgeClasses: "bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]",
@@ -40,11 +45,15 @@ const FIT_RATING_LABELS: Record<FitRating, { label: string; badgeClasses: string
   },
   insufficient_evidence: {
     label: "بيانات غير كافية",
-    badgeClasses: "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]",
+    badgeClasses:
+      "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]",
   },
 };
 
-const VISIT_PRIORITY_LABELS: Record<VisitPriority, { label: string; badgeClasses: string }> = {
+const VISIT_PRIORITY_LABELS: Record<
+  VisitPriority,
+  { label: string; badgeClasses: string }
+> = {
   high: {
     label: "معاينة مرتفعة",
     badgeClasses: "bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]",
@@ -59,7 +68,26 @@ const VISIT_PRIORITY_LABELS: Record<VisitPriority, { label: string; badgeClasses
   },
   insufficient_evidence: {
     label: "معاينة غير محددة",
-    badgeClasses: "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]",
+    badgeClasses:
+      "bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]",
+  },
+};
+
+const CONFIDENCE_LABELS: Record<
+  ConfidenceLevel,
+  { label: string; badgeClasses: string }
+> = {
+  high: {
+    label: "ثقة عالية",
+    badgeClasses: "bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]",
+  },
+  medium: {
+    label: "ثقة متوسطة",
+    badgeClasses: "bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF]",
+  },
+  low: {
+    label: "ثقة منخفضة",
+    badgeClasses: "bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8]",
   },
 };
 
@@ -84,7 +112,9 @@ export default async function ReassessPage({
   // 2. Fetch properties for this case
   const { data: properties, error: propErr } = await supabase
     .from("properties")
-    .select("id, title, district, listing_price_sar, area_sqm, bedrooms, floor_no")
+    .select(
+      "id, title, district, listing_price_sar, area_sqm, bedrooms, floor_no"
+    )
     .eq("case_id", params.id)
     .order("created_at", { ascending: true });
 
@@ -126,12 +156,17 @@ export default async function ReassessPage({
   let errorMessage: string | null = null;
 
   if (hasFindings) {
-    const reassessResult = await reassessPropertyAction(params.id, activeProperty.id);
+    const reassessResult = await reassessPropertyAction(
+      params.id,
+      activeProperty.id
+    );
     if (reassessResult.success && reassessResult.diff) {
       diff = reassessResult.diff;
     } else if (reassessResult.stale) {
       isStale = true;
-      errorMessage = reassessResult.messageAr || "تغيّرت بيانات أو اشتراطات العقار أثناء المعاينة.";
+      errorMessage =
+        reassessResult.messageAr ||
+        "تغيّرت بيانات أو اشتراطات العقار أثناء المعاينة.";
     } else {
       errorMessage = reassessResult.error || "تعذر إكمال إعادة التقييم.";
     }
@@ -149,20 +184,29 @@ export default async function ReassessPage({
   const activeLabel = getPropertyLabel(activeProperty, activeIdx);
   const hasMultipleProperties = properties.length > 1;
 
-  const currentFit = (currentAssessment?.fit_rating as FitRating) || "insufficient_evidence";
-  const currentVisit = (currentAssessment?.visit_priority as VisitPriority) || "insufficient_evidence";
-  const fitInfo = FIT_RATING_LABELS[currentFit] || FIT_RATING_LABELS.insufficient_evidence;
-  const visitInfo = VISIT_PRIORITY_LABELS[currentVisit] || VISIT_PRIORITY_LABELS.insufficient_evidence;
+  const currentFit =
+    (currentAssessment?.fit_rating as FitRating) || "insufficient_evidence";
+  const currentVisit =
+    (currentAssessment?.visit_priority as VisitPriority) ||
+    "insufficient_evidence";
+  const fitInfo =
+    FIT_RATING_LABELS[currentFit] || FIT_RATING_LABELS.insufficient_evidence;
+  const visitInfo =
+    VISIT_PRIORITY_LABELS[currentVisit] ||
+    VISIT_PRIORITY_LABELS.insufficient_evidence;
 
   const compareHref = hasMultipleProperties
     ? `/case/${params.id}/compare`
     : `/case/${params.id}/results`;
   const compareLabel = hasMultipleProperties
     ? "العودة إلى مقارنة الخيارات المحدّثة ←"
-    : "العودة إلى تقرير التقييم المحدّث ←";
+    : "العودة إلى نتيجة استشارة القرار المحدّثة ←";
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8 font-body text-[var(--navy)]" dir="rtl">
+    <div
+      className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8 font-body text-[var(--navy)]"
+      dir="rtl"
+    >
       {/* Top Navigation & Breadcrumbs */}
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
         <Link
@@ -172,7 +216,9 @@ export default async function ReassessPage({
           <ArrowRight className="w-3.5 h-3.5" />
           <span>العودة لقائمة الفحص الميداني</span>
         </Link>
-        <span className="text-[var(--dusty-blue)] font-medium">المرحلة: إعادة التقييم الميداني</span>
+        <span className="text-[var(--dusty-blue)] font-medium">
+          المرحلة: تحديث قرار الشراء بعد المعاينة (مشمول مجاناً ضمن الحالة)
+        </span>
       </div>
 
       {/* Header Card */}
@@ -180,7 +226,7 @@ export default async function ReassessPage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
             <RotateCcw className="w-3.5 h-3.5 text-[var(--navy)]" />
-            <span>تحديث التقييم بعد الزيارة</span>
+            <span>تحديث القرار ومستوى الثقة بعد الزيارة</span>
           </div>
 
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] shadow-xs">
@@ -193,7 +239,7 @@ export default async function ReassessPage({
             نتائج إعادة التقييم بعد المعاينة الميدانية
           </h1>
           <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-2xl leading-relaxed">
-            إعادة تقييم محاور المطابقة المتأثرة بالشواهد الميدانية الفعلية فقط، مع تثبيت بقية المحاور والأسعار دون تغيير.
+            يجيب هذا التحديث عن ثلاثة أسئلة حاسمة بعد زيارتك للشقة: ما الذي تغير؟ وهل تغير الترتيب أو مستوى الثقة؟ ولماذا؟
           </p>
         </div>
       </header>
@@ -250,7 +296,8 @@ export default async function ReassessPage({
             <span>تنبيه: تزامن غير مكتمل (بيانات محدثة)</span>
           </div>
           <p className="text-[var(--dusty-blue)] leading-relaxed font-medium">
-            {errorMessage || "تغيّرت بيانات أو اشتراطات العقار أثناء المعاينة. تم منع التعديل التلقائي لضمان الدقة."}
+            {errorMessage ||
+              "تغيّرت بيانات أو اشتراطات العقار أثناء المعاينة. تم منع التعديل التلقائي لضمان الدقة."}
           </p>
           <div className="pt-1">
             <Link
@@ -306,7 +353,9 @@ export default async function ReassessPage({
         {/* Pricing and Key Specs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
-            <span className="text-[var(--dusty-blue)] font-medium block mb-1">السعر المعروض</span>
+            <span className="text-[var(--dusty-blue)] font-medium block mb-1">
+              السعر المعروض
+            </span>
             <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {activeProperty.listing_price_sar
                 ? formatSAR(Number(activeProperty.listing_price_sar))
@@ -315,14 +364,20 @@ export default async function ReassessPage({
           </div>
 
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
-            <span className="text-[var(--dusty-blue)] font-medium block mb-1">المساحة</span>
+            <span className="text-[var(--dusty-blue)] font-medium block mb-1">
+              المساحة
+            </span>
             <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
-              {activeProperty.area_sqm ? `${activeProperty.area_sqm} م²` : "غير محددة"}
+              {activeProperty.area_sqm
+                ? `${activeProperty.area_sqm} م²`
+                : "غير محددة"}
             </span>
           </div>
 
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
-            <span className="text-[var(--dusty-blue)] font-medium block mb-1">سعر المتر المربع</span>
+            <span className="text-[var(--dusty-blue)] font-medium block mb-1">
+              سعر المتر المربع
+            </span>
             <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {currentAssessment?.price_per_sqm
                 ? `${formatSAR(Number(currentAssessment.price_per_sqm))} / م²`
@@ -331,7 +386,9 @@ export default async function ReassessPage({
           </div>
 
           <div className="bg-[var(--cream)] p-3.5 rounded-2xl border border-[var(--mist)]">
-            <span className="text-[var(--dusty-blue)] font-medium block mb-1">نتائج الفحص المسجلة</span>
+            <span className="text-[var(--dusty-blue)] font-medium block mb-1">
+              نتائج الفحص المسجلة
+            </span>
             <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
               {findingsCount || 0} شواهد
             </span>
@@ -339,7 +396,7 @@ export default async function ReassessPage({
         </div>
       </section>
 
-      {/* Visual Diff Box: "ما الذي تغير؟" */}
+      {/* Visual Diff Box: "ما الذي تغير؟ وهل تغير الترتيب أو مستوى الثقة؟ ولماذا؟" */}
       {diff ? (
         <section
           aria-labelledby="diff-heading"
@@ -357,18 +414,13 @@ export default async function ReassessPage({
                 ما الذي تغير بعد المعاينة الميدانية؟
               </h2>
               <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                الفروقات المباشرة الناتجة عن شواهدك المسجلة على أرض الواقع مقارنة بالتحليل الأولي.
+                الفروقات المباشرة في الملاءمة، ومستوى الثقة، والترتيب التنافسي بعد تسجيل مشاهداتك الميدانية.
               </p>
             </div>
           </div>
 
-          {/* Rating, Priority & Competitive Rank Transitions Grid */}
-          <div
-            className={cn(
-              "grid grid-cols-1 gap-4",
-              diff.previousRank && diff.newRank ? "sm:grid-cols-3" : "sm:grid-cols-2"
-            )}
-          >
+          {/* Rating, Confidence, Priority & Competitive Rank Transitions Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Fit Rating Diff Card */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2.5">
               <span className="text-xs font-bold text-[var(--navy)] block">
@@ -378,23 +430,30 @@ export default async function ReassessPage({
                 <span
                   className={cn(
                     "px-3 py-1 rounded-full border",
-                    FIT_RATING_LABELS[diff.previousFitRating]?.badgeClasses || "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
+                    FIT_RATING_LABELS[diff.previousFitRating]?.badgeClasses ||
+                      "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
                   )}
                 >
-                  {FIT_RATING_LABELS[diff.previousFitRating]?.label || diff.previousFitRating}
+                  {FIT_RATING_LABELS[diff.previousFitRating]?.label ||
+                    diff.previousFitRating}
                 </span>
 
-                <span className="text-[var(--dusty-blue)] text-sm font-bold" aria-hidden="true">
+                <span
+                  className="text-[var(--dusty-blue)] text-sm font-bold"
+                  aria-hidden="true"
+                >
                   ←
                 </span>
 
                 <span
                   className={cn(
                     "px-3 py-1 rounded-full border shadow-xs",
-                    FIT_RATING_LABELS[diff.newFitRating]?.badgeClasses || "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
+                    FIT_RATING_LABELS[diff.newFitRating]?.badgeClasses ||
+                      "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
                   )}
                 >
-                  {FIT_RATING_LABELS[diff.newFitRating]?.label || diff.newFitRating}
+                  {FIT_RATING_LABELS[diff.newFitRating]?.label ||
+                    diff.newFitRating}
                 </span>
               </div>
 
@@ -402,14 +461,56 @@ export default async function ReassessPage({
                 <p className="text-[11px] text-[#A62626] font-medium pt-1">
                   {diff.newFitRating === "weak"
                     ? "⚠️ انخفض التقييم إلى توافق ضعيف لمخالفة اشتراط أساسي أثناء المعاينة."
-                    : "تغيرت درجة التوافق بناءً على الشواهد الميدانية المعتمدة."}
+                    : "تغيرت درجة الملاءمة بناءً على الشواهد الميدانية المعتمدة."}
                 </p>
               ) : (
                 <p className="text-[11px] text-[var(--dusty-blue)] pt-1 font-medium">
-                  درجة التوافق لم تتأثر بالشواهد الميدانية الحالية.
+                  درجة الملاءمة لم تتأثر بالشواهد الميدانية الحالية.
                 </p>
               )}
             </div>
+
+            {/* Confidence Level Diff Card */}
+            {diff.previousConfidence && diff.newConfidence && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2.5">
+                <span className="text-xs font-bold text-[var(--navy)] flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[var(--navy)]" />
+                  <span>تغير مستوى الثقة في النتيجة:</span>
+                </span>
+                <div className="flex items-center gap-2.5 flex-wrap text-xs font-bold">
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full border",
+                      CONFIDENCE_LABELS[diff.previousConfidence]?.badgeClasses
+                    )}
+                  >
+                    {CONFIDENCE_LABELS[diff.previousConfidence]?.label}
+                  </span>
+
+                  <span
+                    className="text-[var(--dusty-blue)] text-sm font-bold"
+                    aria-hidden="true"
+                  >
+                    ←
+                  </span>
+
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full border shadow-xs",
+                      CONFIDENCE_LABELS[diff.newConfidence]?.badgeClasses
+                    )}
+                  >
+                    {CONFIDENCE_LABELS[diff.newConfidence]?.label}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-[var(--dusty-blue)] pt-1 font-medium">
+                  {diff.previousConfidence !== diff.newConfidence
+                    ? "ارتفع/تغير مستوى الثقة نتيجة حسم النقاط غير المؤكدة على أرض الواقع."
+                    : "مستوى الثقة مستقر بناءً على البيانات المتوفرة حالياً."}
+                </p>
+              </div>
+            )}
 
             {/* Visit Priority Diff Card */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2.5">
@@ -420,23 +521,31 @@ export default async function ReassessPage({
                 <span
                   className={cn(
                     "px-3 py-1 rounded-full border",
-                    VISIT_PRIORITY_LABELS[diff.previousVisitPriority]?.badgeClasses || "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
+                    VISIT_PRIORITY_LABELS[diff.previousVisitPriority]
+                      ?.badgeClasses ||
+                      "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
                   )}
                 >
-                  {VISIT_PRIORITY_LABELS[diff.previousVisitPriority]?.label || diff.previousVisitPriority}
+                  {VISIT_PRIORITY_LABELS[diff.previousVisitPriority]?.label ||
+                    diff.previousVisitPriority}
                 </span>
 
-                <span className="text-[var(--dusty-blue)] text-sm font-bold" aria-hidden="true">
+                <span
+                  className="text-[var(--dusty-blue)] text-sm font-bold"
+                  aria-hidden="true"
+                >
                   ←
                 </span>
 
                 <span
                   className={cn(
                     "px-3 py-1 rounded-full border shadow-xs",
-                    VISIT_PRIORITY_LABELS[diff.newVisitPriority]?.badgeClasses || "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
+                    VISIT_PRIORITY_LABELS[diff.newVisitPriority]?.badgeClasses ||
+                      "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
                   )}
                 >
-                  {VISIT_PRIORITY_LABELS[diff.newVisitPriority]?.label || diff.newVisitPriority}
+                  {VISIT_PRIORITY_LABELS[diff.newVisitPriority]?.label ||
+                    diff.newVisitPriority}
                 </span>
               </div>
 
@@ -458,7 +567,10 @@ export default async function ReassessPage({
                     {`المركز #${diff.previousRank}`}
                   </span>
 
-                  <span className="text-[var(--dusty-blue)] text-sm font-bold" aria-hidden="true">
+                  <span
+                    className="text-[var(--dusty-blue)] text-sm font-bold"
+                    aria-hidden="true"
+                  >
                     ←
                   </span>
 
@@ -468,8 +580,8 @@ export default async function ReassessPage({
                       diff.newRank > diff.previousRank
                         ? "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]"
                         : diff.newRank < diff.previousRank
-                        ? "bg-[#E9F4EE] text-[#1E6B43] border-[#C5E4D4]"
-                        : "bg-[var(--paper)] text-[var(--navy)] border-[var(--mist)]"
+                          ? "bg-[#E9F4EE] text-[#1E6B43] border-[#C5E4D4]"
+                          : "bg-[var(--paper)] text-[var(--navy)] border-[var(--mist)]"
                     )}
                   >
                     {`المركز #${diff.newRank}`}
@@ -482,15 +594,15 @@ export default async function ReassessPage({
                     diff.newRank > diff.previousRank
                       ? "text-[#A62626]"
                       : diff.newRank < diff.previousRank
-                      ? "text-[#1E6B43]"
-                      : "text-[var(--dusty-blue)]"
+                        ? "text-[#1E6B43]"
+                        : "text-[var(--dusty-blue)]"
                   )}
                 >
                   {diff.newRank > diff.previousRank
                     ? `⚠️ تراجع ترتيب العقار من المركز #${diff.previousRank} إلى المركز #${diff.newRank} بعد المعاينة.`
                     : diff.newRank < diff.previousRank
-                    ? `تقدم ترتيب العقار من المركز #${diff.previousRank} إلى المركز #${diff.newRank} بعد المعاينة.`
-                    : `حافظ العقار على المركز #${diff.newRank} بين خياراتك المقارنة.`}
+                      ? `تقدم ترتيب العقار من المركز #${diff.previousRank} إلى المركز #${diff.newRank} بعد المعاينة.`
+                      : `حافظ العقار على المركز #${diff.newRank} بين خياراتك المقارنة.`}
                 </p>
               </div>
             )}
@@ -510,7 +622,9 @@ export default async function ReassessPage({
                     key={i}
                     className="p-3.5 rounded-2xl bg-[#FDF1F0] border border-[#F6CBC8] text-[#A62626] text-xs font-medium flex items-start gap-2.5"
                   >
-                    <span className="text-[#A62626] select-none text-base leading-none">•</span>
+                    <span className="text-[#A62626] select-none text-base leading-none">
+                      •
+                    </span>
                     <span className="leading-relaxed">{risk}</span>
                   </div>
                 ))}
@@ -527,7 +641,7 @@ export default async function ReassessPage({
           <div className="space-y-2.5">
             <h3 className="text-xs sm:text-sm font-bold text-[var(--navy)] flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#1E6B43]" />
-              <span>اشتراطات ونقاط غير مؤكدة تم حسمها وتأكيدها:</span>
+              <span>معلومات كانت ناقصة وتم حسمها وتأكيدها ميدانياً:</span>
             </h3>
 
             {diff.resolvedUnknowns.length > 0 ? (
@@ -549,10 +663,10 @@ export default async function ReassessPage({
             )}
           </div>
 
-          {/* Explanation Text */}
+          {/* Explanation Text: "٢. لماذا؟" */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] space-y-1.5">
             <span className="text-xs font-bold text-[var(--navy)] block">
-              ملخص الأثر الميداني على القرار:
+              ٢. لماذا؟ (ملخص الأثر الميداني على قرار الشراء):
             </span>
             <p className="text-xs sm:text-sm leading-relaxed font-normal text-[var(--dusty-blue)]">
               {diff.explanationAr}
@@ -571,7 +685,7 @@ export default async function ReassessPage({
             </h2>
             <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
               قم بزيارة قائمة الفحص الميداني لتسجيل ملاحظاتك (سليم / مشكلة / لم أتحقق) ليتم تحديث
-              مطابقة العقار تلقائياً بناءً على ما شاهدته.
+              ملاءمة العقار ومستوى الثقة تلقائياً بناءً على ما شاهدته.
             </p>
           </div>
           <div className="pt-2">
@@ -600,7 +714,7 @@ export default async function ReassessPage({
             href={`/case/${params.id}/results`}
             className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-[var(--mist)] bg-[var(--paper)] hover:border-[var(--navy)] text-[var(--dusty-blue)] hover:text-[var(--navy)] font-medium text-xs sm:text-sm transition-all text-center"
           >
-            تقرير التقييم التفصيلي
+            لوحة نتيجة القرار
           </Link>
 
           <Link

@@ -20,8 +20,8 @@ interface BawsalaLoadingProps {
 export function BawsalaLoading({
   className = "",
   size = 64,
-  message = "جارٍ التحليل الهندسي…",
-  submessage = "تدقيق البيانات وفق معايير بوصلة العقار",
+  message = "جارٍ تحليل قرار الشراء…",
+  submessage = "نربط بيانات الشقق باحتياجاتك وميزانيتك",
 }: BawsalaLoadingProps) {
   return (
     <div className={`flex flex-col items-center justify-center p-8 text-center select-none ${className}`}>

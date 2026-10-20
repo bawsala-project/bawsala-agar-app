@@ -78,10 +78,10 @@ export function MagneticButton({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       whileTap={{ scale: 0.97 }}
-      className={`group relative inline-flex items-center justify-center gap-3 rounded-full transition-all duration-300 cursor-pointer select-none overflow-hidden focus:outline-hidden ${
+      className={`group relative inline-flex items-center justify-center gap-2.5 rounded-full transition-all duration-300 cursor-pointer select-none overflow-hidden focus:outline-hidden ${
         isPrimary
-          ? "bg-[var(--navy)] text-white px-8 sm:px-10 py-4 text-base font-semibold shadow-[0_20px_60px_rgba(15,26,43,0.06)]"
-          : "bg-transparent text-[var(--navy)] border border-[var(--navy)] hover:bg-[var(--paper)] px-7 sm:px-9 py-4 text-base font-semibold"
+          ? "bg-[var(--navy)] text-white px-6 sm:px-7 py-3.5 text-sm sm:text-base font-semibold shadow-[0_14px_40px_rgba(15,26,43,0.1)]"
+          : "bg-transparent text-[var(--navy)] border border-[var(--navy)] hover:bg-[var(--paper)] px-6 sm:px-7 py-3.5 text-sm sm:text-base font-semibold"
       } ${className}`}
     >
       {/* Circular Wipe from Cursor Position on Primary Hover (Dark Midnight fill, label stays white) */}
@@ -96,9 +96,9 @@ export function MagneticButton({
         />
       )}
 
-      {/* Button Label Text: Full Opacity White for Primary, Full Opacity Navy for Ghost, >= 16px */}
+      {/* Button Label Text: Full Opacity White for Primary, Full Opacity Navy for Ghost */}
       <span
-        className={`relative z-10 font-semibold text-base tracking-tight whitespace-nowrap opacity-100 ${
+        className={`relative z-10 font-semibold text-sm sm:text-base tracking-tight whitespace-nowrap opacity-100 ${
           isPrimary ? "text-white" : "text-[var(--navy)]"
         }`}
       >

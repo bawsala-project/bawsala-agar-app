@@ -95,7 +95,7 @@ export function CityCompassSelector({
           targetAngle={activeBearing.angle}
           messages={[
             `البوصلة تشير نحو: ${activeBearing.name} (${activeBearing.angle}°)`,
-            `تدقيق معايير ${activeBearing.region}`,
+            `شقق سكنية في ${activeBearing.region}`,
           ]}
           showProgressLine={false}
         />

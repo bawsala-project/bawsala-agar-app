@@ -42,3 +42,6 @@ supabase/.branches/
 # scratch
 scratch/
 
+
+.vercel
+.env*

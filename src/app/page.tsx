@@ -60,32 +60,28 @@ export default async function HomePage() {
         activeId="home"
       />
 
-      {/* Hero Section with Line-by-Line Masked Rise, Kashida Accent, Arched Property Image & Two Buttons */}
+      {/* Hero Section */}
       <HeroSection />
 
-      {/* Overlapping "بدء دراسة قرار استشاري جديدة" Card on Paper Background */}
+      {/* Overlapping Consultation Card on Paper Background */}
       <HeroConsultationWrapper>
         <ConsultationCard allowedCities={ALLOWED_CITIES} />
       </HeroConsultationWrapper>
 
       {/* Main Content Area */}
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-20 space-y-24 relative z-10">
-
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-20 space-y-20 relative z-10">
         {/* Active Consultations History Section */}
         <section className="max-w-4xl mx-auto space-y-6" id="active-sessions">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--mist)] pb-4">
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-display font-bold text-[var(--navy)]">
-                  جلسات القرار النشطة
+                  حالاتي
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-[var(--paper)] text-[var(--navy)] text-[11px] font-bold border border-[var(--mist)]">
-                  {cases.length} {cases.length === 1 ? "جلسة" : "جلسات"}
+                  {cases.length} {cases.length === 1 ? "حالة" : "حالات"}
                 </span>
               </div>
-              <p className="text-xs text-[var(--dusty-blue)] mt-1">
-                تابع إدخال العقارات أو استخرج التقرير الهندسي الشامل
-              </p>
             </div>
 
             {cases.length > 0 && (
@@ -94,7 +90,7 @@ export default async function HomePage() {
                 type="button"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
-                <span>تصفية الجلسات</span>
+                <span>تصفية الحالات</span>
               </button>
             )}
           </div>
@@ -105,10 +101,10 @@ export default async function HomePage() {
                 <Inbox className="w-6 h-6 text-[var(--dusty-blue)]" />
               </div>
               <h3 className="text-base font-body font-bold text-[var(--navy)]">
-                لا توجد جلسات دراسة سابقة
+                لا توجد حالات بعد
               </h3>
-              <p className="text-xs text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
-                ابدأ جلستك الاستشارية الأولى باختيار المدينة المستهدفة أعلاه، وسيتم حفظ مسار دراستك تلقائياً هنا.
+              <p className="text-sm text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
+                اختر مدينتك أعلاه لتبدأ.
               </p>
             </div>
           ) : (
@@ -116,22 +112,28 @@ export default async function HomePage() {
               {cases.map((c) => {
                 const propCount = c.properties?.length || 0;
                 let statusBadge = {
-                  text: "مسودة أولية",
+                  text: "مسودة",
                   dotClass: "bg-[var(--dusty-blue)]",
                   bgClass: "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]",
                 };
 
-                if (propCount >= 2) {
+                if (c.status === "analyzed") {
                   statusBadge = {
-                    text: "جاهز للمطابقة والتحليل",
+                    text: "النتيجة جاهزة",
+                    dotClass: "bg-[var(--status-ok)]",
+                    bgClass: "bg-[var(--cream)] text-[var(--status-ok)] border-[var(--mist)]",
+                  };
+                } else if (propCount >= 2) {
+                  statusBadge = {
+                    text: "جاهز للمقارنة",
                     dotClass: "bg-[var(--status-ok)]",
                     bgClass: "bg-[var(--cream)] text-[var(--status-ok)] border-[var(--mist)]",
                   };
                 } else if (propCount === 1) {
                   statusBadge = {
-                    text: "بانتظار إضافة بقية العقارات",
-                    dotClass: "bg-[var(--status-warn)]",
-                    bgClass: "bg-[var(--cream)] text-[var(--status-warn)] border-[var(--mist)]",
+                    text: "جاهز للفحص المجاني",
+                    dotClass: "bg-[var(--status-ok)]",
+                    bgClass: "bg-[var(--cream)] text-[var(--status-ok)] border-[var(--mist)]",
                   };
                 }
 
@@ -140,6 +142,13 @@ export default async function HomePage() {
                   month: "long",
                   day: "numeric",
                 });
+
+                const targetHref =
+                  c.status === "analyzed"
+                    ? `/case/${c.id}/results`
+                    : propCount > 0
+                      ? `/case/${c.id}/properties`
+                      : `/case/${c.id}/needs`;
 
                 return (
                   <div
@@ -151,9 +160,6 @@ export default async function HomePage() {
                         <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] text-[11px] font-bold border border-[var(--mist)]">
                           {c.city}
                         </span>
-                        <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-[11px] font-medium">
-                          عقار سكني
-                        </span>
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusBadge.bgClass}`}
                         >
@@ -163,27 +169,27 @@ export default async function HomePage() {
                       </div>
 
                       <h3 className="text-base font-body font-bold text-[var(--navy)]">
-                        دراسة قرار شراء عقار في {c.city}
+                        شقة سكنية في {c.city}
                       </h3>
 
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--dusty-blue)] font-normal">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--dusty-blue)] font-normal">
                         <span className="flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                           {dateFormatted}
                         </span>
                         <span className="flex items-center gap-1.5 text-[var(--navy)] font-semibold">
                           <Building2 className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
-                          {propCount} {propCount === 1 ? "عقار مضاف" : "عقارات مرشحة"}
+                          {propCount} {propCount === 1 ? "شقة مرشحة" : "شقق مرشحة"}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between md:justify-end gap-5 pt-3 md:pt-0 border-t md:border-t-0 border-[var(--mist)]">
                       <Link
-                        href={`/case/${c.id}/${propCount > 0 ? "properties" : "needs"}`}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] text-[var(--cream)] text-xs font-bold hover:bg-[var(--midnight)] transition-all shadow-xs"
+                        href={targetHref}
+                        className="w-full md:w-auto justify-center min-h-[44px] inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] text-[var(--cream)] text-sm font-bold hover:bg-[var(--midnight)] transition-all shadow-xs"
                       >
-                        <span>متابعة القرار</span>
+                        <span>{c.status === "analyzed" ? "عرض النتيجة" : "متابعة"}</span>
                         <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
                       </Link>
                     </div>
@@ -197,55 +203,61 @@ export default async function HomePage() {
         {/* Compass Divider */}
         <CompassDivider withEmblem className="my-10 max-w-4xl mx-auto" />
 
-        {/* Value Pillar Cards (Minimal, Quiet Luxury on Cream Paper) */}
-        <section className="max-w-4xl mx-auto space-y-8 pt-4">
+        {/* Value Pillar Cards (Aligned with v1.9 Decision Assistant Positioning) */}
+        <section className="max-w-4xl mx-auto space-y-6 sm:space-y-8 pt-4">
           <div className="text-center space-y-2">
             <h2 className="text-xl sm:text-2xl font-display font-bold text-[var(--navy)]">
-              لماذا تختلف بوصلة العقار؟
+              كيف نساعدك؟
             </h2>
-            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-lg mx-auto">
-              معايير مكتب استشاري وهندسي مستقل مصممة لحماية أموالك، بعيداً عن أساليب التسويق العقاري
+            <p className="text-sm text-[var(--dusty-blue)] max-w-xl mx-auto">
+              قرار محايد مبني على ظروفك، لا على التسويق.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
             {/* Pillar 1 */}
-            <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-6 md:p-8 space-y-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
+            <div className="rounded-[22px] md:rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-4 md:p-8 flex md:flex-col items-start gap-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
                 <Scale className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-body font-bold text-[var(--navy)]">
-                حياد استشاري 100%
-              </h3>
-              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
-                لا نتقاضى عمولات تسويقية من أي مطور، ولا نروج لعقار على حساب آخر. مصلحتك كطرف مشترٍ هي غايتنا الوحيدة.
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-base font-body font-bold text-[var(--navy)]">
+                  ملاءمة لاحتياجك
+                </h3>
+                <p className="text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
+                  أسرتك وشروطك وتنقلاتك اليومية.
+                </p>
+              </div>
             </div>
 
             {/* Pillar 2 */}
-            <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-6 md:p-8 space-y-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
-                <ShieldCheck className="w-6 h-6 text-[var(--navy)]" />
+            <div className="rounded-[22px] md:rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-4 md:p-8 flex md:flex-col items-start gap-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-body font-bold text-[var(--navy)]">
-                كشف تضارب المساحات والصكوك
-              </h3>
-              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
-                نكشف الهدر الإعلاني ونطابق المساحة الصافية القابلة للعيش، مع تدقيق ملكية المواقف والارتدادات والتراخيص الرسمية.
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-base font-body font-bold text-[var(--navy)]">
+                  سعر عادل وميزانية واضحة
+                </h3>
+                <p className="text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
+                  سعر المتر، كاش أو تمويل، ومزايا كل خيار.
+                </p>
+              </div>
             </div>
 
             {/* Pillar 3 */}
-            <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-6 md:p-8 space-y-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-[var(--navy)]" />
+            <div className="rounded-[22px] md:rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] p-4 md:p-8 flex md:flex-col items-start gap-4 hover:border-[var(--navy)] transition-all shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="w-11 h-11 md:w-12 md:h-12 shrink-0 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-[var(--navy)]" />
               </div>
-              <h3 className="text-base font-body font-bold text-[var(--navy)]">
-                تحليل تكلفة الامتلاك (TCO)
-              </h3>
-              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
-                لا ننظر لسعر الشراء فقط، بل نحسب مصاريف اتحاد الملاك، كفاءة استهلاك الطاقة، والصيانة الدورية المتوقعة لـ 10 سنوات قادمة.
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-base font-body font-bold text-[var(--navy)]">
+                  ثقة وخطة معاينة
+                </h3>
+                <p className="text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
+                  النواقص، مستوى الثقة، وقائمة تحقق ميداني.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -259,8 +271,8 @@ export default async function HomePage() {
               <BawsalaCompass size={22} animateHover />
             </div>
             <span className="font-display font-black text-sm text-[var(--navy)]">بوصلة العقار</span>
-            <span>•</span>
-            <span>منظومة استشارية وهندسية مستقلة</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline">مساعد مستقل لقرار شراء السكن</span>
           </div>
         </div>
 

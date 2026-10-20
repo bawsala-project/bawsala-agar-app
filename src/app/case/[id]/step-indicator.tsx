@@ -15,7 +15,7 @@ export function StepIndicator({ caseId }: StepIndicatorProps) {
   const steps = [
     { key: "needs", label: "الاحتياج", href: `/case/${caseId}/needs`, stepNum: 1 },
     { key: "properties", label: "العقارات", href: `/case/${caseId}/properties`, stepNum: 2 },
-    { key: "preflight", label: "الفحص المبدئي", href: `/case/${caseId}/preflight`, stepNum: 3 },
+    { key: "preflight", label: "فحص الجاهزية", href: `/case/${caseId}/preflight`, stepNum: 3 },
     { key: "results", label: "النتائج", href: `/case/${caseId}/results`, stepNum: 4 },
   ];
 
@@ -26,8 +26,24 @@ export function StepIndicator({ caseId }: StepIndicatorProps) {
     return segment === s.key;
   });
 
+  const activeIdx = Math.max(currentStepIndex, 0);
+  const activeStep = steps[activeIdx];
+
   return (
-    <nav aria-label="مراحل القرار" className="flex items-center gap-1.5 p-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-xs font-semibold text-[var(--dusty-blue)] select-none">
+    <>
+    {/* Mobile compact progress (below sm) */}
+    <div className="sm:hidden w-full select-none">
+      <div className="flex items-center justify-between text-sm font-bold text-[var(--navy)] mb-1.5">
+        <span>الخطوة {activeStep.stepNum} من {steps.length} · {activeStep.label}</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-[var(--mist)]/50 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[var(--navy)] transition-all"
+          style={{ width: `${(activeStep.stepNum / steps.length) * 100}%` }}
+        />
+      </div>
+    </div>
+    <nav aria-label="مراحل القرار" className="hidden sm:flex items-center gap-1.5 p-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-xs font-semibold text-[var(--dusty-blue)] select-none">
       {steps.map((step, idx) => {
         const isActive = idx === currentStepIndex;
         const isPast = idx < currentStepIndex;
@@ -36,6 +52,7 @@ export function StepIndicator({ caseId }: StepIndicatorProps) {
           <div key={step.key} className="flex items-center gap-1">
             <Link
               href={step.href}
+              prefetch={false}
               className={cn(
                 "px-3.5 py-1.5 sm:py-2 rounded-full transition-all flex items-center gap-1.5 whitespace-nowrap no-underline focus:outline-hidden",
                 isActive
@@ -71,5 +88,6 @@ export function StepIndicator({ caseId }: StepIndicatorProps) {
         );
       })}
     </nav>
+    </>
   );
 }

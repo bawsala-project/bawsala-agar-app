@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getSessionUser } from "@/lib/auth";
 
-export type RateLimitedAction = "extract" | "analyze" | "checkout" | "auth";
+export type RateLimitedAction = "extract" | "analyze" | "checkout" | "auth" | "ask";
 
 export const RATE_LIMIT_MESSAGE =
   "تم تجاوز الحد المسموح من الطلبات. يرجى الانتظار بضع دقائق والمحاولة مجددًا.";
@@ -15,6 +15,7 @@ export const RATE_LIMITS: Record<RateLimitedAction, { max: number; windowMs: num
   analyze: { max: 10, windowMs: HOUR_MS },
   checkout: { max: 10, windowMs: HOUR_MS },
   auth: { max: 3, windowMs: 15 * MINUTE_MS },
+  ask: { max: 30, windowMs: HOUR_MS },
 };
 
 export type RateLimitResult =

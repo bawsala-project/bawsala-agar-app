@@ -274,7 +274,7 @@ function InlineCorrectionForm({
           )}
         </button>
       </div>
-      {error && <p className="text-[11px] text-[#A62626] font-medium">{error}</p>}
+      {error && <p className="text-sm text-[#A62626] font-medium">{error}</p>}
     </form>
   );
 }
@@ -447,7 +447,7 @@ export function PropertyDetailsView({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#A62626] animate-pulse" />
               <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
-                <span>معلومات متعارضة تتطلب الحسم</span>
+                <span>قيم متعارضة</span>
                 <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[#FDF1F0] text-[#A62626] border border-[#F6CBC8]">
                   {conflictingFields.length}
                 </span>
@@ -455,7 +455,7 @@ export function PropertyDetailsView({
             </div>
             <span className="inline-flex items-center gap-1.5 text-xs text-[#A62626] bg-[#FDF1F0] px-3 py-1 rounded-full border border-[#F6CBC8] font-medium">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              <span>قاعدة عدم المتوسط: اختر الرقم المطابق للصك</span>
+              <span>اختر الرقم المطابق للصك</span>
             </span>
           </div>
 
@@ -493,7 +493,7 @@ export function PropertyDetailsView({
                       className="text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] inline-flex items-center gap-1 cursor-pointer transition-colors"
                     >
                       <Edit3 className="w-3 h-3" />
-                      <span>{isManualOpen ? "إغلاق الإدخال اليدوي" : "إدخال قيمة أخرى من الصك"}</span>
+                      <span>{isManualOpen ? "إغلاق" : "قيمة أخرى"}</span>
                     </button>
                   </div>
 
@@ -527,7 +527,7 @@ export function PropertyDetailsView({
                             </div>
 
                             {quotes.length > 0 && (
-                              <p className="text-[11px] text-[var(--dusty-blue)] italic bg-[var(--cream)] px-2.5 py-1.5 rounded-lg border-r-2 border-[var(--navy)] line-clamp-2">
+                              <p className="text-sm text-[var(--dusty-blue)] italic bg-[var(--cream)] px-2.5 py-1.5 rounded-lg border-r-2 border-[var(--navy)] line-clamp-2">
                                 &quot;{quotes[0]}&quot;
                               </p>
                             )}
@@ -551,7 +551,7 @@ export function PropertyDetailsView({
                         propertyId={property.id}
                         field={field}
                         label={def.label}
-                        placeholder={`أدخل ${def.label} المعتمد في الصك...`}
+                        placeholder={`أدخل ${def.label} كما في الإعلان أو حسب علمك...`}
                         buttonLabel="اعتماد"
                         compact
                         onSuccess={() =>
@@ -576,21 +576,21 @@ export function PropertyDetailsView({
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-[#1E6B43]" />
             <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
-              <span>حقائق مؤكدة ومدققة</span>
+              <span>حقائق مؤكدة</span>
               <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4]">
                 {knownFields.length}
               </span>
             </h2>
           </div>
           <span className="text-xs text-[var(--dusty-blue)]">
-            بيانات موثقة تدخل مباشرة في محرك المقارنة والتقييم
+            تدخل مباشرة في المقارنة
           </span>
         </div>
 
         {knownFields.length === 0 ? (
           <div className="text-center py-6 bg-[var(--cream)] rounded-2xl border border-dashed border-[var(--mist)]">
-            <p className="text-xs font-medium text-[var(--navy)]">
-              لم يتم تأكيد أي معلومات بعد
+            <p className="text-sm font-medium text-[var(--navy)]">
+              لا حقائق مؤكدة بعد
             </p>
           </div>
         ) : (
@@ -660,7 +660,7 @@ export function PropertyDetailsView({
                   </div>
 
                   {isQuoteOpen && evidenceQuote && (
-                    <blockquote className="p-2.5 bg-[var(--paper)] rounded-xl border-r-2 border-[var(--navy)] text-[11px] text-[var(--navy)] italic leading-relaxed">
+                    <blockquote className="p-2.5 bg-[var(--paper)] rounded-xl border-r-2 border-[var(--navy)] text-sm text-[var(--navy)] italic leading-relaxed">
                       &quot;{evidenceQuote}&quot;
                     </blockquote>
                   )}
@@ -692,14 +692,14 @@ export function PropertyDetailsView({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#9A6700]" />
               <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
-                <span>بيانات غير مذكورة في الإعلان</span>
+                <span>بيانات ناقصة</span>
                 <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[#FFF9EC] text-[#9A6700] border border-[#F9E2AF]">
                   {unknownFields.length}
                 </span>
               </h2>
             </div>
             <span className="text-xs text-[var(--dusty-blue)]">
-              يمكنك تحديد المتاح منها بنقرة سريعة لرفع دقة المقارنة
+              حدّد المتاح بنقرة لرفع الدقة
             </span>
           </div>
 
@@ -881,7 +881,7 @@ export function PropertyDetailsView({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--navy)]" />
               <h2 className="text-base font-bold text-[var(--navy)] font-display flex items-center gap-2">
-                <span>ادعاءات ومميزات تسويقية</span>
+                <span>ادعاءات تسويقية</span>
                 <span className="text-xs font-body font-semibold px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] tabular-nums">
                   {allClaims.length}
                 </span>

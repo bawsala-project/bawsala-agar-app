@@ -1,5 +1,10 @@
 import type { ConstraintResult, RequirementsRow } from "@/lib/analysis/constraints";
 import type { AffectedTargetsResult } from "./reassess-targets";
+import {
+  computeConfidenceLevel,
+  translateConfidenceAr,
+  type ConfidenceLevel,
+} from "./axes";
 
 export type FitRating = "strong" | "partial" | "weak" | "insufficient_evidence";
 export type VisitPriority = "high" | "medium" | "low" | "insufficient_evidence";
@@ -24,6 +29,8 @@ export interface ReassessmentDiff {
   newFitRating: FitRating;
   previousVisitPriority: VisitPriority;
   newVisitPriority: VisitPriority;
+  previousConfidence?: ConfidenceLevel;
+  newConfidence?: ConfidenceLevel;
   previousRank?: number | null;
   newRank?: number | null;
   addedRisks: string[];
@@ -334,25 +341,41 @@ export function reassessProperty(
       "أولوية متوسطة؛ تم التحقق من بعض البنود الميدانية مع بقاء ملاحظات أخرى تتطلب المتابعة.";
   }
 
-  // 5. Generate structured explanation in concise Arabic
+  // 5. Compute Confidence Level Transition (Before vs After On-Site Findings)
+  const prevConf = computeConfidenceLevel({
+    fitRating: previousAssessment.fit_rating,
+    constraintResults: previousAssessment.constraint_results || [],
+    keyUnknownsCount: (previousAssessment.key_unknowns || []).length,
+  });
+  const nextConf = computeConfidenceLevel({
+    fitRating: newFitRating,
+    constraintResults: newConstraints,
+    keyUnknownsCount: newKeyUnknowns.length,
+  });
+
+  // 6. Generate structured explanation in concise Arabic
   let explanationAr = "";
   if (previousAssessment.fit_rating !== newFitRating) {
     if (newFitRating === "weak") {
       explanationAr = `تغير التوافق من (${translateRating(previousAssessment.fit_rating)}) إلى (توافق ضعيف) بسبب مخالفة شرط جوهري أثناء المعاينة (${addedRisks[0] || "عطل أو مشكلة أساسية"}).`;
     } else if (newFitRating === "strong") {
-      explanationAr = `ارتفع التوافق من (${translateRating(previousAssessment.fit_rating)}) إلى (توافق قوي) بعد تأكيد سلامة البنود المفحوصة ميدانياً (${resolvedUnknowns.slice(0, 2).join("، ")}).`;
+      explanationAr = `ارتفع التوافق من (${translateRating(previousAssessment.fit_rating)}) إلى (توافق قوي) بعد تأكيد سلامة البنود المفحوصة ميدانياً (${resolvedUnknowns.slice(0, 2).join("، ")})، وارتفع مستوى الثقة إلى (${translateConfidenceAr(nextConf.level)}).`;
     } else {
       explanationAr = `تغير التوافق من (${translateRating(previousAssessment.fit_rating)}) إلى (${translateRating(newFitRating)}) بعد مراجعة شواهد الزيارة الميدانية.`;
     }
   } else if (addedRisks.length > 0) {
     explanationAr = `تم رصد وتوثيق ${addedRisks.length} مخاطر وملاحظات ميدانية إضافية مع استقرار التوافق العام عند (${translateRating(newFitRating)}).`;
   } else if (resolvedUnknowns.length > 0) {
-    explanationAr = `تم حسم وتأكيد ${resolvedUnknowns.length} نقاط كانت غير مؤكدة مع استقرار التوافق العام عند (${translateRating(newFitRating)}).`;
+    const confNote =
+      prevConf.level !== nextConf.level
+        ? ` وارتفاع مستوى الثقة من (${translateConfidenceAr(prevConf.level)}) إلى (${translateConfidenceAr(nextConf.level)})`
+        : "";
+    explanationAr = `تم حسم وتأكيد ${resolvedUnknowns.length} نقاط كانت غير مؤكدة مع استقرار التوافق العام عند (${translateRating(newFitRating)})${confNote}.`;
   } else {
     explanationAr = "لم تسفر نتائج المعاينة عن تغييرات جوهرية في محاور التقييم السابقة.";
   }
 
-  // 6. Updated fit summary
+  // 7. Updated fit summary
   const fitSummaryUpdate = addedRisks.length > 0
     ? `${previousAssessment.fit_summary} [تحديث المعاينة الميدانية: تم رصد ملاحظات أثرت على التقييم: ${addedRisks[0]}].`
     : resolvedUnknowns.length > 0
@@ -364,6 +387,8 @@ export function reassessProperty(
     newFitRating,
     previousVisitPriority: previousAssessment.visit_priority,
     newVisitPriority,
+    previousConfidence: prevConf.level,
+    newConfidence: nextConf.level,
     addedRisks,
     resolvedUnknowns,
     explanationAr,

@@ -28,7 +28,7 @@ export async function initiateCheckoutAction(caseId: string): Promise<CheckoutAc
   if (!preflight.ready) {
     return {
       success: false,
-      error: "الحالة غير جاهزة للدفع بعد، يرجى إكمال متطلبات الفحص المبدئي أولاً.",
+      error: "الحالة غير جاهزة للدفع بعد، يرجى إكمال متطلبات فحص الجاهزية المجاني أولاً.",
     };
   }
 

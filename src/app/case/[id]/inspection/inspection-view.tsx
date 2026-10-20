@@ -105,7 +105,7 @@ export function InspectionView({
   return (
     <div className="space-y-4">
       {/* 1. Integrated Top Control Bar: Live Progress + Category Filter Tabs + Reassess CTA */}
-      <div className="bg-[var(--paper)] rounded-[22px] border border-[var(--mist)]/80 p-4 sm:p-5 space-y-3.5 shadow-[0_8px_28px_rgba(15,26,43,0.03)]">
+      <div className="sticky top-2 z-20 lg:static bg-[var(--paper)] rounded-[22px] border border-[var(--mist)]/80 p-4 sm:p-5 space-y-3.5 shadow-[0_8px_28px_rgba(15,26,43,0.03)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Progress Summary */}
           <div className="space-y-1.5 flex-1">
@@ -143,8 +143,8 @@ export function InspectionView({
                 <span aria-hidden="true">←</span>
               </Link>
             ) : (
-              <span className="text-[11px] text-[var(--dusty-blue)]">
-                سجّل نتيجة بند واحد على الأقل لتحديث التقييم
+              <span className="text-sm text-[var(--dusty-blue)]">
+                سجّل بنداً واحداً لتحديث التقييم
               </span>
             )}
           </div>

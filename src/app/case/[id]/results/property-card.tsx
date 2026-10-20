@@ -18,7 +18,7 @@ import {
 import { formatSAR, cn } from "@/lib/utils";
 import { FIELD_REGISTRY, type FieldKey } from "@/lib/evidence/fields";
 import type { ConstraintResult } from "@/lib/analysis/constraints";
-import { EngineeringDialGauge } from "@/components/properties/engineering-dial-gauge";
+import { DecisionFitGauge } from "@/components/properties/decision-fit-gauge";
 import { PropertyDetailSheet } from "@/components/properties/property-detail-sheet";
 
 export interface PropertyCardAssessment {
@@ -34,7 +34,7 @@ export interface PropertyCardAssessment {
   evidence_fields: string[];
   constraint_results: ConstraintResult[];
   price_per_sqm: number | null;
-  engineering_score?: number;
+  decision_fit_score?: number;
 }
 
 export interface PropertyCardProperty {
@@ -174,10 +174,10 @@ export function PropertyCard({
       ? resolvedPrice
       : property.listing_price_sar;
 
-  const area = property.area_sqm || 140;
-  const bedrooms = property.bedrooms || 3;
-  const bathrooms = property.bathrooms || 3;
-  const floor = property.floor_no ?? 2;
+  const area = property.area_sqm && property.area_sqm > 0 ? property.area_sqm : null;
+  const bedrooms = property.bedrooms !== null && property.bedrooms !== undefined ? property.bedrooms : null;
+  const bathrooms = property.bathrooms !== null && property.bathrooms !== undefined ? property.bathrooms : null;
+  const floor = property.floor_no !== null && property.floor_no !== undefined ? property.floor_no : null;
 
   // 3. Fit Rating
   const fitKey = (assessment.fit_rating as keyof typeof FIT_RATING_CONFIG) in FIT_RATING_CONFIG
@@ -204,7 +204,7 @@ export function PropertyCard({
 
   // Engineering score (derived from fit rating)
   const score =
-    assessment.engineering_score ||
+    assessment.decision_fit_score ||
     (assessment.fit_rating === "strong"
       ? 89
       : assessment.fit_rating === "partial"
@@ -272,25 +272,25 @@ export function PropertyCard({
 
           {/* Small Dial Gauge: Engineering Score with tick ring that fills clockwise */}
           <div className="transition-all duration-300 transform group-hover:scale-105 shrink-0 bg-[rgba(15,26,43,0.75)] backdrop-blur-md p-1.5 rounded-full border border-[rgba(82,103,125,0.4)] shadow-md">
-            <EngineeringDialGauge score={score} size={48} strokeWidth={3} countUp={true} />
+            <DecisionFitGauge score={score} size={48} strokeWidth={3} countUp={true} />
           </div>
         </div>
 
         {/* Bottom Area: Display Font Price and Key Numbers */}
         <div className="relative z-10 p-5 sm:p-7 space-y-3.5">
           {/* Slide-up Feature Chips on Hover */}
-          <div className="transform translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-wrap items-center gap-1.5 pointer-events-none">
+          <div className="hidden lg:flex transform translate-y-3 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out flex flex-wrap items-center gap-1.5 pointer-events-none">
             <span className="px-2.5 py-1 rounded-xl bg-[rgba(28,46,74,0.85)] backdrop-blur-md border border-[rgba(82,103,125,0.3)] text-[11px] font-medium text-[var(--mist)] flex items-center gap-1">
               <Building className="w-3 h-3 text-[var(--buttercream)]" />
-              <span>مصعد معتمد</span>
+              <span>تحليل الملاءمة الشخصية</span>
             </span>
             <span className="px-2.5 py-1 rounded-xl bg-[rgba(28,46,74,0.85)] backdrop-blur-md border border-[rgba(82,103,125,0.3)] text-[11px] font-medium text-[var(--mist)] flex items-center gap-1">
               <Car className="w-3 h-3 text-[var(--buttercream)]" />
-              <span>موقف خاص</span>
+              <span>أثر الموقع والحياة اليومية</span>
             </span>
             <span className="px-2.5 py-1 rounded-xl bg-[rgba(28,46,74,0.85)] backdrop-blur-md border border-[rgba(82,103,125,0.3)] text-[11px] font-medium text-[var(--mist)] flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-[var(--status-ok)]" />
-              <span>كود سعودي</span>
+              <span>بيان النواقص ومستوى الثقة</span>
             </span>
           </div>
 
@@ -298,7 +298,7 @@ export function PropertyCard({
           <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[rgba(82,103,125,0.25)] pb-3">
             <div>
               <div className="text-[11px] text-[var(--mist)] uppercase tracking-wider font-semibold">
-                السعر الإجمالي المطلوب
+                السعر
               </div>
               <div className="flex flex-wrap items-baseline gap-3 mt-0.5">
                 {effectivePrice !== null && effectivePrice !== undefined && effectivePrice > 0 ? (
@@ -308,7 +308,7 @@ export function PropertyCard({
                     </span>
                     {assessment.price_per_sqm !== null && assessment.price_per_sqm > 0 && (
                       <span className="text-xs sm:text-sm font-bold text-[var(--mist)] bg-[rgba(28,46,74,0.6)] px-2.5 py-1 rounded-lg border border-[rgba(82,103,125,0.3)] tabular-nums">
-                        {Math.round(assessment.price_per_sqm).toLocaleString("en-US")} ر.س / م²
+                        {Math.round(assessment.price_per_sqm).toLocaleString("ar-SA")} ر.س / م²
                       </span>
                     )}
                   </>
@@ -340,7 +340,7 @@ export function PropertyCard({
                 <span>المساحة</span>
               </div>
               <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
-                {area} م²
+                {area !== null ? `${area} م²` : "غير مذكور"}
               </div>
             </div>
 
@@ -350,7 +350,7 @@ export function PropertyCard({
                 <span>الغرف</span>
               </div>
               <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
-                {bedrooms}
+                {bedrooms !== null ? bedrooms : "غير مذكور"}
               </div>
             </div>
 
@@ -360,7 +360,7 @@ export function PropertyCard({
                 <span>دورات</span>
               </div>
               <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
-                {bathrooms}
+                {bathrooms !== null ? bathrooms : "غير مذكور"}
               </div>
             </div>
 
@@ -370,7 +370,7 @@ export function PropertyCard({
                 <span>الدور</span>
               </div>
               <div className="font-body font-extrabold text-sm sm:text-base text-[var(--buttercream)] tabular-nums mt-0.5">
-                {floor === 0 ? "أرضي" : floor}
+                {floor === null ? "غير مذكور" : floor === 0 ? "أرضي" : floor}
               </div>
             </div>
           </div>
@@ -379,10 +379,10 @@ export function PropertyCard({
           <div className="flex items-center justify-between pt-1 text-xs text-[var(--mist)] opacity-85 group-hover:opacity-100 transition-opacity">
             <span className="flex items-center gap-1 font-medium">
               <Sparkles className="w-3.5 h-3.5 text-[var(--buttercream)]" />
-              انقر لفتح الفحص والمقارنة الهندسية
+              محاور القرار الـ 5
             </span>
             <span className="flex items-center gap-1 font-bold text-[var(--buttercream)] group-hover:-translate-x-1 transition-transform">
-              عرض تفاصيل الصك والتكاليف
+              التفاصيل
               <ChevronLeft className="w-4 h-4" />
             </span>
           </div>
@@ -410,7 +410,7 @@ export function PropertyCard({
                 {advisoryConfig.title}
               </span>
             </div>
-            <p className="text-xs sm:text-sm leading-relaxed text-inherit opacity-95">
+            <p className="text-sm leading-relaxed text-inherit opacity-95">
               {advisoryBodyText}
             </p>
           </div>
@@ -476,7 +476,7 @@ export function PropertyCard({
           {openSections.constraints && (
             <div className="mt-4 space-y-2.5">
               {constraints.length === 0 ? (
-                <p className="text-xs text-[var(--mist)]">لا توجد شروط محددة مسبقاً.</p>
+                <p className="text-sm text-[var(--mist)]">لا توجد شروط محددة مسبقاً.</p>
               ) : (
                 constraints.map((c, idx) => {
                   const isPass = c.result === "pass";
@@ -547,13 +547,13 @@ export function PropertyCard({
           {openSections.strengths && (
             <div className="mt-4">
               {strengths.length === 0 ? (
-                <p className="text-xs text-[var(--mist)]">لا توجد نقاط قوة بارزة مسجلة.</p>
+                <p className="text-sm text-[var(--mist)]">لا توجد نقاط قوة بارزة مسجلة.</p>
               ) : (
                 <ul className="space-y-2.5">
                   {strengths.map((item, idx) => (
                     <li
                       key={idx}
-                      className="text-xs sm:text-sm text-[var(--buttercream)] flex items-start gap-2.5 leading-relaxed bg-[rgba(94,155,121,0.1)] p-3 rounded-xl border border-[rgba(94,155,121,0.25)]"
+                      className="text-sm text-[var(--buttercream)] flex items-start gap-2.5 leading-relaxed bg-[rgba(94,155,121,0.1)] p-3 rounded-xl border border-[rgba(94,155,121,0.25)]"
                     >
                       <span className="w-5 h-5 rounded-full bg-[var(--status-ok)] text-white flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">
                         ✓
@@ -595,13 +595,13 @@ export function PropertyCard({
           {openSections.risks && (
             <div className="mt-4">
               {risks.length === 0 ? (
-                <p className="text-xs text-[var(--mist)]">لا توجد مخاطر مسجلة.</p>
+                <p className="text-sm text-[var(--mist)]">لا توجد مخاطر مسجلة.</p>
               ) : (
                 <ul className="space-y-2.5">
                   {risks.map((item, idx) => (
                     <li
                       key={idx}
-                      className="text-xs sm:text-sm text-[var(--buttercream)] flex items-start gap-2.5 leading-relaxed bg-[rgba(200,92,92,0.12)] p-3 rounded-xl border border-[rgba(200,92,92,0.3)]"
+                      className="text-sm text-[var(--buttercream)] flex items-start gap-2.5 leading-relaxed bg-[rgba(200,92,92,0.12)] p-3 rounded-xl border border-[rgba(200,92,92,0.3)]"
                     >
                       <span className="w-5 h-5 rounded-full bg-[var(--status-danger)] text-white flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">
                         ⚠
@@ -643,13 +643,13 @@ export function PropertyCard({
           {openSections.unknowns && (
             <div className="mt-4">
               {keyUnknowns.length === 0 ? (
-                <p className="text-xs text-[var(--mist)]">تم حسم كافة البيانات الأساسية بنجاح.</p>
+                <p className="text-sm text-[var(--mist)]">تم حسم كافة البيانات الأساسية بنجاح.</p>
               ) : (
                 <ul className="space-y-2.5">
                   {keyUnknowns.map((item, idx) => (
                     <li
                       key={idx}
-                      className="text-xs sm:text-sm text-[var(--buttercream)] flex items-start gap-2.5 leading-relaxed bg-[rgba(204,160,84,0.12)] p-3 rounded-xl border border-[rgba(204,160,84,0.3)]"
+                      className="text-sm text-[var(--buttercream)] flex items-start gap-2.5 leading-relaxed bg-[rgba(204,160,84,0.12)] p-3 rounded-xl border border-[rgba(204,160,84,0.3)]"
                     >
                       <span className="w-5 h-5 rounded-full bg-[var(--status-warn)] text-white flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold">
                         ?
@@ -691,7 +691,7 @@ export function PropertyCard({
           {openSections.evidence && (
             <div className="mt-4">
               {evidenceFields.length === 0 ? (
-                <p className="text-xs text-[var(--mist)]">لا توجد أدلة محددة مسجلة.</p>
+                <p className="text-sm text-[var(--mist)]">لا توجد أدلة محددة مسجلة.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {evidenceFields.map((f, idx) => {
@@ -739,7 +739,7 @@ export function PropertyCard({
           risks: assessment.risks,
           key_unknowns: assessment.key_unknowns,
           price_per_sqm: assessment.price_per_sqm,
-          engineering_score: score,
+          decision_fit_score: score,
         }}
       />
     </article>

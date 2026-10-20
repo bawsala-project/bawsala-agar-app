@@ -232,7 +232,7 @@ export function IntroOverlay({ onIntroComplete }: IntroOverlayProps) {
             transition={{ duration: 0.65, delay: 0.38, ease: [0.22, 1, 0.36, 1] }}
             className="text-xs sm:text-sm font-medium text-[var(--dusty-blue)]"
           >
-            فحص فني وهندسي مستقل لقرار التملك
+            مساعدك الذكي المستقل لقرار شراء شقتك
           </motion.p>
 
           <motion.span

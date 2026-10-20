@@ -2,10 +2,27 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import {
+  Trophy,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  ExternalLink,
+  MapPin,
+  ShieldCheck,
+  Layers,
+} from "lucide-react";
 import { formatSAR } from "@/lib/utils";
-import { EngineeringDialGauge } from "./engineering-dial-gauge";
+import { DecisionFitGauge } from "./decision-fit-gauge";
 import { PropertyDetailSheet } from "./property-detail-sheet";
 import type { ConstraintResult } from "@/lib/analysis/constraints";
+import type {
+  ConfidenceLevel,
+  DailyLifeAssessment,
+  FairPriceAssessment,
+  AffordabilityAssessment,
+  TradeoffSummary,
+} from "@/lib/analysis/axes";
 
 export interface ComparisonItem {
   id: string;
@@ -14,14 +31,14 @@ export interface ComparisonItem {
   district?: string | null;
   city?: string | null;
   listing_price_sar: number;
-  price_per_sqm: number | null;
+  price_per_sqm?: number | null;
   price_delta_budget?: number | null;
-  area_sqm: number | null;
-  bedrooms: number | null;
+  area_sqm?: number | null;
+  bedrooms?: number | null;
   bathrooms?: number | null;
   floor_no?: number | null;
-  fit_rating: string;
-  visit_priority: string;
+  fit_rating: "strong" | "partial" | "weak" | "insufficient_evidence" | string;
+  visit_priority: "high" | "medium" | "low" | "insufficient_evidence" | string;
   visit_priority_reason?: string;
   fit_summary?: string;
   main_advantage_ar?: string;
@@ -36,142 +53,225 @@ export interface ComparisonItem {
     unknown: number;
   };
   constraint_results?: ConstraintResult[];
+  decision_fit_score?: number;
   image_url?: string | null;
-  engineering_score?: number;
+  overall_confidence?: ConfidenceLevel;
+  confidence_label_ar?: string;
+  confidence_reason_ar?: string;
+  daily_life?: DailyLifeAssessment;
+  price_axis?: FairPriceAssessment;
+  affordability_axis?: AffordabilityAssessment;
+  tradeoffs?: TradeoffSummary;
 }
 
-interface ComparisonMatrixProps {
+export interface ComparisonMatrixProps {
   items: ComparisonItem[];
   caseId?: string;
 }
 
-function getFitLabel(rating: string) {
-  switch (rating) {
-    case "strong":
-      return {
-        label: "توافق قوي",
-        classes: "bg-[#E9F4EE] text-[#1E6B43] border-[#C5E4D4]",
-      };
-    case "partial":
-      return {
-        label: "توافق جزئي",
-        classes: "bg-[#FFF9EC] text-[#9A6700] border-[#F9E2AF]",
-      };
-    case "weak":
-      return {
-        label: "توافق ضعيف",
-        classes: "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]",
-      };
-    default:
-      return {
-        label: "بيانات غير كافية",
-        classes: "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]",
-      };
-  }
-}
+const FIT_BADGE: Record<
+  string,
+  { label: string; bg: string; text: string; border: string }
+> = {
+  strong: {
+    label: "توافق قوي",
+    bg: "bg-[#E9F4EE]",
+    text: "text-[#1E6B43]",
+    border: "border-[#C5E4D4]",
+  },
+  partial: {
+    label: "توافق جزئي",
+    bg: "bg-[#FFF9EC]",
+    text: "text-[#9A6700]",
+    border: "border-[#F9E2AF]",
+  },
+  weak: {
+    label: "توافق ضعيف",
+    bg: "bg-[#FDF1F0]",
+    text: "text-[#A62626]",
+    border: "border-[#F6CBC8]",
+  },
+  insufficient_evidence: {
+    label: "بيانات غير كافية",
+    bg: "bg-[var(--cream)]",
+    text: "text-[var(--dusty-blue)]",
+    border: "border-[var(--mist)]",
+  },
+};
 
-function getVisitPriorityLabel(priority: string) {
-  switch (priority) {
-    case "high":
-    case "first":
-      return {
-        label: "معاينة مرتفعة",
-        classes: "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)]",
-      };
-    case "medium":
-    case "second":
-      return {
-        label: "معاينة متوسطة",
-        classes: "bg-[#FFF9EC] text-[#9A6700] border-[#F9E2AF]",
-      };
-    case "low":
-    case "third":
-      return {
-        label: "معاينة منخفضة",
-        classes: "bg-[#FDF1F0] text-[#A62626] border-[#F6CBC8]",
-      };
-    default:
-      return {
-        label: "معاينة قيد التحقق",
-        classes: "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]",
-      };
-  }
-}
+const CONFIDENCE_BADGE: Record<
+  ConfidenceLevel,
+  { label: string; bg: string; text: string; border: string }
+> = {
+  high: {
+    label: "ثقة عالية",
+    bg: "bg-[#E9F4EE]",
+    text: "text-[#1E6B43]",
+    border: "border-[#C5E4D4]",
+  },
+  medium: {
+    label: "ثقة متوسطة",
+    bg: "bg-[#FFF9EC]",
+    text: "text-[#9A6700]",
+    border: "border-[#F9E2AF]",
+  },
+  low: {
+    label: "ثقة منخفضة",
+    bg: "bg-[#FDF1F0]",
+    text: "text-[#A62626]",
+    border: "border-[#F6CBC8]",
+  },
+};
+
+const PRIORITY_BADGE: Record<string, { label: string; text: string }> = {
+  high: { label: "معاينة مرتفعة", text: "text-[#1E6B43]" },
+  medium: { label: "معاينة متوسطة", text: "text-[#9A6700]" },
+  low: { label: "معاينة منخفضة", text: "text-[#A62626]" },
+  insufficient_evidence: {
+    label: "تحتاج استكمال بيانات",
+    text: "text-[var(--dusty-blue)]",
+  },
+};
 
 export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
-  const [activePropertyForSheet, setActivePropertyForSheet] = useState<ComparisonItem | null>(null);
+  const [activePropertyForSheet, setActivePropertyForSheet] =
+    useState<ComparisonItem | null>(null);
+  const [showAllOptions, setShowAllOptions] = useState(false);
 
   if (!items || items.length === 0) return null;
 
-  // Compute best values for highlighting with small navy dot
-  const prices = items.map((it) => it.listing_price_sar).filter((p) => p > 0);
-  const minPrice = prices.length ? Math.min(...prices) : null;
+  const hasMoreThanThree = items.length > 3;
+  const visibleItems =
+    hasMoreThanThree && !showAllOptions ? items.slice(0, 3) : items;
 
-  const pricesPerSqm = items
-    .map((it) => it.price_per_sqm)
-    .filter((p): p is number => p !== null && p > 0);
-  const minPricePerSqm = pricesPerSqm.length ? Math.min(...pricesPerSqm) : null;
-
-  const areas = items.map((it) => it.area_sqm).filter((a): a is number => a !== null && a > 0);
-  const maxArea = areas.length ? Math.max(...areas) : null;
+  const validSqm = visibleItems
+    .map((i) => i.price_per_sqm)
+    .filter((v): v is number => typeof v === "number" && v > 0);
+  const minPricePerSqm = validSqm.length > 0 ? Math.min(...validSqm) : null;
 
   return (
-    <div className="w-full space-y-6 select-none" dir="rtl">
-      {/* Matrix Table Container */}
-      <div className="relative rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] overflow-hidden shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
-        <div className="overflow-x-auto scrollbar-thin">
-          <table className="w-full border-collapse text-right min-w-[760px]">
-            {/* STICKY HEADER */}
-            <thead className="sticky top-0 z-30 bg-[var(--paper)] border-b border-[var(--mist)]">
-              <tr>
-                {/* Metric Axis Column Header */}
-                <th className="p-5 sm:p-6 w-[210px] sm:w-[250px] text-xs font-display font-bold text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
-                    <span className="text-sm">معايير المفاضلة والقرار</span>
-                  </div>
-                  <div className="text-[11px] text-[var(--dusty-blue)] font-normal mt-1">
-                    {items.length} عقارات مرشحة للمقارنة
-                  </div>
+    <div className="w-full space-y-6" dir="rtl">
+      {/* Top-3 Eligible Options Banner (when 4-5 properties exist) */}
+      {hasMoreThanThree && (
+        <div className="rounded-[24px] border border-[var(--mist)] bg-[var(--paper)] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[var(--cream)] border border-[var(--mist)] flex items-center justify-center text-[var(--navy)] shrink-0">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[var(--navy)]">
+                {showAllOptions
+                  ? `كل الشقق (${items.length})`
+                  : "أفضل 3 خيارات"}
+              </h3>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowAllOptions((prev) => !prev)}
+            className="self-start sm:self-center px-4 py-2 rounded-full bg-[var(--cream)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] text-xs font-bold transition-all cursor-pointer shrink-0"
+          >
+            {showAllOptions
+              ? "الاكتفاء بأفضل 3 خيارات"
+              : `إظهار جميع الخيارات (${items.length})`}
+          </button>
+        </div>
+      )}
+
+      {/* Side-by-Side Comparison Table Container */}
+      <div className="rounded-[28px] border border-[var(--mist)] bg-[var(--paper)] shadow-[0_20px_60px_rgba(15,26,43,0.05)] overflow-hidden">
+        <div
+          className="overflow-x-auto focus:outline-2 focus:outline-[var(--navy)]"
+          tabIndex={0}
+          role="region"
+          aria-labelledby="comparison-matrix-caption"
+        >
+          <table className="w-full min-w-[780px] border-collapse text-right">
+            <caption id="comparison-matrix-caption" className="sr-only">
+              مصفوفة المقارنة المباشرة للشقق السكنية المرشحة عبر محاور القرار الخمسة
+            </caption>
+            <thead>
+              <tr className="border-b border-[var(--mist)] bg-[var(--cream)]/70">
+                <th
+                  scope="col"
+                  className="sticky top-0 right-0 z-30 p-4 sm:p-5 w-48 font-display font-bold text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--cream)] align-middle"
+                >
+                  المحور
                 </th>
 
-                {/* Property Columns */}
-                {items.map((item) => {
+                {visibleItems.map((item, idx) => {
+                  const rank = item.rank ?? idx + 1;
+                  const isWinner =
+                    rank === 1 &&
+                    item.fit_rating !== "weak" &&
+                    item.fit_rating !== "insufficient_evidence";
                   const score =
-                    item.engineering_score ||
-                    (item.fit_rating === "strong" ? 89 : item.fit_rating === "partial" ? 74 : 58);
+                    item.decision_fit_score ||
+                    (item.fit_rating === "strong"
+                      ? 89
+                      : item.fit_rating === "partial"
+                        ? 74
+                        : 58);
 
                   return (
                     <th
                       key={item.id}
-                      className="p-4 sm:p-5 w-[260px] sm:w-[300px] border-l border-[var(--mist)] align-top"
+                      scope="col"
+                      className={`sticky top-0 z-20 p-4 sm:p-5 min-w-[230px] border-l border-[var(--mist)] align-top transition-colors ${
+                        isWinner ? "bg-[#E9F4EE]/95" : "bg-[var(--paper)]"
+                      }`}
                     >
-                      <div
-                        onClick={() => setActivePropertyForSheet(item)}
-                        className="group relative rounded-[20px] overflow-hidden border border-[var(--mist)] bg-[var(--cream)] hover:border-[var(--navy)] transition-all p-4 cursor-pointer text-right flex flex-col justify-between h-[196px]"
-                      >
-                        {/* Top: Rank and Score */}
+                      <div className="space-y-3">
+                        {/* Rank + Dial Row */}
                         <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]">
-                            {`المركز #${item.rank}`}
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold ${
+                              isWinner
+                                ? "bg-[#1E6B43] text-white"
+                                : "bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]"
+                            }`}
+                          >
+                            {isWinner && <Trophy className="w-3.5 h-3.5" />}
+                            <span>
+                              {isWinner
+                                ? "#1 · الخيار الأنسب"
+                                : `المركز #${rank}`}
+                            </span>
                           </span>
-                          <EngineeringDialGauge score={score} size={42} strokeWidth={2.5} />
+
+                          <DecisionFitGauge
+                            score={score}
+                            size={40}
+                            strokeWidth={3.5}
+                            countUp={true}
+                          />
                         </div>
 
-                        {/* Bottom: Title & Price in Body Font */}
-                        <div className="space-y-1">
-                          <h4 className="font-body font-bold text-sm text-[var(--navy)] line-clamp-1">
+                        {/* Property Title & District */}
+                        <div>
+                          <div className="font-display font-bold text-base text-[var(--navy)] leading-snug">
                             {item.title}
-                          </h4>
-                          <div className="text-[11px] text-[var(--dusty-blue)]">
-                            {item.district ? `حي ${item.district}` : item.city || "المدينة غير محددة"}
                           </div>
-                          <div className="font-body font-extrabold text-lg text-[var(--navy)] tabular-nums pt-0.5">
-                            {item.listing_price_sar > 0
-                              ? formatSAR(item.listing_price_sar)
-                              : "السعر غير محدد"}
+                          <div className="text-xs text-[var(--dusty-blue)] flex items-center gap-1 mt-0.5 font-normal">
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            <span>
+                              {item.district
+                                ? `حي ${item.district}`
+                                : "الحي غير مذكور"}
+                            </span>
                           </div>
                         </div>
+
+                        {/* Quick Sheet Trigger */}
+                        <button
+                          type="button"
+                          onClick={() => setActivePropertyForSheet(item)}
+                          className="inline-flex items-center gap-1 text-xs font-body font-bold text-[var(--navy)] hover:underline cursor-pointer"
+                        >
+                          <span>عرض محاور القرار الـ 5</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
                       </div>
                     </th>
                   );
@@ -179,174 +279,260 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
               </tr>
             </thead>
 
-            {/* MATRIX BODY: Honest Decision-Driving Rows */}
-            <tbody className="divide-y divide-[var(--mist)]">
-              {/* Row 1: مستوى التوافق وتوصية المعاينة */}
+            <tbody className="divide-y divide-[var(--mist)] font-body">
+              {/* Row 1: الملاءمة الشخصية ومستوى الثقة */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
-                  مستوى التوافق وتوصية المعاينة
-                </td>
-                {items.map((item) => {
-                  const fitMeta = getFitLabel(item.fit_rating);
-                  const visitMeta = getVisitPriorityLabel(item.visit_priority);
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-middle"
+                >
+                  الملاءمة والثقة
+                </th>
+                {visibleItems.map((item) => {
+                  const fit =
+                    FIT_BADGE[item.fit_rating] ||
+                    FIT_BADGE.insufficient_evidence;
+                  const prio =
+                    PRIORITY_BADGE[item.visit_priority] ||
+                    PRIORITY_BADGE.insufficient_evidence;
+                  const confLevel: ConfidenceLevel =
+                    item.overall_confidence ||
+                    (item.fit_rating === "insufficient_evidence"
+                      ? "low"
+                      : item.key_unknowns.length <= 1
+                        ? "high"
+                        : "medium");
+                  const conf = CONFIDENCE_BADGE[confLevel];
+
                   return (
                     <td
                       key={item.id}
-                      className="p-4 sm:p-5 text-xs border-l border-[var(--mist)] align-top"
+                      className="p-4 sm:p-5 border-l border-[var(--mist)] align-middle space-y-2"
                     >
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full font-bold border ${fitMeta.classes}`}
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${fit.bg} ${fit.text} ${fit.border}`}
                         >
-                          {fitMeta.label}
+                          {fit.label}
                         </span>
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full font-bold border ${visitMeta.classes}`}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${conf.bg} ${conf.text} ${conf.border}`}
                         >
-                          {visitMeta.label}
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>{item.confidence_label_ar || conf.label}</span>
                         </span>
+                      </div>
+                      <div className={`text-xs font-semibold ${prio.text}`}>
+                        {prio.label}
                       </div>
                     </td>
                   );
                 })}
               </tr>
 
-              {/* Row 2: السعر المطلوب وسعر المتر والموقف من الميزانية */}
+              {/* Row 2: السعر العادل ومؤشر المتر */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
-                  السعر الإجمالي وسعر المتر
-                </td>
-                {items.map((item) => {
-                  const isBestPrice =
-                    minPrice !== null && item.listing_price_sar === minPrice;
-                  const isBestPpsqm =
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-middle"
+                >
+                  السعر وسعر المتر
+                </th>
+                {visibleItems.map((item) => {
+                  const hasPrice = item.listing_price_sar > 0;
+                  const isBestSqm =
                     minPricePerSqm !== null &&
-                    item.price_per_sqm !== null &&
-                    item.price_per_sqm === minPricePerSqm;
-                  const delta = item.price_delta_budget;
+                    item.price_per_sqm === minPricePerSqm &&
+                    visibleItems.length > 1;
+                  const overBudget =
+                    typeof item.price_delta_budget === "number" &&
+                    item.price_delta_budget > 0;
+                  const underBudget =
+                    typeof item.price_delta_budget === "number" &&
+                    item.price_delta_budget <= 0;
 
                   return (
                     <td
                       key={item.id}
-                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)] align-top space-y-1.5"
+                      className="p-4 sm:p-5 border-l border-[var(--mist)] align-middle space-y-1.5"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-body font-extrabold text-[var(--navy)] tabular-nums text-base">
-                          {item.listing_price_sar > 0
-                            ? formatSAR(item.listing_price_sar)
-                            : "غير محدد"}
-                        </span>
-                        {isBestPrice && (
-                          <span
-                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
-                            title="الأقل سعراً"
-                          />
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 text-xs text-[var(--dusty-blue)]">
-                        <span className="font-medium tabular-nums font-mono">
-                          {item.price_per_sqm
-                            ? `${formatSAR(item.price_per_sqm)} / م²`
-                            : "سعر المتر غير محدد"}
-                        </span>
-                        {isBestPpsqm && (
-                          <span className="text-[10px] font-bold text-[#1E6B43]">
-                            أفضل قيمة للمتر
-                          </span>
-                        )}
-                      </div>
-
-                      {delta !== null && delta !== undefined && (
-                        <div className="pt-0.5">
-                          {delta < 0 ? (
-                            <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#E9F4EE] text-[#1E6B43]">
-                              توفير {formatSAR(Math.abs(delta))} عن الميزانية
-                            </span>
-                          ) : delta === 0 ? (
-                            <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md bg-[var(--cream)] text-[var(--navy)]">
-                              مطابق للحد الأقصى للميزانية
-                            </span>
+                      {hasPrice ? (
+                        <>
+                          <div className="font-extrabold text-base sm:text-lg text-[var(--navy)] tabular-nums">
+                            {formatSAR(item.listing_price_sar)}
+                          </div>
+                          {item.price_per_sqm ? (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-xs text-[var(--dusty-blue)] font-semibold tabular-nums">
+                                {item.price_per_sqm.toLocaleString("en-US")} ر.س / م²
+                              </span>
+                              {isBestSqm && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43]">
+                                  أفضل قيمة للمتر
+                                </span>
+                              )}
+                            </div>
                           ) : (
-                            <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#FDF1F0] text-[#A62626]">
-                              يتجاوز الميزانية بـ {formatSAR(delta)}
-                            </span>
+                            <div className="text-xs text-[var(--dusty-blue)]">
+                              سعر المتر غير متاح
+                            </div>
                           )}
-                        </div>
+
+                          {item.price_axis && (
+                            <div className="text-[11px] font-bold text-[var(--navy)]">
+                              {item.price_axis.label_ar}
+                            </div>
+                          )}
+
+                          {overBudget && (
+                            <div className="text-[11px] font-bold text-[#A62626]">
+                              يتجاوز الميزانية بـ{" "}
+                              {formatSAR(item.price_delta_budget!)}
+                            </div>
+                          )}
+                          {underBudget && (
+                            <div className="text-[11px] font-bold text-[#1E6B43]">
+                              {item.price_delta_budget! < 0
+                                ? `توفير ${formatSAR(Math.abs(item.price_delta_budget!))} ضمن ميزانيتك ✓`
+                                : "ضمن سقف ميزانيتك ✓"}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs font-bold text-[#9A6700] bg-[#FFF9EC] px-2.5 py-1 rounded-lg border border-[#F9E2AF]">
+                          السعر غير مذكور
+                        </span>
                       )}
                     </td>
                   );
                 })}
               </tr>
 
-              {/* Row 3: المساحة وعدد الغرف */}
+              {/* Row 3: القدرة المالية وطريقة الشراء */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
-                  المساحة وعدد الغرف
-                </td>
-                {items.map((item) => {
-                  const isBestArea = maxArea !== null && item.area_sqm === maxArea;
-                  return (
-                    <td
-                      key={item.id}
-                      className="p-4 sm:p-5 text-xs sm:text-sm border-l border-[var(--mist)] align-top space-y-1"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-[var(--navy)] tabular-nums font-mono">
-                          {item.area_sqm ? `${item.area_sqm} م²` : "المساحة غير محددة"}
-                        </span>
-                        {isBestArea && (
-                          <span
-                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
-                            title="الأكبر مساحة"
-                          />
-                        )}
-                      </div>
-                      <div className="text-xs text-[var(--dusty-blue)]">
-                        {item.bedrooms ? `${item.bedrooms} غرف نوم` : "عدد الغرف غير محدد"}
-                        {item.floor_no !== null && item.floor_no !== undefined
-                          ? ` • الدور ${item.floor_no}`
-                          : ""}
-                      </div>
-                    </td>
-                  );
-                })}
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top"
+                >
+                  القدرة المالية
+                </th>
+                {visibleItems.map((item) => (
+                  <td
+                    key={item.id}
+                    className="p-4 sm:p-5 text-sm border-l border-[var(--mist)] align-top space-y-1.5 leading-relaxed"
+                  >
+                    <div className="font-bold text-[var(--navy)]">
+                      {item.affordability_axis?.label_ar || "حسب ميزانيتك"}
+                    </div>
+                    <p className="text-[var(--dusty-blue)]">
+                      {item.affordability_axis?.summary_ar ||
+                        "يُقيّم بمقارنة السعر بميزانيتك."}
+                    </p>
+                  </td>
+                ))}
               </tr>
 
-              {/* Row 4: الشروط الملزمة */}
+              {/* Row 4: الموقع وأثره على الحياة اليومية */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top"
+                >
+                  الموقع والحياة اليومية
+                </th>
+                {visibleItems.map((item) => (
+                  <td
+                    key={item.id}
+                    className="p-4 sm:p-5 text-sm border-l border-[var(--mist)] align-top space-y-1.5 leading-relaxed"
+                  >
+                    <div className="font-bold text-[var(--navy)]">
+                      {item.daily_life?.label_ar ||
+                        (item.district ? `حي ${item.district}` : "الحي غير محدد")}
+                    </div>
+                    <p className="text-[var(--dusty-blue)]">
+                      {item.daily_life?.summary_ar ||
+                        (item.district
+                          ? `يقع في حي ${item.district}؛ يوصى بالتحقق الميداني من المسار وقت الذروة.`
+                          : "اسم الحي غير مذكور في الإعلان.")}
+                    </p>
+                  </td>
+                ))}
+              </tr>
+
+              {/* Row 5: المساحة والغرف */}
+              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-middle"
+                >
+                  المساحة والغرف
+                </th>
+                {visibleItems.map((item) => (
+                  <td
+                    key={item.id}
+                    className="p-4 sm:p-5 text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] align-middle space-y-1"
+                  >
+                    <div className="font-bold tabular-nums">
+                      المساحة:{" "}
+                      {item.area_sqm ? `${item.area_sqm} م²` : "غير مذكورة"}
+                    </div>
+                    <div className="text-xs text-[var(--dusty-blue)] tabular-nums">
+                      غرف النوم:{" "}
+                      {item.bedrooms !== null && item.bedrooms !== undefined
+                        ? `${item.bedrooms} غرف نوم`
+                        : "غير مذكور"}
+                      {item.bathrooms
+                        ? ` · ${item.bathrooms} دورات مياه`
+                        : ""}
+                    </div>
+                    {item.floor_no !== null && item.floor_no !== undefined && (
+                      <div className="text-xs text-[var(--dusty-blue)]">
+                        الدور:{" "}
+                        {item.floor_no === 0
+                          ? "الأرضي"
+                          : `الدور ${item.floor_no}`}
+                      </div>
+                    )}
+                  </td>
+                ))}
+              </tr>
+
+              {/* Row 6: مطابقة الشروط الملزمة */}
+              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top"
+                >
                   الشروط الملزمة
-                </td>
-                {items.map((item) => {
+                </th>
+                {visibleItems.map((item) => {
+                  const summary = item.constraint_summary || {
+                    pass: 0,
+                    fail: 0,
+                    unknown: 0,
+                  };
                   const constraints = item.constraint_results || [];
-                  const pass =
-                    item.constraint_summary?.pass ??
-                    constraints.filter((c) => c.result === "pass").length;
-                  const fail =
-                    item.constraint_summary?.fail ??
-                    constraints.filter((c) => c.result === "fail").length;
-                  const unknown =
-                    item.constraint_summary?.unknown ??
-                    constraints.filter((c) => c.result === "unknown").length;
 
                   return (
                     <td
                       key={item.id}
-                      className="p-4 sm:p-5 text-xs border-l border-[var(--mist)] align-top space-y-2"
+                      className="p-4 sm:p-5 border-l border-[var(--mist)] align-top space-y-2.5"
                     >
-                      <div className="flex flex-wrap items-center gap-1.5 font-bold">
-                        <span className="px-2 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43]">
-                          {pass} مطابق
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43]">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>{summary.pass} مطابق</span>
                         </span>
-                        {fail > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-[#FDF1F0] text-[#A62626]">
-                            {fail} مخالف
+                        {summary.fail > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FDF1F0] text-[#A62626]">
+                            <XCircle className="w-3 h-3" />
+                            <span>{summary.fail} مخالف</span>
                           </span>
                         )}
-                        {unknown > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-[#FFF9EC] text-[#9A6700]">
-                            {unknown} غير مؤكد
+                        {summary.unknown > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFF9EC] text-[#9A6700]">
+                            <HelpCircle className="w-3 h-3" />
+                            <span>{summary.unknown} غير مؤكد</span>
                           </span>
                         )}
                       </div>
@@ -354,17 +540,24 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
                       {constraints.length > 0 && (
                         <ul className="space-y-1 text-[11px] text-[var(--dusty-blue)]">
                           {constraints.slice(0, 4).map((c, idx) => (
-                            <li key={`${c.key}-${idx}`} className="flex items-center gap-1.5">
+                            <li
+                              key={`${c.key}-${idx}`}
+                              className="flex items-center gap-1.5"
+                            >
                               <span
                                 className={`font-bold ${
                                   c.result === "pass"
                                     ? "text-[#1E6B43]"
                                     : c.result === "fail"
-                                    ? "text-[#A62626]"
-                                    : "text-[#9A6700]"
+                                      ? "text-[#A62626]"
+                                      : "text-[#9A6700]"
                                 }`}
                               >
-                                {c.result === "pass" ? "✓" : c.result === "fail" ? "✗" : "؟"}
+                                {c.result === "pass"
+                                  ? "✓"
+                                  : c.result === "fail"
+                                    ? "✗"
+                                    : "؟"}
                               </span>
                               <span className="truncate">{c.labelAr}</span>
                             </li>
@@ -376,39 +569,51 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
                 })}
               </tr>
 
-              {/* Row 5: لماذا هذا الترتيب؟ */}
+              {/* Row 7: لماذا هذا الترتيب؟ */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top"
+                >
                   لماذا هذا الترتيب؟
-                </td>
-                {items.map((item) => (
+                </th>
+                {visibleItems.map((item) => (
                   <td
                     key={item.id}
-                    className="p-4 sm:p-5 text-xs border-l border-[var(--mist)] align-top space-y-2 leading-relaxed"
+                    className="p-4 sm:p-5 text-sm border-l border-[var(--mist)] align-top space-y-2 leading-relaxed"
                   >
                     <div className="text-[var(--navy)] font-medium">
                       <span className="text-[#1E6B43] font-bold">الميزة: </span>
-                      {item.main_advantage_ar || item.fit_summary || "توافق متوازن مع متطلباتك"}
+                      {item.main_advantage_ar ||
+                        item.fit_summary ||
+                        "توافق متوازن مع متطلباتك"}
                     </div>
-                    {item.main_tradeoff_ar && (
+                    {(item.tradeoffs?.[0] ||
+                      item.main_tradeoff_ar) && (
                       <div className="text-[var(--dusty-blue)]">
-                        <span className="text-[#9A6700] font-bold">المفاضلة: </span>
-                        {item.main_tradeoff_ar}
+                        <span className="text-[#9A6700] font-bold">
+                          المفاضلة:{" "}
+                        </span>
+                        {item.tradeoffs?.[0] ||
+                          item.main_tradeoff_ar}
                       </div>
                     )}
                   </td>
                 ))}
               </tr>
 
-              {/* Row 6: ما الذي قد يغيّر الترتيب؟ */}
+              {/* Row 8: المعلومات الناقصة وما قد يغيّر الترتيب */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top"
+                >
                   ما الذي قد يغيّر الترتيب؟
-                </td>
-                {items.map((item) => (
+                </th>
+                {visibleItems.map((item) => (
                   <td
                     key={item.id}
-                    className="p-4 sm:p-5 text-xs text-[var(--dusty-blue)] border-l border-[var(--mist)] align-top leading-relaxed space-y-1.5"
+                    className="p-4 sm:p-5 text-sm text-[var(--dusty-blue)] border-l border-[var(--mist)] align-top leading-relaxed space-y-1.5"
                   >
                     <p className="text-[var(--navy)]">
                       {item.what_could_change_rank_ar ||
@@ -420,15 +625,18 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
                 ))}
               </tr>
 
-              {/* Row 7: الإجراء التالي */}
+              {/* Row 9: الإجراء التالي */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-middle">
+                <th
+                  scope="row"
+                  className="sticky right-0 z-10 p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-middle"
+                >
                   الإجراء التالي
-                </td>
-                {items.map((item) => (
+                </th>
+                {visibleItems.map((item) => (
                   <td
                     key={item.id}
-                    className="p-4 sm:p-5 text-xs border-l border-[var(--mist)] align-middle"
+                    className="p-4 sm:p-5 text-sm border-l border-[var(--mist)] align-middle"
                   >
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       {caseId && (
@@ -478,15 +686,25 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
             fit_rating: activePropertyForSheet.fit_rating,
             fit_summary: activePropertyForSheet.fit_summary || "",
             visit_priority: activePropertyForSheet.visit_priority,
-            visit_priority_reason: activePropertyForSheet.visit_priority_reason || "",
+            visit_priority_reason:
+              activePropertyForSheet.visit_priority_reason || "",
             main_advantage_ar: activePropertyForSheet.main_advantage_ar,
             main_tradeoff_ar: activePropertyForSheet.main_tradeoff_ar,
+            what_could_change_rank_ar:
+              activePropertyForSheet.what_could_change_rank_ar,
             strengths: activePropertyForSheet.strengths,
             risks: activePropertyForSheet.risks,
             key_unknowns: activePropertyForSheet.key_unknowns,
             constraint_results: activePropertyForSheet.constraint_results,
-            engineering_score: activePropertyForSheet.engineering_score,
+            decision_fit_score: activePropertyForSheet.decision_fit_score,
             price_per_sqm: activePropertyForSheet.price_per_sqm,
+            overall_confidence: activePropertyForSheet.overall_confidence,
+            confidence_label_ar: activePropertyForSheet.confidence_label_ar,
+            confidence_reason_ar: activePropertyForSheet.confidence_reason_ar,
+            daily_life: activePropertyForSheet.daily_life,
+            price_axis: activePropertyForSheet.price_axis,
+            affordability_axis: activePropertyForSheet.affordability_axis,
+            tradeoffs: activePropertyForSheet.tradeoffs,
           }}
         />
       )}

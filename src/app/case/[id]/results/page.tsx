@@ -1,52 +1,74 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Info } from "lucide-react";
 import { getSessionUser, requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
+import { resolveFacts } from "@/lib/evidence/resolve";
 import {
   resolveComparison,
   computePoolFitScores,
   type PropertyAssessmentWithProperty,
 } from "@/lib/analysis/compare";
-import type { ConstraintResult, RequirementsRow } from "@/lib/analysis/constraints";
 import { AccountLinkBanner } from "@/components/account-link-banner";
-import {
-  ResultsLeaderboard,
-  type LeaderboardEntry,
-  type PropertyCardData,
-  type PropertyAssessmentData,
-} from "@/components/properties/property-card-redesigned";
+import { ResultsLeaderboard } from "@/components/properties/property-card-redesigned";
+import { DecisionFollowupQA } from "@/components/properties/decision-followup-qa";
 import { AnalysisStatus, type AnalysisStatusMode } from "./analysis-status";
+import { formatSAR } from "@/lib/utils";
+import type { Database } from "@/types/database";
+import type { ConstraintResult } from "@/lib/analysis/constraints";
+import { Scale, SlidersHorizontal, Building2 } from "lucide-react";
 
-// Mirrors the 5-minute stale threshold used by startAnalysis for running runs.
 const STALE_RUN_MS = 300 * 1000;
+
+type PropertyRow = Database["public"]["Tables"]["properties"]["Row"];
+type FactRow = Database["public"]["Tables"]["property_facts"]["Row"];
+type AssessmentRow = Database["public"]["Tables"]["property_assessments"]["Row"];
+
+type AssessmentWithJoinedProperty = AssessmentRow & {
+  properties?:
+    | (Partial<PropertyRow> & {
+        property_facts?: FactRow[] | null;
+      })
+    | null;
+};
 
 interface ResultsPageProps {
   params: { id: string };
-  searchParams?: { notice?: string };
+  searchParams?: { notice?: string; reanalyze?: string };
 }
 
-export default async function ResultsPage({ params, searchParams }: ResultsPageProps) {
-  // 1. Guard with RLS & get case context
+export default async function ResultsPage({
+  params,
+  searchParams,
+}: ResultsPageProps) {
+  // 1. Guard access via RLS
   const currentCase = await requireCase(params.id);
-
   const user = await getSessionUser();
   const banner = user?.is_anonymous ? (
     <AccountLinkBanner nextPath={`/case/${params.id}/results`} />
   ) : null;
 
-  // 2. Fetch latest committed run
   const supabase = createClient();
-  const { data: runs } = await supabase
+
+  // 2. Fetch latest committed analysis run for this case
+  const { data: committedRuns } = await supabase
     .from("analysis_runs")
-    .select("id, status, created_at, finished_at")
+    .select("*")
     .eq("case_id", params.id)
     .eq("status", "committed")
     .order("finished_at", { ascending: false })
     .limit(1);
 
-  if (!runs || runs.length === 0) {
+  const latestCommittedRun =
+    committedRuns && committedRuns.length > 0 ? committedRuns[0] : null;
+
+  const isCommittedRunStale =
+    !latestCommittedRun ||
+    (typeof latestCommittedRun.base_state_version === "number" &&
+      currentCase.state_version > latestCommittedRun.base_state_version);
+
+  const wantsReanalyze = searchParams?.reanalyze === "1" && isCommittedRunStale;
+
+  if (!latestCommittedRun || wantsReanalyze) {
     const { data: paidPayments } = await supabase
       .from("payments")
       .select("id")
@@ -71,9 +93,9 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
       Date.now() - new Date(latestRun.created_at).getTime() >= STALE_RUN_MS;
 
     let mode: AnalysisStatusMode = "start";
-    if (latestRun?.status === "failed" || runIsStale) {
+    if (!wantsReanalyze && (latestRun?.status === "failed" || runIsStale)) {
       mode = "failed";
-    } else if (latestRun?.status === "running") {
+    } else if (latestRun?.status === "running" && !runIsStale) {
       mode = "wait";
     }
 
@@ -85,248 +107,371 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
     );
   }
 
-  const latestRunId = runs[0].id;
-
-  // 3. Fetch assessments + requirements (safely guarded for test mocks)
-  const reqTable = supabase.from("requirements") as unknown as {
-    select?: (cols: string) => {
-      eq: (col: string, val: string) => {
-        maybeSingle: () => Promise<{ data: RequirementsRow | null }>;
-      };
-    };
-  };
-
-  const [{ data: assessments }, reqResult] = await Promise.all([
-    supabase
-      .from("property_assessments")
-      .select(`
+  // 3. Fetch property_assessments with joined properties + facts, and optional requirements
+  const assessmentsTable = supabase.from("property_assessments");
+  const assessmentsRes = await assessmentsTable
+    .select(
+      `
+      *,
+      properties (
         *,
-        properties (
-          id,
-          title,
-          district,
-          listing_price_sar,
-          source_url,
-          input_mode,
-          notes,
-          property_facts (*)
-        )
-      `)
-      .eq("run_id", latestRunId)
-      .order("created_at", { ascending: true }),
-    typeof reqTable?.select === "function"
-      ? reqTable.select("*").eq("case_id", params.id).maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+        property_facts (*)
+      )
+    `
+    )
+    .eq("run_id", latestCommittedRun.id)
+    .order("created_at", { ascending: true });
 
-  const requirements = reqResult?.data ?? null;
+  const joinedAssessments: AssessmentWithJoinedProperty[] =
+    (assessmentsRes?.data as unknown as AssessmentWithJoinedProperty[]) || [];
 
-  if (!assessments || assessments.length === 0) {
+  if (joinedAssessments.length === 0) {
     redirect(`/case/${params.id}/preflight`);
   }
 
-  // Round price_per_sqm up front so narrative strings never show .05 or .8 decimals
-  const normalizedAssessments = assessments.map((a) => ({
-    ...a,
-    price_per_sqm: a.price_per_sqm ? Math.round(Number(a.price_per_sqm)) : null,
-  })) as unknown as PropertyAssessmentWithProperty[];
+  let requirements: Database["public"]["Tables"]["requirements"]["Row"] | null =
+    null;
+  try {
+    const reqQuery = supabase.from("requirements");
+    if (reqQuery && typeof reqQuery.select === "function") {
+      const reqRes = await reqQuery
+        .select("*")
+        .eq("case_id", params.id)
+        .maybeSingle();
+      requirements = reqRes?.data || null;
+    }
+  } catch {
+    requirements = null;
+  }
 
-  const typedRequirements = (requirements as unknown as RequirementsRow | null) ?? null;
-  const comparison = resolveComparison(normalizedAssessments, typedRequirements);
+  // 4. Build comparison pool and property/fact lookup maps
+  const propById = new Map<string, Partial<PropertyRow>>();
+  const factsByPropId = new Map<string, FactRow[]>();
+  const assessmentByPropId = new Map<string, AssessmentWithJoinedProperty>();
+  const comparisonPool: PropertyAssessmentWithProperty[] = [];
 
-  const assessmentById = new Map(assessments.map((a) => [a.id, a]));
+  for (const item of joinedAssessments) {
+    const joinedProp = item.properties || { id: item.property_id };
+    const propId = joinedProp.id || item.property_id;
+    const propFacts = Array.isArray(joinedProp.property_facts)
+      ? joinedProp.property_facts
+      : [];
 
-  const rankedItems =
-    comparison.items.length > 0
-      ? comparison.items
-      : normalizedAssessments.map((a, idx) => ({
-          property_id: a.property_id,
-          assessment_id: a.id,
-          rank: idx + 1,
-          title: a.properties?.title || `العقار #${idx + 1}`,
-          district: a.properties?.district || "غير محدد",
-          price: a.properties?.listing_price_sar ?? null,
-          price_per_sqm: a.price_per_sqm,
-          price_delta_budget: null,
-          area_sqm: null,
-          bedrooms: null,
-          fit_rating: (a.fit_rating as "strong" | "partial" | "weak" | "insufficient_evidence") || "partial",
-          visit_priority: (a.visit_priority as "high" | "medium" | "low" | "insufficient_evidence") || "medium",
-          constraint_summary: { pass: 0, fail: 0, unknown: 0 },
-          constraints: (a.constraint_results as unknown as ConstraintResult[]) || [],
-          main_advantage_ar: (a.strengths as unknown as string[])?.[0] || "خيار متوازن للمعاينة",
-          main_tradeoff_ar: (a.risks as unknown as string[])?.[0] || "",
-          what_could_change_rank_ar: "",
-          strengths: (a.strengths as unknown as string[]) || [],
-          risks: (a.risks as unknown as string[]) || [],
-          key_unknowns: (a.key_unknowns as unknown as string[]) || [],
-        }));
+    propById.set(propId, joinedProp);
+    factsByPropId.set(propId, propFacts);
+    assessmentByPropId.set(propId, item);
 
-  const finalScores = computePoolFitScores(
+    comparisonPool.push({
+      id: item.id,
+      property_id: propId,
+      fit_rating: item.fit_rating,
+      fit_summary: item.fit_summary,
+      visit_priority: item.visit_priority,
+      visit_priority_reason: item.visit_priority_reason,
+      price_per_sqm: item.price_per_sqm,
+      evidence_fields: Array.isArray(item.evidence_fields)
+        ? (item.evidence_fields as unknown as string[])
+        : [],
+      constraint_results: Array.isArray(item.constraint_results)
+        ? (item.constraint_results as unknown as ConstraintResult[])
+        : [],
+      strengths: Array.isArray(item.strengths)
+        ? (item.strengths as unknown as string[])
+        : [],
+      risks: Array.isArray(item.risks)
+        ? (item.risks as unknown as string[])
+        : [],
+      key_unknowns: Array.isArray(item.key_unknowns)
+        ? (item.key_unknowns as unknown as string[])
+        : [],
+      properties: {
+        id: propId,
+        title: joinedProp.title ?? null,
+        district: joinedProp.district ?? null,
+        listing_price_sar: joinedProp.listing_price_sar ?? null,
+        area_sqm: joinedProp.area_sqm ?? null,
+        bedrooms: joinedProp.bedrooms ?? null,
+        source_url: joinedProp.source_url ?? null,
+        input_mode: joinedProp.input_mode ?? null,
+        notes: joinedProp.notes ?? null,
+        property_facts: propFacts,
+      },
+    });
+  }
+
+  const comparison = resolveComparison(comparisonPool, requirements);
+  const rankedItems = comparison.items;
+  const poolScores = computePoolFitScores(
     rankedItems,
-    typedRequirements?.max_budget_sar ?? null
+    requirements?.max_budget_sar ?? null
   );
 
-  const propertyCount = rankedItems.length;
-  const showComparisonCTA = propertyCount >= 2;
-  const comparisonLabel = `مقارنة الخيارات (${propertyCount} عقارات)`;
+  const isStandalone = rankedItems.length === 1;
 
-  // Build clean Leaderboard entries
-  const entries: LeaderboardEntry[] = rankedItems.map((item, index) => {
-    const rawAssessment = assessmentById.get(item.assessment_id) || assessments[index];
-    const p = rawAssessment?.properties as unknown as {
-      id: string;
-      title?: string | null;
-      district?: string | null;
-      listing_price_sar?: number | null;
-      source_url?: string | null;
-      input_mode?: string | null;
-      notes?: string | null;
-      property_facts?: PropertyFact[];
+  // 5. Map ranked items into ResultsLeaderboard entries with resolved evidence and all 5 decision axes
+  const entries = rankedItems.map((rankedItem, idx) => {
+    const prop = propById.get(rankedItem.property_id) || {
+      id: rankedItem.property_id,
     };
-
-    const rawFacts = (p?.property_facts as PropertyFact[]) || [];
-    const resolved = resolveFacts(rawFacts);
+    const rawAssessment = assessmentByPropId.get(rankedItem.property_id);
+    const propFacts = factsByPropId.get(rankedItem.property_id) || [];
+    const resolved = resolveFacts(propFacts);
 
     const resolvedPrice =
-      item.price ??
-      (resolved.fields.listing_price_sar?.status === "known"
-        ? Number(resolved.fields.listing_price_sar.value)
-        : p?.listing_price_sar ?? null);
+      resolved.fields.listing_price_sar.status === "known" &&
+      typeof resolved.fields.listing_price_sar.value === "number"
+        ? resolved.fields.listing_price_sar.value
+        : (prop.listing_price_sar ?? null);
+
+    const resolvedDistrict =
+      resolved.fields.district.status === "known" &&
+      typeof resolved.fields.district.value === "string"
+        ? resolved.fields.district.value
+        : (prop.district ?? null);
 
     const resolvedArea =
-      item.area_sqm ??
-      (resolved.fields.area_sqm?.status === "known"
-        ? Number(resolved.fields.area_sqm.value)
-        : null);
+      resolved.fields.area_sqm.status === "known" &&
+      typeof resolved.fields.area_sqm.value === "number"
+        ? resolved.fields.area_sqm.value
+        : (prop.area_sqm ?? null);
 
     const resolvedBedrooms =
-      item.bedrooms ??
-      (resolved.fields.bedrooms?.status === "known"
-        ? Number(resolved.fields.bedrooms.value)
-        : null);
+      resolved.fields.bedrooms.status === "known" &&
+      typeof resolved.fields.bedrooms.value === "number"
+        ? resolved.fields.bedrooms.value
+        : (prop.bedrooms ?? null);
 
     const resolvedBathrooms =
-      resolved.fields.bathrooms?.status === "known"
-        ? Number(resolved.fields.bathrooms.value)
+      resolved.fields.bathrooms.status === "known" &&
+      typeof resolved.fields.bathrooms.value === "number"
+        ? resolved.fields.bathrooms.value
         : null;
 
     const resolvedFloor =
-      resolved.fields.floor_no?.status === "known"
-        ? Number(resolved.fields.floor_no.value)
-        : null;
+      resolved.fields.floor_no.status === "known" &&
+      typeof resolved.fields.floor_no.value === "number"
+        ? resolved.fields.floor_no.value
+        : (prop.floor_no ?? null);
 
-    const resolvedDistrict =
-      resolved.fields.district?.status === "known"
-        ? String(resolved.fields.district.value)
-        : p?.district ?? null;
+    const constraints: ConstraintResult[] = Array.isArray(
+      rawAssessment?.constraint_results
+    )
+      ? (rawAssessment!.constraint_results as unknown as ConstraintResult[])
+      : rankedItem.constraints;
 
-    // Short, human-readable title (never truncates with ugly specs soup)
-    const rawCustomTitle = p?.title?.trim();
-    const cleanTitle =
-      rawCustomTitle && rawCustomTitle !== "عقار بدون عنوان"
-        ? rawCustomTitle
-        : resolvedDistrict
-        ? `شقة في ${resolvedDistrict}`
-        : `العقار الخيار #${index + 1}`;
-
-    const computedPpsqm =
-      item.price_per_sqm ??
-      (resolvedPrice && resolvedArea && resolvedArea > 0
-        ? Math.round(resolvedPrice / resolvedArea)
-        : null);
-
-    const propertyData: PropertyCardData = {
-      id: p?.id || item.property_id,
-      title: cleanTitle,
-      city: currentCase.city,
-      district: resolvedDistrict,
-      listing_price_sar: resolvedPrice,
-      area_sqm: resolvedArea,
-      bedrooms: resolvedBedrooms,
-      bathrooms: resolvedBathrooms,
-      floor_no: resolvedFloor,
-      notes: p?.notes,
-    };
-
-    const assessmentData: PropertyAssessmentData = {
-      fit_rating: item.fit_rating,
-      fit_summary: rawAssessment?.fit_summary || item.main_advantage_ar,
-      visit_priority: item.visit_priority,
-      visit_priority_reason: rawAssessment?.visit_priority_reason || "",
-      strengths: item.strengths,
-      risks: item.risks,
-      key_unknowns: item.key_unknowns,
-      price_per_sqm: computedPpsqm ? Math.round(computedPpsqm) : null,
-      engineering_score: finalScores[index],
-      constraint_results: item.constraints,
-      constraint_summary: item.constraint_summary,
-      main_advantage_ar: item.main_advantage_ar,
-      main_tradeoff_ar: item.main_tradeoff_ar,
-    };
+    const decisionFitScore = poolScores[idx] ?? 75;
 
     return {
-      id: item.assessment_id,
-      rank: index + 1,
-      property: propertyData,
-      assessment: assessmentData,
+      rank: isStandalone ? null : (rankedItem.rank ?? idx + 1),
+      property: {
+        id: rankedItem.property_id,
+        title: rankedItem.title,
+        district: resolvedDistrict,
+        city: currentCase.city,
+        listing_price_sar: resolvedPrice,
+        area_sqm: resolvedArea,
+        bedrooms: resolvedBedrooms,
+        bathrooms: resolvedBathrooms,
+        floor_no: resolvedFloor,
+        resolvedFields: resolved.fields,
+      },
+      assessment: {
+        fit_rating: rankedItem.fit_rating,
+        fit_summary:
+          rawAssessment?.fit_summary || rankedItem.main_advantage_ar || "",
+        visit_priority: rankedItem.visit_priority,
+        visit_priority_reason: rawAssessment?.visit_priority_reason || "",
+        main_advantage_ar: rankedItem.main_advantage_ar,
+        main_tradeoff_ar: rankedItem.main_tradeoff_ar,
+        what_could_change_rank_ar: rankedItem.what_could_change_rank_ar,
+        strengths: rankedItem.strengths,
+        risks: rankedItem.risks,
+        key_unknowns: rankedItem.key_unknowns,
+        constraint_results: constraints,
+        decision_fit_score: decisionFitScore,
+        price_per_sqm: rankedItem.price_per_sqm,
+        overall_confidence: rankedItem.overall_confidence,
+        confidence_label_ar: rankedItem.confidence_label_ar,
+        confidence_reason_ar: rankedItem.confidence_reason_ar,
+        daily_life: rankedItem.daily_life,
+        price_axis: rankedItem.price_axis,
+        affordability_axis: rankedItem.affordability_axis,
+        tradeoffs: rankedItem.tradeoffs,
+      },
     };
   });
 
+  const isStale =
+    typeof latestCommittedRun.base_state_version === "number" &&
+    currentCase.state_version > latestCommittedRun.base_state_version;
+  const propertyCount = entries.length;
+  const showInsufficientCompareNotice =
+    searchParams?.notice === "insufficient_compare";
+
+  const purchaseMethodLabel =
+    requirements?.purchase_method === "cash"
+      ? "شراء نقدي (كاش)"
+      : requirements?.purchase_method === "finance" ||
+          requirements?.purchase_method === "mortgage"
+        ? "تمويل عقاري"
+        : "غير محدد";
+
+  const hardConstraintsCount = Array.isArray(requirements?.hard_constraints)
+    ? requirements.hard_constraints.length
+    : 0;
+
   return (
-    <div className="w-full space-y-5" dir="rtl">
+    <div className="space-y-6 sm:space-y-8" dir="rtl">
       {banner}
+      {/* Header: one line of context, one headline, desktop actions */}
+      <header className="space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold text-[var(--dusty-blue)]">
+              {isStandalone ? "1 عقار محلل" : `${propertyCount} عقارات محللة`}
+              {currentCase.city ? ` · ${currentCase.city}` : ""}
+            </p>
+            <h1 className="text-[28px] sm:text-4xl font-extrabold text-[var(--navy)] tracking-tight font-display leading-tight">
+              {isStandalone ? "نتيجة قرار الشراء" : "ترتيب الشقق المرشحة"}
+            </h1>
+          </div>
 
-      {/* Insufficient compare notice */}
-      {searchParams?.notice === "insufficient_compare" && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="p-4 rounded-2xl bg-[#FFF9EC] border border-[#F9E2AF] text-[var(--navy)] text-xs sm:text-sm flex items-start gap-3"
-        >
-          <Info className="w-4 h-4 text-[#9A6700] shrink-0 mt-0.5" />
-          <p className="text-xs leading-relaxed">
-            <strong className="font-bold">تنبيه:</strong> تتطلب مقارنة الخيارات وجود عقارين مرشحين على الأقل.
-          </p>
+          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+            {propertyCount >= 2 ? (
+              <Link
+                href={`/case/${params.id}/compare`}
+                className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-sm font-bold transition-all no-underline"
+              >
+                <Scale className="w-4 h-4" />
+                <span>{`مقارنة الخيارات (${propertyCount} عقارات) ←`}</span>
+              </Link>
+            ) : (
+              <Link
+                href={`/case/${params.id}/properties`}
+                className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-sm font-bold transition-all no-underline"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>إضافة عقار آخر +</span>
+              </Link>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Centered Editorial Header aligned with the #1 Center Podium Axis */}
-      <header className="max-w-2xl mx-auto text-center space-y-2 pt-1">
-        <h1 className="text-2xl sm:text-3xl font-display font-bold text-[var(--navy)]">
-          ترتيب الخيارات المرشحة
-        </h1>
-        <p className="text-xs font-medium text-[var(--dusty-blue)]">
-          {[
-            currentCase.city,
-            `${propertyCount} ${propertyCount === 1 ? "عقار محلل" : "عقارات محللة"}`,
-            "اضغط على أي مركز في المنصة لعرض تفاصيله",
-          ]
-            .filter(Boolean)
-            .join("  ·  ")}
-        </p>
-
-        {showComparisonCTA && (
-          <div className="pt-1 flex items-center justify-center gap-3">
+        {/* Your criteria — one scannable strip, swipeable on mobile */}
+        {requirements && (
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex items-center gap-2 overflow-x-auto [scrollbar-width:none] text-sm">
+            {[
+              requirements.max_budget_sar
+                ? `حتى ${formatSAR(Number(requirements.max_budget_sar))}`
+                : null,
+              purchaseMethodLabel !== "غير محدد" ? purchaseMethodLabel : null,
+              requirements.household_size
+                ? `${requirements.household_size} أفراد · ${requirements.min_bedrooms}+ غرف`
+                : null,
+              hardConstraintsCount > 0 ? `${hardConstraintsCount} شروط ملزمة` : null,
+            ]
+              .filter(Boolean)
+              .map((chip) => (
+                <span
+                  key={chip as string}
+                  className="shrink-0 px-3.5 py-1.5 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] font-semibold tabular-nums whitespace-nowrap"
+                >
+                  {chip}
+                </span>
+              ))}
             <Link
-              href={`/case/${params.id}/compare`}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-full bg-[var(--paper)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] hover:border-[var(--navy)] font-bold text-xs transition-all shadow-sm"
+              href={`/case/${params.id}/needs`}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[var(--dusty-blue)] hover:text-[var(--navy)] font-semibold whitespace-nowrap no-underline"
             >
-              <span>{comparisonLabel}</span>
-              <span aria-hidden="true">←</span>
-            </Link>
-            <Link
-              href={`/case/${params.id}/preflight`}
-              className="text-xs font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] px-2.5 py-1.5 transition-colors"
-            >
-              الفحص المبدئي
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              تعديل
             </Link>
           </div>
         )}
       </header>
 
-      {/* Interactive 2 — 1 — 3 Podium + Focused Detail Card */}
+      {/* Stale State Warning Banner */}
+      {isStale && (
+        <div
+          role="alert"
+          className="rounded-[24px] border border-[#F9E2AF] bg-[#FFF9EC] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs"
+        >
+          <div className="flex items-start gap-3">
+            <span
+              className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-[var(--paper)] text-[#9A6700] border border-[#F9E2AF] font-bold shrink-0 mt-0.5"
+              aria-hidden="true"
+            >
+              !
+            </span>
+            <div className="space-y-1">
+              <h2 className="text-sm font-bold text-[var(--navy)]">
+                تم تعديل البيانات بعد هذا التحليل
+              </h2>
+              <p className="text-sm text-[var(--dusty-blue)] leading-relaxed">
+                أعد التحليل لتحديث التوصية.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href={`/case/${params.id}/results?reanalyze=1`}
+            className="w-full sm:w-auto text-center px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-bold shadow-xs transition-all shrink-0 no-underline"
+          >
+            إعادة التحليل ←
+          </Link>
+        </div>
+      )}
+
+      {/* Insufficient Compare Notice Banner */}
+      {showInsufficientCompareNotice && (
+        <div
+          role="status"
+          className="rounded-[24px] border border-[var(--mist)] bg-[var(--paper)] p-4 flex items-center justify-between gap-4 text-sm text-[var(--navy)] shadow-xs"
+        >
+          <span>المقارنة تحتاج عقارين على الأقل.</span>
+          <Link
+            href={`/case/${params.id}/properties`}
+            className="font-bold underline hover:text-[var(--dusty-blue)] shrink-0"
+          >
+            إضافة عقار آخر +
+          </Link>
+        </div>
+      )}
+
+      {/* Ranked Leaderboard OR Standalone Decision Card */}
       <ResultsLeaderboard entries={entries} caseId={params.id} />
+
+      {/* Interactive Follow-Up Q&A within the same case (Free in-case consultation) */}
+      <DecisionFollowupQA
+        caseId={params.id}
+        items={rankedItems}
+        mode={comparison.mode}
+        closeOptions={comparison.close_options}
+        isStandalone={isStandalone}
+        maxBudgetSar={requirements?.max_budget_sar ?? null}
+        purchaseMethod={requirements?.purchase_method ?? null}
+      />
+
+      {/* Mobile thumb-zone action bar */}
+      <div className="lg:hidden sticky bottom-0 z-30 -mx-4 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--mist)] flex items-center gap-2.5">
+        {propertyCount >= 2 ? (
+          <Link
+            href={`/case/${params.id}/compare`}
+            className="flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] active:scale-[0.98] text-[var(--cream)] text-base font-bold transition-transform no-underline"
+          >
+            <Scale className="w-5 h-5" />
+            <span>{`مقارنة الخيارات (${propertyCount} عقارات)`}</span>
+          </Link>
+        ) : (
+          <Link
+            href={`/case/${params.id}/properties`}
+            className="flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] active:scale-[0.98] text-[var(--cream)] text-base font-bold transition-transform no-underline"
+          >
+            <Building2 className="w-5 h-5" />
+            <span>إضافة عقار آخر</span>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,13 @@
 import type { ConstraintResult, RequirementsRow } from "@/lib/analysis/constraints";
 import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
 import { formatSAR } from "@/lib/utils";
+import {
+  evaluateDecisionAxes,
+  type AffordabilityAxis,
+  type ConfidenceLevel,
+  type DailyLifeAxis,
+  type PriceAxis,
+} from "@/lib/analysis/axes";
 
 export interface PropertyAssessmentWithProperty {
   id: string;
@@ -12,7 +19,7 @@ export interface PropertyAssessmentWithProperty {
   key_unknowns: string[];
   visit_priority: "high" | "medium" | "low" | "insufficient_evidence" | string;
   visit_priority_reason: string;
-  evidence_fields: string[];
+  evidence_fields?: string[];
   constraint_results: ConstraintResult[];
   price_per_sqm: number | null;
   properties?: {
@@ -59,7 +66,16 @@ export interface RankedItem {
   area_sqm: number | null;
   bedrooms: number | null;
   fit_rating: "strong" | "partial" | "weak" | "insufficient_evidence";
+  fit_summary?: string;
   visit_priority: "high" | "medium" | "low" | "insufficient_evidence";
+  visit_priority_reason?: string;
+  overall_confidence: ConfidenceLevel;
+  confidence_label_ar: string;
+  confidence_reason_ar: string;
+  daily_life: DailyLifeAxis;
+  price_axis: PriceAxis;
+  affordability_axis: AffordabilityAxis;
+  tradeoffs: string[];
   constraint_summary: {
     pass: number;
     fail: number;
@@ -185,12 +201,12 @@ export function computePoolFitScores(
 
 export function resolveComparison(
   assessments: PropertyAssessmentWithProperty[],
-  requirements?: RequirementsRow | null
+  requirements?: Partial<RequirementsRow> | null
 ): ComparisonResult {
   // 1. Eligibility: up to 5 properties from current run
   const pool = (assessments || []).slice(0, 5);
 
-  // If < 2 properties: mode = 'insufficient'
+  // If < 2 properties: mode = 'insufficient' (standalone decision analysis for 1 property)
   if (pool.length < 2) {
     const rawItems: RankedItem[] = pool.map((item, idx) => {
       const p = item.property || item.properties;
@@ -221,6 +237,11 @@ export function resolveComparison(
           ? String(resolved.fields.district.value)
           : p?.district ?? "");
 
+      const floorNo =
+        resolved?.fields.floor_no.status === "known"
+          ? Number(resolved.fields.floor_no.value)
+          : p?.floor_no ?? null;
+
       const constraints = item.constraint_results || [];
       const pass = constraints.filter((c) => c.result === "pass").length;
       const fail = constraints.filter((c) => c.result === "fail").length;
@@ -243,6 +264,50 @@ export function resolveComparison(
 
       const budget = requirements?.max_budget_sar;
       const deltaBudget = price !== null && budget ? price - budget : null;
+      const fitRating =
+        (item.fit_rating as RankedItem["fit_rating"]) || "insufficient_evidence";
+      const visitPriority =
+        (item.visit_priority as RankedItem["visit_priority"]) ||
+        "insufficient_evidence";
+
+      const axes = evaluateDecisionAxes({
+        fitRating,
+        constraints,
+        strengths: item.strengths || [],
+        risks: item.risks || [],
+        keyUnknowns: item.key_unknowns || [],
+        price,
+        areaSqm: area,
+        bedrooms,
+        floorNo,
+        district,
+        pricePerSqm: item.price_per_sqm,
+        poolMedianPpsqm: null,
+        resolved,
+        requirements,
+      });
+
+      const failedConstraint = constraints.find((c) => c.result === "fail");
+      const unknownConstraints = constraints.filter((c) => c.result === "unknown");
+
+      const mainAdvantage =
+        item.strengths?.[0] ||
+        (fail === 0 && pass > 0
+          ? "مطابق للشروط الأساسية المتوفرة ضمن حدود الميزانية."
+          : "تم تحليل المعطيات المتاحة في مواجهة ملف احتياجك.");
+
+      const mainTradeoff =
+        failedConstraint?.detailAr ||
+        item.risks?.[0] ||
+        axes.tradeoffs[0] ||
+        "لا توجد مقايضات حرجة مسجلة بناءً على البيانات المتاحة.";
+
+      const whatCouldChange =
+        unknownConstraints.length > 0
+          ? `التحقق الميداني من (${unknownConstraints.map((u) => u.labelAr).join("، ")}) لحسم مستوى الثقة في القرار.`
+          : item.key_unknowns?.[0]
+            ? `التأكد الميداني من: ${item.key_unknowns.slice(0, 2).join("، ")}.`
+            : "استكمال المعاينة الميدانية أو إضافة شقق مرشحة أخرى للمقارنة.";
 
       return {
         property_id: item.property_id,
@@ -255,13 +320,22 @@ export function resolveComparison(
         price_delta_budget: deltaBudget,
         area_sqm: area,
         bedrooms,
-        fit_rating: (item.fit_rating as RankedItem["fit_rating"]) || "insufficient_evidence",
-        visit_priority: (item.visit_priority as RankedItem["visit_priority"]) || "insufficient_evidence",
+        fit_rating: fitRating,
+        fit_summary: item.fit_summary,
+        visit_priority: visitPriority,
+        visit_priority_reason: item.visit_priority_reason,
+        overall_confidence: axes.overall_confidence,
+        confidence_label_ar: axes.confidence_label_ar,
+        confidence_reason_ar: axes.confidence_reason_ar,
+        daily_life: axes.daily_life,
+        price_axis: axes.price_axis,
+        affordability_axis: axes.affordability_axis,
+        tradeoffs: axes.tradeoffs,
         constraint_summary: { pass, fail, unknown },
         constraints,
-        main_advantage_ar: item.strengths[0] || "بيانات فردية غير كافية للمقارنة",
-        main_tradeoff_ar: item.risks[0] || "لا تتوفر خيارات بديلة للمفاضلة",
-        what_could_change_rank_ar: item.key_unknowns[0] || "إضافة عقارات أخرى للمقارنة",
+        main_advantage_ar: mainAdvantage,
+        main_tradeoff_ar: mainTradeoff,
+        what_could_change_rank_ar: whatCouldChange,
         strengths: item.strengths || [],
         risks: item.risks || [],
         key_unknowns: item.key_unknowns || [],
@@ -279,10 +353,12 @@ export function resolveComparison(
   // 2. Prepare normalized items
   interface NormalizedCandidate {
     raw: PropertyAssessmentWithProperty;
+    resolved: ReturnType<typeof resolveFacts> | null;
     property_id: string;
     assessment_id: string;
     title: string;
     district: string;
+    floor_no: number | null;
     price: number | null;
     price_per_sqm: number | null;
     price_delta_budget: number | null;
@@ -329,6 +405,11 @@ export function resolveComparison(
         ? String(resolved.fields.district.value)
         : p?.district ?? "");
 
+    const floorNo =
+      resolved?.fields.floor_no.status === "known"
+        ? Number(resolved.fields.floor_no.value)
+        : p?.floor_no ?? null;
+
     const constraints = item.constraint_results || [];
     const passCount = constraints.filter((c) => c.result === "pass").length;
     const failCount = constraints.filter((c) => c.result === "fail").length;
@@ -360,10 +441,12 @@ export function resolveComparison(
 
     return {
       raw: item,
+      resolved,
       property_id: item.property_id,
       assessment_id: item.id,
       title,
       district,
+      floor_no: floorNo,
       price,
       price_per_sqm: item.price_per_sqm,
       price_delta_budget: deltaBudget,
@@ -379,6 +462,16 @@ export function resolveComparison(
       hasUnknownCriticalConstraint,
     };
   });
+
+  // Compute pool median price_per_sqm for fair comparative price axis
+  const validPoolPpsqm = candidates
+    .map((c) => c.price_per_sqm)
+    .filter((v): v is number => v !== null && v > 0)
+    .sort((a, b) => a - b);
+  const poolMedianPpsqm =
+    validPoolPpsqm.length >= 2
+      ? validPoolPpsqm[Math.floor(validPoolPpsqm.length / 2)]
+      : null;
 
   // 3. Sorting
   // Rule A: 0 failed constraints rank above properties with failed constraints
@@ -458,10 +551,27 @@ export function resolveComparison(
     }
   }
 
-  // 6. Build Narrative (Advantage, Tradeoff, What Could Change Rank)
+  // 6. Build Narrative (Advantage, Tradeoff, What Could Change Rank) + 5 Decision Axes
   const rankedItems: RankedItem[] = candidates.map((c, index) => {
     const rank = index + 1;
     const others = candidates.filter((_, idx) => idx !== index);
+
+    const axes = evaluateDecisionAxes({
+      fitRating: c.fit_rating,
+      constraints: c.constraints,
+      strengths: c.raw.strengths || [],
+      risks: c.raw.risks || [],
+      keyUnknowns: c.raw.key_unknowns || [],
+      price: c.price,
+      areaSqm: c.area_sqm,
+      bedrooms: c.bedrooms,
+      floorNo: c.floor_no,
+      district: c.district,
+      pricePerSqm: c.price_per_sqm,
+      poolMedianPpsqm,
+      resolved: c.resolved,
+      requirements,
+    });
 
     // Compute main advantage vs others
     let mainAdvantage = "";
@@ -494,7 +604,7 @@ export function resolveComparison(
     } else if (c.raw.risks && c.raw.risks.length > 0) {
       mainTradeoff = c.raw.risks[0];
     } else {
-      mainTradeoff = "لا توجد تضحيات جوهرية مسجلة.";
+      mainTradeoff = axes.tradeoffs[0] || "لا توجد تضحيات جوهرية مسجلة.";
     }
 
     // Compute what could change rank
@@ -521,7 +631,16 @@ export function resolveComparison(
       area_sqm: c.area_sqm,
       bedrooms: c.bedrooms,
       fit_rating: c.fit_rating,
+      fit_summary: c.raw.fit_summary,
       visit_priority: c.visit_priority,
+      visit_priority_reason: c.raw.visit_priority_reason,
+      overall_confidence: axes.overall_confidence,
+      confidence_label_ar: axes.confidence_label_ar,
+      confidence_reason_ar: axes.confidence_reason_ar,
+      daily_life: axes.daily_life,
+      price_axis: axes.price_axis,
+      affordability_axis: axes.affordability_axis,
+      tradeoffs: axes.tradeoffs,
       constraint_summary: {
         pass: c.passCount,
         fail: c.failCount,

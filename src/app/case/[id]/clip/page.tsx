@@ -116,10 +116,10 @@ export default function ClipPage({ params }: { params: { id: string } }) {
 
             <div className="space-y-1">
               <h2 className="text-base sm:text-lg font-bold font-display text-[var(--navy)]">
-                جارٍ تحليل وتدقيق المواصفات…
+                جارٍ قراءة مواصفات الشقة…
               </h2>
-              <p className="text-xs text-[var(--dusty-blue)] max-w-xs mx-auto leading-relaxed">
-                يقوم الذكاء الاصطناعي باستخراج السعر، المساحة، الغرف، ومطابقتها مع شروطك.
+              <p className="text-sm text-[var(--dusty-blue)] max-w-xs mx-auto leading-relaxed">
+                نستخرج السعر والمساحة والغرف.
               </p>
             </div>
 
@@ -140,10 +140,10 @@ export default function ClipPage({ params }: { params: { id: string } }) {
 
             <div className="space-y-1">
               <h2 className="text-lg sm:text-xl font-bold font-display text-[var(--navy)]">
-                تم استيراد وتحليل العقار بنجاح!
+                تمت إضافة العقار
               </h2>
-              <p className="text-xs text-[var(--dusty-blue)] leading-relaxed max-w-xs mx-auto">
-                تمت إضافة العقار وحفظ كافة مواصفاته الموثقة في قرارك الشرائي.
+              <p className="text-sm text-[var(--dusty-blue)] leading-relaxed max-w-xs mx-auto">
+                حُفظت مواصفاته في حالتك.
               </p>
             </div>
 
@@ -181,7 +181,7 @@ export default function ClipPage({ params }: { params: { id: string } }) {
               <h2 className="text-lg font-bold font-display text-[var(--navy)]">
                 تعذر استخراج المواصفات
               </h2>
-              <p className="text-xs text-[var(--status-danger)] font-bold max-w-xs mx-auto">{errorMessage}</p>
+              <p className="text-sm text-[var(--status-danger)] font-bold max-w-xs mx-auto">{errorMessage}</p>
             </div>
 
             <button
@@ -200,10 +200,10 @@ export default function ClipPage({ params }: { params: { id: string } }) {
         {/* State 4: Waiting / Manual Input */}
         {status === "waiting" && (
           <form onSubmit={handleManualSubmit} className="space-y-4 relative z-10">
-            <div className="bg-[var(--cream)] border border-[var(--mist)] rounded-2xl p-4 text-xs text-[var(--navy)] space-y-1 shadow-xs">
-              <p className="font-extrabold text-[var(--navy)]">💡 استيراد فوري بدون حظر:</p>
+            <div className="bg-[var(--cream)] border border-[var(--mist)] rounded-2xl p-4 text-sm text-[var(--navy)] space-y-1 shadow-xs">
+              <p className="font-extrabold text-[var(--navy)]">استيراد يدوي</p>
               <p className="text-[var(--dusty-blue)] leading-relaxed font-normal">
-                إذا لم تفتح هذه النافذة عبر كليبر الإشارات المرجعية، افتح صفحة الإعلان في متصفحك، اضغط <kbd className="bg-[var(--paper)] px-2 py-0.5 rounded border border-[var(--mist)] font-mono font-bold text-[var(--navy)]">Ctrl+A</kbd> ثم <kbd className="bg-[var(--paper)] px-2 py-0.5 rounded border border-[var(--mist)] font-mono font-bold text-[var(--navy)]">Ctrl+C</kbd> والصق النص أدناه.
+                انسخ صفحة الإعلان كاملة <kbd className="bg-[var(--paper)] px-2 py-0.5 rounded border border-[var(--mist)] font-mono font-bold text-[var(--navy)]">Ctrl+A</kbd> ثم <kbd className="bg-[var(--paper)] px-2 py-0.5 rounded border border-[var(--mist)] font-mono font-bold text-[var(--navy)]">Ctrl+C</kbd> والصقها هنا.
               </p>
             </div>
 
@@ -218,7 +218,7 @@ export default function ClipPage({ params }: { params: { id: string } }) {
                 placeholder="https://sa.aqar.fm/..."
                 value={manualUrl}
                 onChange={(e) => setManualUrl(e.target.value)}
-                className="w-full text-xs sm:text-sm px-4 py-3 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] bg-[var(--cream)] placeholder:text-[var(--dusty-blue)]/50 transition-all shadow-xs"
+                className="w-full text-base sm:text-sm px-4 py-3 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] bg-[var(--cream)] placeholder:text-[var(--dusty-blue)]/50 transition-all shadow-xs"
               />
             </div>
 
@@ -232,7 +232,7 @@ export default function ClipPage({ params }: { params: { id: string } }) {
                 placeholder="فيلا للبيع في حي الأندلس..."
                 value={manualTitle}
                 onChange={(e) => setManualTitle(e.target.value)}
-                className="w-full text-xs sm:text-sm px-4 py-3 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] bg-[var(--cream)] placeholder:text-[var(--dusty-blue)]/50 transition-all shadow-xs"
+                className="w-full text-base sm:text-sm px-4 py-3 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] bg-[var(--cream)] placeholder:text-[var(--dusty-blue)]/50 transition-all shadow-xs"
               />
             </div>
 
@@ -247,12 +247,12 @@ export default function ClipPage({ params }: { params: { id: string } }) {
                 value={manualText}
                 onChange={(e) => setManualText(e.target.value)}
                 placeholder="الصق نص صفحة الإعلان هنا..."
-                className="w-full text-xs sm:text-sm p-4 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] bg-[var(--cream)] placeholder:text-[var(--dusty-blue)]/50 resize-none transition-all shadow-xs font-mono"
+                className="w-full text-base sm:text-sm p-4 rounded-2xl border border-[var(--mist)] focus:border-[var(--navy)] outline-none text-[var(--navy)] bg-[var(--cream)] placeholder:text-[var(--dusty-blue)]/50 resize-none transition-all shadow-xs font-mono"
               />
             </div>
 
             {errorMessage && (
-              <p className="text-xs text-[var(--status-danger)] font-bold bg-[var(--status-danger)]/10 p-3 rounded-xl border border-[var(--status-danger)]/20">
+              <p className="text-sm text-[var(--status-danger)] font-bold bg-[var(--status-danger)]/10 p-3 rounded-xl border border-[var(--status-danger)]/20">
                 {errorMessage}
               </p>
             )}
@@ -262,7 +262,7 @@ export default function ClipPage({ params }: { params: { id: string } }) {
               className="btn-primary w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-semibold text-base shadow-sm transition-all cursor-pointer opacity-100"
             >
               <Sparkles className="w-4 h-4 text-[var(--cream)] opacity-100 shrink-0" />
-              <span className="text-[var(--cream)] text-base font-semibold opacity-100">تحليل واستيراد العقار فوراً</span>
+              <span className="text-[var(--cream)] text-base font-semibold opacity-100">استيراد العقار</span>
             </button>
           </form>
         )}

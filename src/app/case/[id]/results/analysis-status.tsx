@@ -74,10 +74,10 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
 
           <div className="space-y-2">
             <h2 className="text-xl font-display font-bold text-[var(--navy)]">
-              تعذر استكمال التحليل الآلي
+              تعذر إكمال التحليل
             </h2>
             <p className="text-sm text-[var(--dusty-blue)] max-w-md mx-auto leading-relaxed">
-              تم تأكيد دفعتك (10 ر.س)، ولكن حدث عارض أثناء معالجة المطابقة الهندسية.
+              دفعتك محفوظة. أعد التشغيل مجانًا.
             </p>
           </div>
 
@@ -118,21 +118,21 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
             state="searching"
             showProgressLine={true}
             messages={[
-              "ندقق المساحات الصافية ونطابق كروكي البلدية والصك…",
-              "نحسب تكاليف التشغيل السنوية والالتزامات الخفية…",
-              "نحلل مطابقة العقارات لاشتراطات كود البناء السعودي…",
-              "نقيس كفاءة العزل وموثوقية خدمات المبنى والمصعد…",
-              "نصيغ التوصية الهندسية المحايدة لحماية قرارك…",
+              "نطابق الشقق مع احتياجك…",
+              "نقيّم الموقع والتنقل…",
+              "نقارن السعر وسعر المتر…",
+              "نوازن المزايا والتنازلات…",
+              "نصيغ التوصية…",
             ]}
           />
         </div>
 
         <div className="relative z-10 space-y-2 max-w-md mx-auto pt-2">
           <h2 className="text-xl sm:text-2xl font-display font-bold text-[var(--navy)] tracking-tight">
-            تم تأكيد الدفع بنجاح — جارٍ تحليل العقارات
+            جارٍ تحليل قرار الشراء
           </h2>
-          <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed">
-            محرك بوصلة العقار يجري الفحص الميداني المحايد ويطابق الشروط الملزمة والمساحات
+          <p className="text-sm text-[var(--dusty-blue)] leading-relaxed">
+            يستغرق ذلك دقيقة تقريبًا.
           </p>
         </div>
 

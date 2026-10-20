@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useFormState as useActionState, useFormStatus } from "react-dom";
 import {
   ShieldCheck,
   ArrowLeft,
+  ArrowRight,
   Coins,
   Layers,
   Car,
@@ -71,7 +72,7 @@ const INTENT_LABELS: Record<string, string> = {
 
 export interface ParsedArabicNeeds {
   budget?: number;
-  purchaseMethod?: "cash" | "mortgage" | "undecided";
+  purchaseMethod?: "cash" | "finance" | "undecided";
   householdSize?: number;
   minBedrooms?: number;
   minAreaSqm?: number;
@@ -129,7 +130,7 @@ export function parseArabicNeedsDescription(rawText: string): ParsedArabicNeeds 
     result.purchaseMethod = "cash";
     result.matchedFieldsAr.push("الدفع كاش");
   } else if (/(?:تمويل|بنك|عقاري|رهن|أقساط|اقساط)/.test(text)) {
-    result.purchaseMethod = "mortgage";
+    result.purchaseMethod = "finance";
     result.matchedFieldsAr.push("تمويل عقاري");
   }
 
@@ -209,6 +210,14 @@ export function parseArabicNeedsDescription(rawText: string): ParsedArabicNeeds 
   return result;
 }
 
+const WIZARD_STEPS: { title: string; hint: string; fields: string[] }[] = [
+  { title: "صف بيتك بكلماتك", hint: "اختياري — نعبّئ الأسئلة التالية عنك", fields: [] },
+  { title: "كم ميزانيتك؟", hint: "أي عقار يتجاوزها يُستبعد", fields: ["max_budget_sar", "purchase_method"] },
+  { title: "من سيسكن معك؟", hint: "حجم الأسرة والمساحة", fields: ["household_size", "min_bedrooms", "min_area_sqm"] },
+  { title: "ما الذي لا تتنازل عنه؟", hint: "شروط تستبعد أي عقار لا يحققها", fields: ["hard_constraints"] },
+  { title: "ما الأهم لك؟", hint: "تفضيلاتك والأماكن التي تزورها", fields: ["preferences", "important_locations"] },
+];
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -216,16 +225,16 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full sm:w-auto px-8 py-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-[var(--cream)] font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-xs cursor-pointer"
+      className="w-full sm:w-auto px-8 py-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed text-[var(--cream)] font-bold text-sm flex items-center justify-center gap-2.5 transition-all duration-200 shadow-xs cursor-pointer"
     >
       {pending ? (
         <>
           <Loader2 className="w-4 h-4 animate-spin text-[var(--cream)]" />
-          <span>جاري حفظ المعايير والانتقال…</span>
+          <span>جارٍ الحفظ…</span>
         </>
       ) : (
         <>
-          <span>حفظ المعايير ومتابعة إلى حصر العقارات</span>
+          <span>حفظ ومتابعة للعقارات</span>
           <ArrowLeft className="w-4 h-4" />
         </>
       )}
@@ -237,6 +246,27 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
   const saveActionWithId = saveRequirements.bind(null, caseId);
   const initialState: RequirementsFormState = { errors: {} };
   const [state, formAction] = useActionState(saveActionWithId, initialState);
+
+  // Mobile wizard: one question per screen (< lg). Desktop keeps the full form.
+  const [step, setStep] = useState(0);
+  const wizardTopRef = useRef<HTMLDivElement>(null);
+  const goToStep = (next: number) => {
+    setStep(Math.max(0, Math.min(WIZARD_STEPS.length - 1, next)));
+    requestAnimationFrame(() =>
+      wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    );
+  };
+  const stepCls = (i: number, base: string) =>
+    `${base} ${i === step ? "max-lg:animate-[stepIn_0.35s_cubic-bezier(0.22,1,0.36,1)]" : "max-lg:hidden"}`;
+  const isLastStep = step === WIZARD_STEPS.length - 1;
+
+  // Jump to the first step that holds a server validation error.
+  useEffect(() => {
+    const errs = state?.errors ?? {};
+    const firstErrStep = WIZARD_STEPS.findIndex((s) => s.fields.some((f) => (errs as Record<string, unknown>)[f]));
+    if (firstErrStep >= 0) goToStep(firstErrStep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   // Quick Natural-Language Needs Helper State
   const [freeTextNeeds, setFreeTextNeeds] = useState("");
@@ -515,12 +545,12 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
   const showBudgetPreview = !isNaN(parsedBudget) && parsedBudget > 0;
 
   return (
-    <div className="space-y-10" dir="rtl">
+    <div className="space-y-6 sm:space-y-10" dir="rtl">
       {/* Hero / Page Intro */}
-      <section className="text-center max-w-3xl mx-auto space-y-3">
+      <section className={`text-center max-w-3xl mx-auto space-y-3 ${step > 0 ? "max-lg:hidden" : ""}`}>
         <div className="inline-flex flex-wrap items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium shadow-xs">
           <ShieldCheck className="w-4 h-4 text-[var(--navy)]" />
-          <span>المرحلة الأولى • صياغة المعايير الهندسية والمالية</span>
+          <span>احتياجك وميزانيتك</span>
           {city && (
             <>
               <span className="text-[var(--mist)]">•</span>
@@ -547,15 +577,55 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         <h1 className="text-2xl sm:text-4xl font-extrabold text-[var(--navy)] tracking-tight leading-[1.3] font-display">
           {initialContext?.title?.trim()
             ? initialContext.title.trim()
-            : "محددات واحتياجات قرار الشراء"}
+            : "ماذا تحتاج في بيتك؟"}
         </h1>
-        <p className="text-xs sm:text-sm text-[var(--dusty-blue)] font-normal leading-relaxed max-w-2xl mx-auto">
-          تحدد هذه المعايير خوارزمية الفرز والتقييم الحتمي. أي عقار يتجاوز ميزانيتك القصوى أو يخالف شروطك الحتمية سيتم استبعاده فوراً من المنافسة.
+        <p className="text-sm text-[var(--dusty-blue)] font-normal leading-relaxed max-w-2xl mx-auto">
+          أي عقار يتجاوز ميزانيتك أو شروطك يُستبعد تلقائياً.
         </p>
       </section>
 
       {/* Main Form */}
-      <form action={formAction} className="space-y-8">
+      <form
+        action={formAction}
+        className="space-y-8"
+        onKeyDown={(e) => {
+          // On mobile, Enter advances to the next question instead of submitting early.
+          if (
+            e.key === "Enter" &&
+            !isLastStep &&
+            (e.target as HTMLElement).tagName === "INPUT" &&
+            window.matchMedia("(max-width: 1023px)").matches
+          ) {
+            e.preventDefault();
+            goToStep(step + 1);
+          }
+        }}
+      >
+        {/* Mobile wizard header */}
+        <div ref={wizardTopRef} className="lg:hidden scroll-mt-28 space-y-4 pt-1">
+          <div className="flex items-center gap-1.5" aria-hidden="true">
+            {WIZARD_STEPS.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                tabIndex={-1}
+                onClick={() => i < step && goToStep(i)}
+                className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                  i <= step ? "bg-[var(--navy)]" : "bg-[var(--mist)]"
+                }`}
+              />
+            ))}
+          </div>
+          <div key={step} className="space-y-1.5 animate-[stepIn_0.35s_cubic-bezier(0.22,1,0.36,1)]">
+            <p className="text-xs font-bold tracking-wide text-[var(--dusty-blue)]">
+              السؤال {step + 1} من {WIZARD_STEPS.length}
+            </p>
+            <h2 className="text-[26px] leading-[1.25] font-extrabold text-[var(--navy)] font-display">
+              {WIZARD_STEPS[step].title}
+            </h2>
+            <p className="text-sm text-[var(--dusty-blue)]">{WIZARD_STEPS[step].hint}</p>
+          </div>
+        </div>
         <input
           type="hidden"
           name="hard_constraints"
@@ -573,9 +643,9 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         />
 
         {/* ============================================================== */}
-        {/* Section 0: التعبئة الذكية السريعة (اوصف احتياجك بكلماتك) */}
+        {/* Section 0: اكتب احتياجك بكلماتك */}
         {/* ============================================================== */}
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-4">
+        <div className={stepCls(0, "bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-4 sm:p-8 space-y-4")}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-[var(--cream)] border border-[var(--mist)] flex items-center justify-center text-[var(--navy)]">
@@ -583,10 +653,10 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               </div>
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-[var(--navy)] font-display">
-                  التعبئة الذكية السريعة (اوصف احتياجك بكلماتك)
+                  اكتب احتياجك بكلماتك
                 </h2>
-                <p className="text-[11px] text-[var(--dusty-blue)] mt-0.5">
-                  اكتب مواصفات الشقة وميزانيتك وشروطك بجملة واحدة ليقوم النظام باستخلاص المعايير وتعبئة الحقول تلقائياً
+                <p className="text-sm text-[var(--dusty-blue)] mt-0.5">
+                  جملة واحدة، ونعبّئ الحقول عنك
                 </p>
               </div>
             </div>
@@ -597,9 +667,9 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                   "أبحث عن شقة جديدة 4 غرف بمساحة 150 متر وميزانية 900 ألف كاش لأسرة من 4 أفراد مع مصعد وموقف خاص قريبة من حي الملقا"
                 )
               }
-              className="self-start sm:self-center text-[11px] font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] underline underline-offset-4 cursor-pointer"
+              className="self-start sm:self-center text-sm font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] underline underline-offset-4 cursor-pointer"
             >
-              تجربة مثال جاهز
+              جرّب مثالاً
             </button>
           </div>
 
@@ -608,8 +678,8 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               value={freeTextNeeds}
               onChange={(e) => setFreeTextNeeds(e.target.value)}
               rows={2}
-              placeholder="مثال: أريد شقة 4 غرف بمساحة 150 متر وميزانية 900 ألف كاش مع مصعد وموقف خاص قريبة من عملي في حي العليا..."
-              className="w-full px-4 py-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-xs sm:text-sm text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all resize-none"
+              placeholder="مثال: شقة 4 غرف، 150 م²، 900 ألف كاش، مع مصعد، قرب حي العليا"
+              className="w-full px-4 py-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all resize-none"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
@@ -618,13 +688,13 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                 className="px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-xs"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>تحليل وتعبئة الحقول تلقائياً</span>
+                <span>عبّئ الحقول تلقائياً</span>
               </button>
 
               {parsedFeedback && (
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E9F4EE] border border-[#C5E4D4] text-[#1E6B43] text-[11px] font-bold">
                   <Check className="w-3.5 h-3.5 shrink-0" />
-                  <span>تم استخلاص وتعبئة: {parsedFeedback.join(" • ")}</span>
+                  <span>تمت التعبئة: {parsedFeedback.join(" • ")}</span>
                 </div>
               )}
             </div>
@@ -634,16 +704,15 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         {/* ============================================================== */}
         {/* Section 1: الميزانية وطريقة الشراء */}
         {/* ============================================================== */}
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
+        <div className={stepCls(1, "bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-4 sm:p-8 space-y-6")}>
+          <div className="max-lg:hidden flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
-                  الميزانية والقدرة المالية
+                  الميزانية
                 </h2>
                 <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  السقف المالي الأعلى وطريقة السداد المقترحة
                 </p>
               </div>
             </div>
@@ -656,7 +725,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             {/* Budget Input */}
             <div className="space-y-2">
               <label htmlFor="max_budget_sar" className="block text-xs font-bold text-[var(--navy)]">
-                الميزانية القصوى المتاحة (ريال سعودي)
+                أقصى ميزانية (ر.س)
               </label>
               <input
                 id="max_budget_sar"
@@ -683,7 +752,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             {/* Purchase Method */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-[var(--navy)]">
-                طريقة التمويل والشراء
+                طريقة الشراء
               </label>
               <input type="hidden" name="purchase_method" value={purchaseMethod} />
               <div className="grid grid-cols-3 gap-2">
@@ -696,7 +765,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)] font-medium"
                   }`}
                 >
-                  <span className="block text-xs">نقداً</span>
+                  <span className="block text-sm">نقداً</span>
                   <span className="block text-[10px] opacity-75 mt-0.5">سيولة جاهزة</span>
                 </button>
 
@@ -709,7 +778,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)] font-medium"
                   }`}
                 >
-                  <span className="block text-xs">تمويل عقاري</span>
+                  <span className="block text-sm">تمويل عقاري</span>
                   <span className="block text-[10px] opacity-75 mt-0.5">بنكي / دعم</span>
                 </button>
 
@@ -722,7 +791,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)] font-medium"
                   }`}
                 >
-                  <span className="block text-xs">لم يتقرر بعد</span>
+                  <span className="block text-sm">لم يتقرر بعد</span>
                   <span className="block text-[10px] opacity-75 mt-0.5">قيد الدراسة</span>
                 </button>
               </div>
@@ -736,16 +805,15 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         {/* ============================================================== */}
         {/* Section 2: احتياج الأسرة */}
         {/* ============================================================== */}
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
+        <div className={stepCls(2, "bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-4 sm:p-8 space-y-6")}>
+          <div className="max-lg:hidden flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
-                  السعة المكانية للأسرة
+                  حجم الأسرة والمساحة
                 </h2>
                 <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  الحد الأدنى لعدد الغرف والمساحة الصافية
                 </p>
               </div>
             </div>
@@ -829,16 +897,15 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         {/* ============================================================== */}
         {/* Section 3: الشروط الحتمية */}
         {/* ============================================================== */}
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
+        <div className={stepCls(3, "bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-4 sm:p-8 space-y-6")}>
+          <div className="max-lg:hidden flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
-                  الشروط الحتمية الصارمة (Hard Constraints)
+                  شروط لا تنازل عنها
                 </h2>
                 <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  معايير استبعاد تلقائي فورية، العقار الذي لا يحققها يُقصى
                 </p>
               </div>
             </div>
@@ -868,7 +935,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                   <Layers className="w-4 h-4" />
                 </span>
                 <div>
-                  <div className="text-xs font-bold">وجود مصعد عامل</div>
+                  <div className="text-sm font-bold">وجود مصعد عامل</div>
                   <div className={`text-[11px] ${hasElevator ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
                     إلزامي للأدوار العليا
                   </div>
@@ -902,7 +969,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                   <Car className="w-4 h-4" />
                 </span>
                 <div>
-                  <div className="text-xs font-bold">موقف سيارة خاص</div>
+                  <div className="text-sm font-bold">موقف سيارة خاص</div>
                   <div className={`text-[11px] ${hasParking ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
                     مسجل بالصك أو مخصص
                   </div>
@@ -936,7 +1003,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                   <Sparkles className="w-4 h-4" />
                 </span>
                 <div>
-                  <div className="text-xs font-bold">مبنى جديد / أول ساكن</div>
+                  <div className="text-sm font-bold">مبنى جديد / أول ساكن</div>
                   <div className={`text-[11px] ${hasNewBuilding ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
                     عمر العقار صفر سنوات
                   </div>
@@ -973,8 +1040,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                     <Building2 className="w-4 h-4" />
                   </span>
                   <div>
-                    <div className="text-xs font-bold text-[var(--navy)]">أقصى دور مسموح به</div>
-                    <div className="text-[11px] text-[var(--dusty-blue)]">تحديد أعلى دور ترغب بالسكن فيه</div>
+                    <div className="text-sm font-bold text-[var(--navy)]">أقصى دور مسموح به</div>
                   </div>
                 </div>
                 <div
@@ -1007,10 +1073,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
           <div className="pt-4 border-t border-[var(--mist)] space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-[var(--navy)]">شروط إضافية خاصة بك</span>
-                <p className="text-[11px] text-[var(--dusty-blue)]">
-                  شروط فنية أخرى ملزمة لك (مثال: غرفة خادمة، مدخل مستقل، عزل صوتي)
-                </p>
+                <span className="text-xs font-bold text-[var(--navy)]">شروط إضافية</span>
               </div>
               <button
                 type="button"
@@ -1019,7 +1082,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>إضافة شرط مخصص</span>
+                <span>أضف شرطاً</span>
               </button>
             </div>
 
@@ -1029,7 +1092,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                   value={item.text}
                   maxLength={120}
                   onChange={(e) => handleUpdateCustomConstraint(item.id, e.target.value)}
-                  placeholder="اكتب الشرط الحتمي (مثال: غرفة خادمة مستقلة، شرفة لا تطل على الجيران)"
+                  placeholder="مثال: غرفة خادمة مستقلة"
                   className="flex-1 px-4 py-3 rounded-xl bg-[var(--cream)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
                 />
                 <button
@@ -1052,16 +1115,15 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         {/* ============================================================== */}
         {/* Section 4: التفضيلات والمواقع المهمة */}
         {/* ============================================================== */}
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-6 sm:p-8 space-y-8">
-          <div className="flex items-center justify-between pb-4 border-b border-[var(--mist)]">
+        <div className={stepCls(4, "bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.06)] p-4 sm:p-8 space-y-8")}>
+          <div className="max-lg:hidden flex items-center justify-between pb-4 border-b border-[var(--mist)]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-[var(--navy)] font-display">
-                  التفضيلات التنافسية والمواقع المهمة
+                  تفضيلات ومواقع مهمة
                 </h2>
                 <p className="text-xs text-[var(--dusty-blue)] mt-0.5">
-                  معايير ترجيحية تُمنح درجات ونقاط للمقارنة والمفاضلة بين العقارات المتأهلة
                 </p>
               </div>
             </div>
@@ -1075,11 +1137,8 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[var(--navy)]">
-                  قائمة التفضيلات التفضيلية (حتى 10 تفضيلات)
+                  ما يهمك أكثر
                 </span>
-                <p className="text-[11px] text-[var(--dusty-blue)]">
-                  حدد درجة الأهمية النسبية لكل ميزة للمساعدة في وزن التقييم النهائي
-                </p>
               </div>
               <span className="text-xs font-bold text-[var(--dusty-blue)]">
                 {preferences.length} / 10
@@ -1096,7 +1155,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                     value={pref.label}
                     maxLength={80}
                     onChange={(e) => handleUpdatePreference(pref.id, "label", e.target.value)}
-                    placeholder="وصف الميزة المرغوبة (مثال: واجهة شمالية، مطبخ راكب، تشطيب مودرن)"
+                    placeholder="مثال: واجهة شمالية"
                     className="flex-1 px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
                   />
                   <div className="w-full sm:w-44">
@@ -1111,9 +1170,9 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       }
                       className="w-full rounded-xl border border-[var(--mist)] bg-[var(--paper)] px-3 py-2.5 text-xs font-bold text-[var(--navy)] shadow-xs focus:border-[var(--navy)] focus:outline-none"
                     >
-                      <option value="high">أهمية عالية (ترجيح قوي)</option>
-                      <option value="medium">أهمية متوسطة (عادية)</option>
-                      <option value="low">أهمية منخفضة (ثانوية)</option>
+                      <option value="high">أهمية عالية</option>
+                      <option value="medium">أهمية متوسطة</option>
+                      <option value="low">أهمية منخفضة</option>
                     </select>
                   </div>
                   <button
@@ -1135,7 +1194,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>إضافة تفضيل جديد</span>
+              <span>أضف تفضيلاً</span>
             </button>
 
             {state?.errors?.preferences?.[0] && (
@@ -1148,11 +1207,8 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[var(--navy)]">
-                  المواقع الجغرافية المهمة للتنقل اليومي (حتى 5 مواقع)
+                  أماكن تذهب إليها كثيراً
                 </span>
-                <p className="text-[11px] text-[var(--dusty-blue)]">
-                  نحسب أزمنة التنقل وعبء الزحام لكل عقار مرشح إلى هذه المقرات
-                </p>
               </div>
               <span className="text-xs font-bold text-[var(--dusty-blue)]">
                 {locations.length} / 5
@@ -1170,7 +1226,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       value={loc.label}
                       maxLength={60}
                       onChange={(e) => handleUpdateLocation(loc.id, "label", e.target.value)}
-                      placeholder="اسم المقر (مثل: عمل الزوج، مدرسة)"
+                      placeholder="مثل: العمل، المدرسة"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
                     />
                   </div>
@@ -1179,7 +1235,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       value={loc.address_text}
                       maxLength={200}
                       onChange={(e) => handleUpdateLocation(loc.id, "address_text", e.target.value)}
-                      placeholder="الحي أو الشارع (مثل: حي الملقا، طريق الملك فهد)"
+                      placeholder="الحي أو الشارع"
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
                     />
                   </div>
@@ -1195,8 +1251,8 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                       }
                       className="w-full rounded-xl border border-[var(--mist)] bg-[var(--paper)] px-3 py-2.5 text-xs font-bold text-[var(--navy)] shadow-xs focus:border-[var(--navy)] focus:outline-none"
                     >
-                      <option value="daily">تردد يومي (عمل/مدرسة)</option>
-                      <option value="weekly">تردد أسبوعي (عائلة/ترفيه)</option>
+                      <option value="daily">يومياً</option>
+                      <option value="weekly">أسبوعياً</option>
                     </select>
                   </div>
                   <button
@@ -1218,7 +1274,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>إضافة مقر مهم</span>
+              <span>أضف مكاناً</span>
             </button>
 
             {state?.errors?.important_locations?.[0] && (
@@ -1236,14 +1292,47 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         )}
 
         {/* Submit Action Bar */}
-        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 shadow-[0_20px_60px_rgba(15,26,43,0.06)] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs text-[var(--dusty-blue)]">
+        <div className="sticky bottom-0 z-30 -mx-4 sm:mx-0 bg-[var(--paper)] sm:rounded-[28px] border-t sm:border border-[var(--mist)] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-6 shadow-[0_-8px_24px_rgba(15,26,43,0.06)] sm:shadow-[0_20px_60px_rgba(15,26,43,0.06)] flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="hidden sm:flex items-center gap-2 text-sm text-[var(--dusty-blue)]">
             <ShieldCheck className="w-4 h-4 text-[var(--navy)] shrink-0" />
             <span>
-              يتم حفظ المحددات وتطبيقها حتمياً في مراحل المقارنة والتحليل اللاحقة.
+              تُطبَّق على كل العقارات لاحقاً.
             </span>
           </div>
-          <SubmitButton />
+          <div className={`w-full sm:w-auto ${isLastStep ? "" : "max-lg:hidden"}`}>
+            <SubmitButton />
+          </div>
+          {!isLastStep && (
+            <div className="lg:hidden w-full flex items-center gap-3">
+              {step > 0 && (
+                <button
+                  type="button"
+                  onClick={() => goToStep(step - 1)}
+                  aria-label="السؤال السابق"
+                  className="shrink-0 w-14 h-14 rounded-full border border-[var(--mist)] bg-[var(--cream)] text-[var(--navy)] flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => goToStep(step + 1)}
+                className="flex-1 h-14 rounded-full bg-[var(--navy)] text-[var(--cream)] font-bold text-base flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform shadow-xs cursor-pointer"
+              >
+                <span>{step === 0 && !freeTextNeeds.trim() ? "تخطَّ" : "التالي"}</span>
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+          {isLastStep && step > 0 && (
+            <button
+              type="button"
+              onClick={() => goToStep(step - 1)}
+              className="lg:hidden text-sm font-semibold text-[var(--dusty-blue)] underline underline-offset-4 cursor-pointer"
+            >
+              السؤال السابق
+            </button>
+          )}
         </div>
       </form>
     </div>

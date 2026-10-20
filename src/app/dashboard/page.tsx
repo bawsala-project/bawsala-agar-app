@@ -46,24 +46,17 @@ export default async function DashboardPage() {
       <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)]" />
-              <span>لوحة التحكم والدراسات العقارية</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-display font-bold text-[var(--navy)] tracking-tight">
-              حالات القرار الخاصة بي ({cases.length})
+              حالاتي ({cases.length})
             </h1>
-            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-xl leading-relaxed">
-              متابعة دراسات التقييم الميداني والمالي، فحص الصكوك ومقارنة العقارات المرشحة لكل مسكن.
-            </p>
           </div>
 
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] px-6 py-3 text-xs sm:text-sm font-body font-bold text-[var(--cream)] shadow-sm transition-all self-start sm:self-center shrink-0 active:scale-[0.98] no-underline"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] px-6 py-3 min-h-[44px] text-sm font-body font-bold text-[var(--cream)] shadow-sm transition-all w-full sm:w-auto sm:self-center shrink-0 active:scale-[0.98] no-underline"
           >
             <Plus className="w-4 h-4" />
-            <span>إنشاء حالة جديدة +</span>
+            <span>حالة جديدة</span>
           </Link>
         </div>
       </div>
@@ -76,19 +69,19 @@ export default async function DashboardPage() {
           </div>
           <div className="space-y-1.5 max-w-md mx-auto">
             <h2 className="text-base sm:text-lg font-display font-bold text-[var(--navy)]">
-              لا توجد دراسات قرار نشطة حتى الآن
+              لا توجد حالات بعد
             </h2>
-            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
-              ابدأ الآن بإنشاء دراسة استشارية جديدة لتحديد ميزانيتك، فحص عقاراتك المرشحة، والمفاضلة بينها بأرقام قطعية.
+            <p className="text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
+              أنشئ حالتك الأولى وقارن شققك المرشحة.
             </p>
           </div>
           <div className="pt-2">
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm shadow-sm transition-all no-underline"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 min-h-[44px] rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-sm shadow-sm transition-all no-underline"
             >
               <Plus className="w-4 h-4" />
-              <span>بدء دراسة قرار جديدة</span>
+              <span>ابدأ حالة جديدة</span>
             </Link>
           </div>
         </div>
@@ -120,7 +113,7 @@ export default async function DashboardPage() {
                     </span>
                   </div>
 
-                  <p className="text-xs text-[var(--dusty-blue)] flex items-center gap-3">
+                  <p className="text-sm text-[var(--dusty-blue)] flex items-center gap-3">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
                       <span>
@@ -143,10 +136,10 @@ export default async function DashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                <div className="flex items-center gap-3 w-full sm:w-auto sm:self-center shrink-0">
                   <Link
                     href={c.href}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-xs sm:text-sm shadow-sm transition-all active:scale-[0.98] no-underline"
+                    className="flex-1 sm:flex-initial justify-center min-h-[44px] inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-body font-bold text-sm shadow-sm transition-all active:scale-[0.98] no-underline"
                   >
                     <span>فتح الحالة</span>
                     <ChevronLeft className="w-4 h-4" />

@@ -28,7 +28,7 @@ export default function CitySelectionPage() {
           className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] transition-colors px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] shadow-xs"
         >
           <ArrowRight className="w-3.5 h-3.5" />
-          <span>العودة للرئيسية</span>
+          <span>الرئيسية</span>
         </Link>
 
         <Link href="/" className="opacity-90 hover:opacity-100 transition-opacity">
@@ -37,7 +37,7 @@ export default function CitySelectionPage() {
 
         <Link
           href="/styleguide"
-          className="text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] transition-colors px-3 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)]"
+          className="hidden sm:inline-flex text-xs font-medium text-[var(--dusty-blue)] hover:text-[var(--navy)] transition-colors px-3 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)]"
         >
           دليل الهوية
         </Link>
@@ -60,11 +60,8 @@ export default function CitySelectionPage() {
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-5 h-5 text-[var(--status-ok,#34D399)] shrink-0" />
               <div>
-                <div className="text-xs font-bold text-[var(--navy)]">
-                  تم تحديد نطاق {confirmedData.name} بنجاح
-                </div>
-                <div className="text-[11px] text-[var(--dusty-blue)]">
-                  جاهز لبدء نمذجة الفحص الهندسي والمالي
+                <div className="text-sm font-bold text-[var(--navy)]">
+                  تم اختيار {confirmedData.name}
                 </div>
               </div>
             </div>
@@ -73,17 +70,17 @@ export default function CitySelectionPage() {
               <button
                 type="button"
                 onClick={() => setConfirmedData(null)}
-                className="px-3 py-2 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-xs text-[var(--dusty-blue)] hover:text-[var(--navy)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="min-h-[44px] px-3 py-2 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-sm text-[var(--dusty-blue)] hover:text-[var(--navy)] flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>إعادة الاختيار</span>
+                <span>تغيير</span>
               </button>
 
               <Link
                 href="/#consultation"
-                className="flex-1 sm:flex-initial px-5 py-2 rounded-full bg-[var(--navy)] text-[var(--cream)] font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-[var(--midnight)] transition-all shadow-xs cursor-pointer"
+                className="min-h-[44px] flex-1 sm:flex-initial px-5 py-2 rounded-full bg-[var(--navy)] text-[var(--cream)] font-bold text-sm flex items-center justify-center gap-1.5 hover:bg-[var(--midnight)] transition-all shadow-xs cursor-pointer"
               >
-                <span>متابعة الفحص</span>
+                <span>متابعة</span>
                 <ChevronLeft className="w-3.5 h-3.5" />
               </Link>
             </div>

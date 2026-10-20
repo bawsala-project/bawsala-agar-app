@@ -15,14 +15,14 @@ export function HeroConsultationWrapper({
   return (
     <motion.div
       id="consultation-card"
-      initial={{ y: 60, opacity: 0 }}
+      initial={{ y: 36, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{
-        duration: 0.85,
-        delay: 0.3,
+        duration: 0.75,
+        delay: 0.25,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className={`max-w-4xl mx-auto -mt-14 sm:-mt-20 md:-mt-24 px-4 sm:px-6 relative z-20 will-change-transform ${className}`}
+      className={`max-w-4xl mx-auto mt-0 px-4 sm:px-6 relative z-20 scroll-mt-24 will-change-transform ${className}`}
     >
       {children}
     </motion.div>

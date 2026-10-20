@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-interface EngineeringDialGaugeProps {
+interface DecisionFitGaugeProps {
   score: number; // 0 to 100
   size?: number; // diameter in pixels (default: 52)
   strokeWidth?: number;
@@ -16,14 +16,14 @@ const TICK_COUNT = 36;
 const CX = 50;
 const CY = 50;
 
-export function EngineeringDialGauge({
+export function DecisionFitGauge({
   score = 85,
   size = 52,
   strokeWidth = 3,
   showTicks = true,
   className = "",
   countUp = true,
-}: EngineeringDialGaugeProps) {
+}: DecisionFitGaugeProps) {
   const [displayNumber, setDisplayNumber] = useState(countUp ? 0 : score);
   const clampedScore = Math.min(100, Math.max(0, Math.round(score)));
 
@@ -81,7 +81,7 @@ export function EngineeringDialGauge({
     <div
       className={`relative inline-flex items-center justify-center select-none ${className}`}
       style={{ width: size, height: size }}
-      title={`التقييم الهندسي: ${clampedScore}%`}
+      title={`درجة الملاءمة لك: ${clampedScore}%`}
     >
       <svg
         viewBox="0 0 100 100"

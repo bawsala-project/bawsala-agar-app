@@ -362,3 +362,48 @@ a.btn-ghost {
   color: var(--btn-ghost-text) !important;
   opacity: 1 !important;
 }
+
+@keyframes stepIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: none; }
+}
+
+
+/* ===== Ask Bawsala AI: FAB + bottom sheet ===== */
+@keyframes bawsala-ai-breathe {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(242, 236, 224, 0.9), 0 0 18px 2px rgba(15, 26, 43, 0.18), 0 10px 24px rgba(15, 26, 43, 0.22); }
+  50% { box-shadow: 0 0 0 4px rgba(242, 236, 224, 0.9), 0 0 26px 6px rgba(15, 26, 43, 0.26), 0 10px 24px rgba(15, 26, 43, 0.22); }
+}
+.bawsala-ai-fab {
+  box-shadow: 0 0 0 4px rgba(242, 236, 224, 0.9), 0 0 18px 2px rgba(15, 26, 43, 0.18), 0 10px 24px rgba(15, 26, 43, 0.22);
+  animation: bawsala-ai-breathe 5s ease-in-out infinite;
+}
+dialog.bawsala-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 42rem;
+  max-height: 85dvh;
+  padding: 0;
+  border: none;
+  border-radius: 28px 28px 0 0;
+  background: var(--paper);
+  color: var(--navy);
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), overlay 0.32s allow-discrete, display 0.32s allow-discrete;
+}
+dialog.bawsala-sheet[open] {
+  transform: translateY(0);
+}
+@starting-style {
+  dialog.bawsala-sheet[open] { transform: translateY(100%); }
+}
+dialog.bawsala-sheet::backdrop {
+  background-color: rgba(15, 26, 43, 0.45);
+  backdrop-filter: blur(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .bawsala-ai-fab { animation: none; }
+  dialog.bawsala-sheet { transition: none; }
+}

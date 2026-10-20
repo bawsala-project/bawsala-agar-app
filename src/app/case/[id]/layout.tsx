@@ -18,7 +18,7 @@ export default async function CaseLayout({
     <div className="min-h-screen flex flex-col bg-[var(--cream)] text-[var(--navy)] antialiased font-body selection:bg-[var(--mist)] selection:text-[var(--navy)]">
       {/* Executive Header */}
       <header className="sticky top-0 z-50 bg-[var(--paper)] border-b border-[var(--mist)] shadow-xs transition-all">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-14 sm:h-20 flex items-center justify-between gap-4">
           {/* Brand Logo Lockup */}
           <Link href="/" className="flex items-center gap-3 group shrink-0 no-underline focus:outline-hidden">
             <div className="text-[var(--navy)] flex items-center justify-center">
@@ -29,12 +29,12 @@ export default async function CaseLayout({
                 <span className="font-display font-black text-base sm:text-lg text-[var(--navy)] tracking-tight">
                   بوصلة العقار
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]">
+                <span className="hidden sm:inline text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]">
                   استشاري المشتري
                 </span>
               </div>
               <p className="text-xs text-[var(--dusty-blue)] font-normal hidden sm:block">
-                فحص فني وهندسي مستقل لقرار التملك
+                مساعد قرار شراء الشقق
               </p>
             </div>
           </Link>
@@ -57,7 +57,7 @@ export default async function CaseLayout({
         </div>
 
         {/* Mobile Stepper subheader */}
-        <div className="lg:hidden border-t border-[var(--mist)] px-4 py-2.5 overflow-x-auto no-scrollbar flex justify-center bg-[var(--paper)]">
+        <div className="lg:hidden border-t border-[var(--mist)] px-4 py-2 sm:py-2.5 overflow-x-auto no-scrollbar flex justify-center bg-[var(--paper)]">
           <StepIndicator caseId={params.id} />
         </div>
       </header>
@@ -68,15 +68,15 @@ export default async function CaseLayout({
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-[var(--mist)] bg-[var(--cream)] py-10 pb-28 md:pb-10">
+      <footer className="mt-auto border-t border-[var(--mist)] bg-[var(--cream)] py-6 sm:py-10 pb-28 md:pb-10">
         <div className="max-w-[1200px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--dusty-blue)]">
           <div className="flex items-center gap-2.5">
             <div className="text-[var(--navy)] flex items-center justify-center">
               <BawsalaCompass size={18} animateHover />
             </div>
             <span className="font-display font-black text-sm text-[var(--navy)]">بوصلة العقار</span>
-            <span>•</span>
-            <span>منظومة استشارية هندسية ومالية مستقلة</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline">مساعد ذكي ومستقل لقرار شراء السكن</span>
           </div>
         </div>
 

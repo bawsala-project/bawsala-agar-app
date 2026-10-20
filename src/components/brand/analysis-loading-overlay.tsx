@@ -85,7 +85,7 @@ export function AnalysisLoadingOverlay({
                     onClick={simulateComplete}
                     className="text-[11px] py-1 px-3.5 rounded-full border border-[var(--mist)] text-[var(--navy)] bg-[var(--paper)] hover:bg-[var(--cream)] shadow-xs transition-all cursor-pointer font-medium"
                   >
-                    <span>محاكاة اكتمال التحليل الهندسي</span>
+                    <span>محاكاة اكتمال تحليل القرار</span>
                   </button>
                 </div>
               )}

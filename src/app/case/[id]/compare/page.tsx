@@ -14,7 +14,11 @@ import {
   computePoolFitScores,
   type PropertyAssessmentWithProperty,
 } from "@/lib/analysis/compare";
-import { ComparisonMatrix, type ComparisonItem } from "@/components/properties/comparison-matrix";
+import {
+  ComparisonMatrix,
+  type ComparisonItem,
+} from "@/components/properties/comparison-matrix";
+import { DecisionFollowupQA } from "@/components/properties/decision-followup-qa";
 
 import type { ConstraintResult } from "@/lib/analysis/constraints";
 
@@ -82,7 +86,10 @@ export default async function ComparePage({ params }: ComparePageProps) {
   );
 
   const { mode, items, summaryAr, close_options } = comparison;
-  const poolScores = computePoolFitScores(items, requirements?.max_budget_sar ?? null);
+  const poolScores = computePoolFitScores(
+    items,
+    requirements?.max_budget_sar ?? null
+  );
 
   const assessmentMap = new Map(
     (
@@ -103,11 +110,13 @@ export default async function ComparePage({ params }: ComparePageProps) {
   const matrixItems: ComparisonItem[] = items.map((it, idx) => {
     const rawAssessment = assessmentMap.get(it.property_id);
     const rawProp = rawAssessment?.properties;
-    const fact = Array.isArray(rawProp?.property_facts) ? rawProp?.property_facts[0] : undefined;
+    const fact = Array.isArray(rawProp?.property_facts)
+      ? rawProp?.property_facts[0]
+      : undefined;
 
     return {
       id: it.property_id,
-      rank: it.rank ?? (idx + 1),
+      rank: it.rank ?? idx + 1,
       title: it.title,
       district: it.district,
       city: decisionCase.city,
@@ -132,33 +141,35 @@ export default async function ComparePage({ params }: ComparePageProps) {
       constraint_results: Array.isArray(rawAssessment?.constraint_results)
         ? rawAssessment?.constraint_results
         : it.constraints,
-      engineering_score: poolScores[idx] ?? 75,
+      decision_fit_score: poolScores[idx] ?? 75,
+      overall_confidence: it.overall_confidence,
+      confidence_label_ar: it.confidence_label_ar,
+      confidence_reason_ar: it.confidence_reason_ar,
+      daily_life: it.daily_life,
+      price_axis: it.price_axis,
+      affordability_axis: it.affordability_axis,
+      tradeoffs: it.tradeoffs,
     };
   });
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8" dir="rtl">
+    <div
+      className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-8"
+      dir="rtl"
+    >
       {/* Top Header Card */}
       <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-8 space-y-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] animate-pulse" />
-                المرحلة 4 من 4 • مصفوفة المقارنة المباشرة
-              </span>
-
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
-                {items.length} عقارات
+                {items.length} شقق مرشحة
               </span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-display font-bold text-[var(--navy)] tracking-tight">
-              مقارنة الخيارات جنباً إلى جنب
+              مقارنة الخيارات
             </h1>
-            <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-2xl leading-relaxed">
-              مقارنة موضوعية وترتيب مشتق من نتائج التحليل المعتمدة لمساعدتك في اتخاذ القرار والمفاضلة الذكية بالأرقام القطعية.
-            </p>
           </div>
 
           <div className="self-start sm:self-center shrink-0">
@@ -181,8 +192,8 @@ export default async function ComparePage({ params }: ComparePageProps) {
           mode === "ranked"
             ? "bg-[#E9F4EE] border-[#C5E4D4]"
             : mode === "provisional"
-            ? "bg-[#FFF9EC] border-[#F9E2AF]"
-            : "bg-[var(--paper)] border-[var(--mist)]"
+              ? "bg-[#FFF9EC] border-[#F9E2AF]"
+              : "bg-[var(--paper)] border-[var(--mist)]"
         }`}
       >
         <div
@@ -190,8 +201,8 @@ export default async function ComparePage({ params }: ComparePageProps) {
             mode === "ranked"
               ? "bg-[#1E6B43] text-[var(--cream)]"
               : mode === "provisional"
-              ? "bg-[#9A6700] text-[var(--cream)]"
-              : "bg-[var(--navy)] text-[var(--cream)]"
+                ? "bg-[#9A6700] text-[var(--cream)]"
+                : "bg-[var(--navy)] text-[var(--cream)]"
           }`}
         >
           {mode === "ranked" ? (
@@ -207,12 +218,12 @@ export default async function ComparePage({ params }: ComparePageProps) {
           <h2 className="text-base sm:text-lg font-display font-bold text-[var(--navy)]">
             {summaryAr}
           </h2>
-          <p className="text-xs sm:text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
+          <p className="text-sm text-[var(--dusty-blue)] leading-relaxed font-normal">
             {mode === "ranked"
-              ? "الترتيب يعتمد أولاً على تفادي مخالفة أي شروط ملزمة، ثم على مستوى التوافق الإجمالي وأفضل قيمة لسعر المتر المربع."
+              ? "الشروط الملزمة أولاً، ثم الملاءمة وسعر المتر."
               : mode === "provisional"
-              ? "هناك شروط أساسية أو بيانات حاسمة غير مؤكدة في إعلانات الخيارات المتصدرة؛ التحقق الميداني قد يغير الترتيب الحالي."
-              : "البيانات المسجلة محدودة؛ نوصي بإضافة المزيد من التفاصيل لإجراء مقارنة دقيقة."}
+                ? "بيانات حاسمة غير مؤكدة؛ المعاينة قد تغيّر الترتيب."
+                : "البيانات محدودة؛ أكمل الناقص لمقارنة أدق."}
           </p>
         </div>
       </div>
@@ -230,8 +241,8 @@ export default async function ComparePage({ params }: ComparePageProps) {
             <h3 className="text-sm font-body font-bold text-[var(--navy)]">
               خيارات متقاربة جدًا
             </h3>
-            <p className="text-xs text-[var(--dusty-blue)] leading-relaxed">
-              الخيارات الأولى متطابقة أو متقاربة للغاية في السعر ومستوى التوافق (فارق أقل من 5%)؛ احرص على مراجعة الفروقات والمفاضلات النوعية أدناه قبل اتخاذ القرار.
+            <p className="text-sm text-[var(--dusty-blue)] leading-relaxed">
+              الفارق أقل من 5%؛ راجع المفاضلات أدناه.
             </p>
           </div>
         </div>
@@ -241,6 +252,17 @@ export default async function ComparePage({ params }: ComparePageProps) {
       <section aria-label="مصفوفة المقارنة المباشرة">
         <ComparisonMatrix items={matrixItems} caseId={params.id} />
       </section>
+
+      {/* Interactive Follow-Up Q&A */}
+      <DecisionFollowupQA
+        caseId={params.id}
+        items={items}
+        mode={mode}
+        closeOptions={close_options}
+        isStandalone={false}
+        maxBudgetSar={requirements?.max_budget_sar ?? null}
+        purchaseMethod={requirements?.purchase_method ?? null}
+      />
     </div>
   );
 }

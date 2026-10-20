@@ -84,7 +84,7 @@ export function BawsalaNavbar({
                   }`}
                 />
                 <span className="text-xs font-medium whitespace-nowrap hidden sm:inline">
-                  الجلسات
+                  حالاتي
                 </span>
                 <span
                   className={`px-1.5 py-0.2 rounded-full text-[11px] font-mono font-bold transition-colors duration-500 ${

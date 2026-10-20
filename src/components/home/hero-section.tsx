@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import { HeroCompassWatermark } from "@/components/brand/compass-watermark";
 import { MagneticButton } from "./magnetic-button";
 
@@ -12,152 +12,132 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) {
-  const containerRef = useRef<HTMLElement>(null);
-
-  // Slow Parallax on scroll: house moves up 40px slower than the page
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
-
-  const rawHouseY = useTransform(scrollYProgress, [0, 1], [0, 40]);
-  const houseParallaxY = useSpring(rawHouseY, { stiffness: 90, damping: 24 });
-
-  // Stretched kashida representation for "هندسي محايد"
-  const kashidaPhrase = "هندسيـــــ محايـــــد";
-
   return (
     <section
-      ref={containerRef}
       dir="rtl"
-      className={`relative bg-[var(--cream)] pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-14 sm:pb-16 md:pb-20 lg:pb-24 overflow-visible select-none z-20 ${className}`}
+      className={`relative bg-[var(--cream)] pt-24 sm:pt-28 lg:pt-32 pb-10 sm:pb-12 lg:pb-14 overflow-hidden select-none z-20 ${className}`}
     >
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 relative z-20 min-h-[520px] lg:min-h-[460px] xl:min-h-[480px] flex flex-col lg:block">
-        
-        {/* Giant Faint 4% Navy Rotating Compass Watermark behind the hero image and next to the title */}
-        <div className="absolute top-[48%] lg:top-[46%] xl:top-[45%] left-1/2 lg:left-[26%] xl:left-[24%] -translate-x-1/2 -translate-y-1/2 pointer-events-none -z-10">
-          <HeroCompassWatermark
-            size={840}
-            className="opacity-100"
-          />
-        </div>
-        
-        {/* TEXT & CTAS: Centered on Mobile, Top Right on Desktop */}
-        <div className="w-full lg:max-w-[560px] xl:max-w-[620px] lg:mr-0 lg:ml-auto space-y-6 sm:space-y-8 text-center lg:text-right relative z-30">
-          {/* Headline: Navy Display Font on 3 Comfortable Lines with Masked Rise */}
-          <div className="space-y-1 sm:space-y-2">
-            {/* Line 1: اتخذ قرار شراء مسكنك */}
-            <div className="overflow-hidden py-1">
-              <motion.h1
-                initial={{ y: "115%", opacity: 0 }}
-                animate={{ y: "0%", opacity: 1 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-                className="font-display font-black text-[38px] sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.25] sm:leading-[1.3]"
-              >
-                اتخذ قرار شراء مسكنك
-              </motion.h1>
-            </div>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 relative z-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 items-center gap-8 sm:gap-10 lg:gap-8 xl:gap-12">
+          {/* RIGHT COLUMN (RTL): Editorial Headline, Description & CTAs */}
+          <div className="lg:col-span-6 space-y-5 sm:space-y-6 text-center lg:text-right relative z-30">
+            {/* Subtle Scope Eyebrow */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-xs font-bold text-[var(--navy)] shadow-2xs"
+            >
+              <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
+              <span>مساعد مستقل لمشتري الشقق</span>
+            </motion.div>
 
-            {/* Line 2: بأرقام قطعية وتدقيق */}
-            <div className="overflow-hidden py-1">
-              <motion.div
-                initial={{ y: "115%", opacity: 0 }}
-                animate={{ y: "0%", opacity: 1 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
-                className="font-display font-black text-[38px] sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.25] sm:leading-[1.3]"
-              >
-                بأرقام قطعية وتدقيق
-              </motion.div>
-            </div>
+            {/* Headline: Navy Display Font on 3 Clean, Non-Overlapping Lines */}
+            <h1 className="font-display font-black text-[28px] sm:text-[36px] md:text-[40px] lg:text-[38px] xl:text-[44px] text-[var(--navy)] tracking-tight leading-[1.3] space-y-1">
+              <span className="block overflow-hidden py-0.5">
+                <motion.span
+                  initial={{ y: "110%", opacity: 0 }}
+                  animate={{ y: "0%", opacity: 1 }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+                  className="block"
+                >
+                  اتخذ قرار شراء شقتك
+                </motion.span>
+              </span>
 
-            {/* Line 3: هندسي محايد (with Stretched Kashida in --midnight) */}
-            <div className="overflow-hidden py-1">
-              <motion.div
-                initial={{ y: "115%", opacity: 0 }}
-                animate={{ y: "0%", opacity: 1 }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
-                className="font-display font-black text-[38px] sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--midnight)] tracking-tight leading-[1.25] sm:leading-[1.3]"
+              <span className="block overflow-hidden py-0.5">
+                <motion.span
+                  initial={{ y: "110%", opacity: 0 }}
+                  animate={{ y: "0%", opacity: 1 }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+                  className="block"
+                >
+                  بناءً على احتياجك وميزانيتك
+                </motion.span>
+              </span>
+
+              <span className="block overflow-hidden py-0.5">
+                <motion.span
+                  initial={{ y: "110%", opacity: 0 }}
+                  animate={{ y: "0%", opacity: 1 }}
+                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
+                  className="block text-[var(--midnight)]"
+                >
+                  بوضوح وثقة مستقلة
+                </motion.span>
+              </span>
+            </h1>
+
+            {/* Subtext in Dusty-Blue */}
+            <motion.p
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              className="text-[var(--dusty-blue)] text-sm sm:text-base leading-[1.85] max-w-[52ch] font-normal mx-auto lg:mx-0"
+            >
+              قارن حتى 5 شقق مرشحة بما يناسب أسرتك وميزانيتك.
+            </motion.p>
+
+            {/* Primary & Ghost CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.48, ease: [0.22, 1, 0.36, 1] }}
+              className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4"
+            >
+              <MagneticButton
+                href="#consultation-card"
+                onClick={onStartClick}
+                variant="primary"
               >
-                {kashidaPhrase}
-              </motion.div>
-            </div>
+                ابدأ استشارتك
+              </MagneticButton>
+
+              <MagneticButton
+                href="#active-sessions"
+                variant="ghost"
+                showArrow={false}
+              >
+                حالاتي
+              </MagneticButton>
+            </motion.div>
           </div>
 
-          {/* Subtext in Dusty-Blue */}
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[var(--dusty-blue)] text-base sm:text-lg leading-[1.8] max-w-[52ch] font-normal mx-auto lg:mx-0"
-          >
-            نكشف الفوارق الخفية بين المساحات الترويجية والواقع الفعلي للصك ومخطط البناء، ونزن تكاليف التشغيل المخفية قبل دفع أي عربون أو توقيع تمويل عقاري.
-          </motion.p>
+          {/* LEFT COLUMN (RTL): Cutout Property Illustration + Contained Compass Watermark */}
+          <div className="lg:col-span-6 relative flex items-center justify-center">
+            {/* Contained Faint Compass Watermark directly behind the building */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
+              <HeroCompassWatermark size={480} className="opacity-100" />
+            </div>
 
-          {/* TWO BUTTONS ONLY: Primary (Navy Fill) & Ghost (1px Navy Border) */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-4"
-          >
-            {/* Primary CTA (Navy Fill, Cream Text: ابدأ دراسة قرار جديدة) */}
-            <MagneticButton
-              href="#consultation-card"
-              onClick={onStartClick}
-              variant="primary"
+            <motion.div
+              initial={{ y: 32, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{
+                duration: 0.85,
+                delay: 0.2,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="relative w-full max-w-[500px] lg:max-w-[540px] mx-auto"
             >
-              ابدأ دراسة قرار جديدة
-            </MagneticButton>
+              {/* Soft Ground Shadow */}
+              <div
+                className="absolute -bottom-2 left-[8%] right-[8%] h-7 sm:h-10 rounded-[100%] bg-[var(--navy)]/10 blur-[24px] pointer-events-none -z-10"
+                aria-hidden="true"
+              />
 
-            {/* Ghost Button (1px Navy Border: استعراض جلسات التقييم) */}
-            <MagneticButton
-              href="#active-sessions"
-              variant="ghost"
-              showArrow={false}
-            >
-              استعراض جلسات التقييم
-            </MagneticButton>
-          </motion.div>
+              <Image
+                src="/images/house-cutout.png"
+                alt="بوصلة العقار - مساعد ذكي ومستقل لاتخاذ قرار شراء شقة سكنية في السعودية"
+                width={1100}
+                height={691}
+                priority
+                sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 540px"
+                className="w-full h-auto block object-contain select-none transition-[filter] duration-400 ease-out hover:brightness-[1.04]"
+              />
+            </motion.div>
+          </div>
         </div>
-
-        {/* CUTOUT HOUSE IMAGE (Transparent PNG)
-            - Desktop: ~58-60% width, anchored bottom-left, bleeding slightly off left edge, overlaps card by 48px
-            - Tablet: 70% width, centered under text
-            - Mobile: 110% width, overlapping card by 32px
-        */}
-        <motion.div
-          style={{ y: houseParallaxY }}
-          className="relative z-20 w-full lg:w-[54%] xl:w-[58%] lg:absolute lg:top-0 xl:top-0 lg:bottom-auto xl:bottom-auto lg:left-[-24px] xl:left-[-40px] lg:mt-0 md:w-[70%] md:mx-auto md:relative md:left-auto md:bottom-auto md:mt-10 mt-8 sm:mt-10 will-change-transform pointer-events-auto"
-        >
-          <motion.div
-            initial={{ y: 60, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{
-              duration: 1.0,
-              delay: 0.25, // 200ms after headline reveals begin
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="relative group w-[110%] -mr-[5%] -ml-[5%] md:w-full md:m-0"
-          >
-            {/* Soft Ground Shadow: Flat ellipse, navy at 10% opacity, blurred 30px */}
-            <div
-              className="absolute -bottom-2 sm:-bottom-3 left-[6%] right-[6%] h-8 sm:h-12 rounded-[100%] bg-[var(--navy)]/10 blur-[30px] pointer-events-none -z-10"
-              aria-hidden="true"
-            />
-
-            {/* Cutout House with subtle hover window brightening */}
-            <Image
-              src="/images/house-cutout.png"
-              alt="نموذج فيلا سكنية حديثة خاضعة للتدقيق الهندسي - بوصلة العقار"
-              width={1100}
-              height={691}
-              priority
-              sizes="(max-width: 640px) 110vw, (max-width: 1024px) 70vw, 720px"
-              className="w-full h-auto object-contain select-none transition-[filter] duration-400 ease-out hover:brightness-[1.06]"
-            />
-          </motion.div>
-        </motion.div>
-
       </div>
     </section>
   );
