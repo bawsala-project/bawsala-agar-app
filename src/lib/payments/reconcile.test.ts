@@ -3,7 +3,7 @@ import { reconcilePaymentEffect } from "@/lib/payments/reconcile";
 import type { VerifiedWebhook } from "@/lib/payments/adapter";
 
 type Row = Record<string, unknown>;
-const tables: Record<string, Row[]> = { payments: [], case_operations: [] };
+const tables: Record<string, Row[]> = { payments: [], case_operations: [], decision_cases: [] };
 let updateCount = 0;
 
 vi.mock("@/lib/supabase/admin", () => {

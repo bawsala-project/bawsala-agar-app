@@ -128,9 +128,11 @@ export function buildAIAnalysisPayload(
   return aiAnalysisPayloadSchema.parse(target);
 }
 
+import { PRICE_PER_CONSULTATION_SAR } from "@/config/product";
+
 // --- Payment gateway -------------------------------------------------------
 
-const CHECKOUT_AMOUNT_SAR = 10.0;
+const CHECKOUT_AMOUNT_SAR = PRICE_PER_CONSULTATION_SAR;
 
 const paymentPayloadSchema = z.object({
   case_id: z.string().min(1).max(64),

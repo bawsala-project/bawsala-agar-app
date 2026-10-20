@@ -41,6 +41,10 @@ export function BawsalaLogo({
 
   const content = (
     <div
+      dir="ltr"
+      lang="en"
+      style={{ direction: "ltr", unicodeBidi: "isolate" }}
+      aria-label="BAWSALA"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`group inline-flex items-center gap-3 transition-colors duration-200 text-[var(--navy)] ${

@@ -34,7 +34,7 @@ export default async function CaseLayout({
                 </span>
               </div>
               <p className="text-xs text-[var(--dusty-blue)] font-normal hidden sm:block">
-                فحص فني وهندسي مستقل لقرار التملك
+                مستشارك الذكي لقرار شراء شقتك
               </p>
             </div>
           </Link>
@@ -76,9 +76,9 @@ export default async function CaseLayout({
             </div>
             <span className="font-display font-black text-sm text-[var(--navy)]">بوصلة العقار</span>
             <span>•</span>
-            <span>منظومة استشارية هندسية ومالية مستقلة</span>
+            <span>مستشارك الذكي المستقل لقرار الشراء</span>
           </div>
-          <div>متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة</div>
+          <div>مخصص للشقق السكنية في السعودية وفق أولويات المشتري وميزانيته</div>
         </div>
 
         {/* Large Faint Footer Wordmark in Navy Ink */}

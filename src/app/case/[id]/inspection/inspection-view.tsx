@@ -167,7 +167,7 @@ export function InspectionView({
           <div className="w-full sm:w-auto space-y-1.5">
             <div className="flex items-center justify-between sm:justify-start gap-3">
               <span className="text-xs sm:text-sm font-medium text-[var(--navy)] tabular-nums">
-                تم فحص {checkedCount} من {totalItems} بنود ({problemCount} ملاحظات مسجلة)
+                تم فحص {checkedCount} من {totalItems} بنود ({problemCount} مشاكل مسجلة)
               </span>
 
               {goodCount > 0 && (

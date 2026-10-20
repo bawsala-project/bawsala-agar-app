@@ -5,6 +5,9 @@ import { formatSAR } from "@/lib/utils";
 import { EngineeringDialGauge } from "./engineering-dial-gauge";
 import { PropertyDetailSheet } from "./property-detail-sheet";
 
+import type { PropertyFitEvaluation, ConfidenceAssessment } from "@/lib/analysis/fit-evaluator";
+import type { DimensionWeights } from "@/lib/analysis/weights";
+
 export interface ComparisonItem {
   id: string;
   rank?: number | null;
@@ -24,6 +27,15 @@ export interface ComparisonItem {
   key_unknowns: string[];
   image_url?: string | null;
   engineering_score?: number;
+  weighted_fit_score?: number;
+  dimensions?: PropertyFitEvaluation["dimensions"];
+  dimension_weights?: DimensionWeights;
+  top_pros?: string[];
+  top_cons?: string[];
+  ranking_reason_ar?: string;
+  missing_information?: string[];
+  confidence?: ConfidenceAssessment;
+  is_certain?: boolean;
 }
 
 interface ComparisonMatrixProps {
@@ -41,18 +53,22 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
   const prices = items.map((it) => it.listing_price_sar).filter((p) => p > 0);
   const minPrice = prices.length ? Math.min(...prices) : null;
 
-  const pricesPerSqm = items
-    .map((it) => it.price_per_sqm)
-    .filter((p): p is number => p !== null && p > 0);
-  const minPricePerSqm = pricesPerSqm.length ? Math.min(...pricesPerSqm) : null;
-
-  const areas = items.map((it) => it.area_sqm).filter((a): a is number => a !== null && a > 0);
-  const maxArea = areas.length ? Math.max(...areas) : null;
-
-  const scores = items.map((it) =>
-    it.engineering_score || (it.fit_rating === "strong" ? 89 : it.fit_rating === "partial" ? 74 : 58)
+  const fitScores = items.map(
+    (it) => it.weighted_fit_score ?? it.engineering_score ?? (it.fit_rating === "strong" ? 89 : it.fit_rating === "partial" ? 74 : 58)
   );
-  const maxScore = Math.max(...scores);
+  const maxFitScore = Math.max(...fitScores);
+
+  const dailyLifeScores = items.map((it) => it.dimensions?.locationDailyLife.score ?? 75);
+  const maxDailyLifeScore = Math.max(...dailyLifeScores);
+
+  const qualityScores = items.map((it) => it.dimensions?.propertyQuality.score ?? 75);
+  const maxQualityScore = Math.max(...qualityScores);
+
+  const risksScores = items.map((it) => it.dimensions?.risks.score ?? 80);
+  const maxRisksScore = Math.max(...risksScores);
+
+  const confidenceScores = items.map((it) => it.confidence?.score ?? (it.confidence?.level === "high" ? 90 : it.confidence?.level === "medium" ? 70 : 40));
+  const maxConfidenceScore = Math.max(...confidenceScores);
 
   return (
     <div className="w-full space-y-6 select-none" dir="rtl">
@@ -67,7 +83,7 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
                 <th className="p-5 sm:p-6 w-[220px] sm:w-[260px] text-xs font-display font-bold text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)] align-top">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
-                    <span className="text-sm">معايير المقارنة الهندسية</span>
+                    <span className="text-sm">محاور الملاءمة ومقارنة الخيارات</span>
                   </div>
                   <div className="text-[11px] text-[var(--dusty-blue)] font-normal mt-1">
                     {items.length} عقارات مرشحة
@@ -77,7 +93,8 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
                 {/* Property Columns */}
                 {items.map((item) => {
                   const score =
-                    item.engineering_score ||
+                    item.weighted_fit_score ??
+                    item.engineering_score ??
                     (item.fit_rating === "strong" ? 89 : item.fit_rating === "partial" ? 74 : 58);
 
                   return (
@@ -92,7 +109,7 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
                         {/* Top: Rank and Score */}
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-semibold text-[var(--dusty-blue)]">
-                            خيار #{item.rank}
+                            خيار {`#${item.rank}`}
                           </span>
                           <EngineeringDialGauge score={score} size={42} strokeWidth={2.5} />
                         </div>
@@ -118,117 +135,35 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
 
             {/* MATRIX BODY: Rows with Hairline Separators */}
             <tbody className="divide-y divide-[var(--mist)]">
-              {/* Row 1: السعر الإجمالي */}
+              {/* Row 1: Fit score (مؤشر ملاءمة العقار) */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
                 <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
-                  السعر الإجمالي المطلوب
-                </td>
-                {items.map((item) => {
-                  const isBest = minPrice !== null && item.listing_price_sar === minPrice;
-                  return (
-                    <td
-                      key={item.id}
-                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-display font-black text-[var(--navy)] tabular-nums font-mono text-base">
-                          {formatSAR(item.listing_price_sar)}
-                        </span>
-                        {isBest && (
-                          <span
-                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
-                            title="الأفضل في هذا المعيار"
-                          />
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-
-              {/* Row 2: سعر المتر الصافي */}
-              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
-                  سعر المتر المربع الصافي
-                </td>
-                {items.map((item) => {
-                  const isBest =
-                    minPricePerSqm !== null &&
-                    item.price_per_sqm !== null &&
-                    item.price_per_sqm === minPricePerSqm;
-                  return (
-                    <td
-                      key={item.id}
-                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-[var(--navy)] tabular-nums font-mono">
-                          {item.price_per_sqm ? `${formatSAR(item.price_per_sqm)} / م²` : "غير محدد"}
-                        </span>
-                        {isBest && (
-                          <span
-                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
-                            title="الأفضل في هذا المعيار"
-                          />
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-
-              {/* Row 3: المساحة الصافية */}
-              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
-                  المساحة الصافية القابلة للعيش
-                </td>
-                {items.map((item) => {
-                  const isBest = maxArea !== null && item.area_sqm === maxArea;
-                  return (
-                    <td
-                      key={item.id}
-                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-[var(--navy)] tabular-nums font-mono">
-                          {item.area_sqm ? `${item.area_sqm} م²` : "غير محدد"}
-                        </span>
-                        {isBest && (
-                          <span
-                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
-                            title="الأفضل في هذا المعيار"
-                          />
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-
-              {/* Row 4: التقييم الهندسي العام */}
-              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
-                  التقييم الهندسي والإنشائي
+                  مؤشر ملاءمة العقار
                 </td>
                 {items.map((item) => {
                   const score =
-                    item.engineering_score ||
+                    item.weighted_fit_score ??
+                    item.engineering_score ??
                     (item.fit_rating === "strong" ? 89 : item.fit_rating === "partial" ? 74 : 58);
-                  const isBest = score === maxScore;
-
+                  const isBest = score === maxFitScore;
                   return (
                     <td
                       key={item.id}
                       className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-[var(--navy)] tabular-nums font-mono">
-                          {score} / 100
-                        </span>
+                        <div>
+                          <span className="font-display font-black text-[var(--navy)] tabular-nums font-mono text-base">
+                            {score} / 100
+                          </span>
+                          <div className="text-[11px] text-[var(--dusty-blue)] mt-0.5">
+                            {score >= 80 ? "توافق ممتاز مع الأولويات" : score >= 65 ? "توافق مقبول مع تضحيات" : "توافق محدود"}
+                          </div>
+                        </div>
                         {isBest && (
                           <span
                             className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
-                            title="الأعلى تقييماً"
+                            title="الأعلى في مؤشر الملاءمة"
                           />
                         )}
                       </div>
@@ -237,36 +172,188 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
                 })}
               </tr>
 
-              {/* Row 5: كود البناء والتراخيص */}
+              {/* Row 2: Price vs budget (السعر مقابل الميزانية) */}
               <tr className="hover:bg-[var(--cream)]/40 transition-colors">
                 <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
-                  كود البناء والتراخيص
-                </td>
-                {items.map((item) => (
-                  <td
-                    key={item.id}
-                    className="p-4 sm:p-5 text-xs text-[var(--dusty-blue)] border-l border-[var(--mist)]"
-                  >
-                    مطابق لكود البناء (SBC)
-                  </td>
-                ))}
-              </tr>
-
-              {/* Row 6: أولوية الزيارة */}
-              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
-                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
-                  توصية المعاينة
+                  السعر والقدرة المالية
                 </td>
                 {items.map((item) => {
-                  const isPriority = item.visit_priority === "first" || item.rank === 1;
+                  const isBest = minPrice !== null && item.listing_price_sar === minPrice;
+                  const priceReason = item.dimensions?.priceAffordability.reasonAr;
                   return (
                     <td
                       key={item.id}
-                      className="p-4 sm:p-5 text-xs border-l border-[var(--mist)]"
+                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
                     >
-                      <span className={`font-semibold ${isPriority ? "text-[var(--navy)]" : "text-[var(--dusty-blue)]"}`}>
-                        {isPriority ? "أولوية أولى للمعاينة" : "خيار ثانوي للمقارنة"}
-                      </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="font-display font-black text-[var(--navy)] tabular-nums font-mono text-base">
+                            {formatSAR(item.listing_price_sar)}
+                          </span>
+                          <div className="text-[11px] text-[var(--dusty-blue)] mt-0.5 leading-relaxed line-clamp-2">
+                            {priceReason || (item.price_per_sqm ? `${formatSAR(item.price_per_sqm)} / م²` : "ضمن الميزانية المحددة")}
+                          </div>
+                        </div>
+                        {isBest && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
+                            title="السعر الأفضل"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 3: Daily life impact (الموقع وأثر الحياة اليومية) */}
+              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
+                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
+                  الموقع وأثر الحياة اليومية
+                </td>
+                {items.map((item) => {
+                  const score = item.dimensions?.locationDailyLife.score ?? 75;
+                  const isBest = score === maxDailyLifeScore;
+                  const reason = item.dimensions?.locationDailyLife.reasonAr;
+                  return (
+                    <td
+                      key={item.id}
+                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-[var(--navy)] tabular-nums font-mono">
+                            {score} / 100
+                          </span>
+                          <div className="text-[11px] text-[var(--dusty-blue)] mt-0.5 leading-relaxed line-clamp-2">
+                            {reason || (item.district ? `حي ${item.district} - موقع مناسب للروتين اليومي` : "ملائم للروتين اليومي")}
+                          </div>
+                        </div>
+                        {isBest && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
+                            title="الأفضل في الموقع والحياة اليومية"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 4: Quality (جودة العقار وحالته) */}
+              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
+                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
+                  جودة العقار وحالته
+                </td>
+                {items.map((item) => {
+                  const score = item.dimensions?.propertyQuality.score ?? 75;
+                  const isBest = score === maxQualityScore;
+                  const reason = item.dimensions?.propertyQuality.reasonAr;
+                  return (
+                    <td
+                      key={item.id}
+                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-[var(--navy)] tabular-nums font-mono">
+                            {score} / 100
+                          </span>
+                          <div className="text-[11px] text-[var(--dusty-blue)] mt-0.5 leading-relaxed line-clamp-2">
+                            {reason || "مواصفات تشطيب حديث وعمر بناء مناسب"}
+                          </div>
+                        </div>
+                        {isBest && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
+                            title="الأعلى جودة"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 5: Risks (المخاطر وجوانب الحذر) */}
+              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
+                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
+                  المخاطر وجوانب الحذر
+                </td>
+                {items.map((item) => {
+                  const score = item.dimensions?.risks.score ?? 80;
+                  const isBest = score === maxRisksScore;
+                  const reason = item.dimensions?.risks.reasonAr;
+                  return (
+                    <td
+                      key={item.id}
+                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-[var(--navy)] tabular-nums font-mono">
+                            {score} / 100
+                          </span>
+                          <div className="text-[11px] text-[var(--dusty-blue)] mt-0.5 leading-relaxed line-clamp-2">
+                            {reason || "سلامة الصك الإلكتروني وخلو من الالتزامات الحرجة"}
+                          </div>
+                        </div>
+                        {isBest && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
+                            title="الأقل مخاطر والأعلى أماناً"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+
+              {/* Row 6: Confidence (مستوى الثقة وموثوقية البيانات) */}
+              <tr className="hover:bg-[var(--cream)]/40 transition-colors">
+                <td className="p-4 sm:p-5 font-bold text-xs sm:text-sm text-[var(--navy)] border-l border-[var(--mist)] bg-[var(--paper)]">
+                  مستوى الثقة وموثوقية البيانات
+                </td>
+                {items.map((item) => {
+                  const level = item.confidence?.level ?? (item.is_certain !== false ? "high" : "low");
+                  const confScore = item.confidence?.score ?? (level === "high" ? 90 : level === "medium" ? 70 : 40);
+                  const isBest = confScore === maxConfidenceScore;
+                  const reason = item.confidence?.reasonAr;
+                  return (
+                    <td
+                      key={item.id}
+                      className="p-4 sm:p-5 text-sm border-l border-[var(--mist)]"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <span
+                            className={`font-bold text-xs ${
+                              level === "high"
+                                ? "text-emerald-700"
+                                : level === "medium"
+                                ? "text-blue-700"
+                                : "text-amber-700"
+                            }`}
+                          >
+                            {level === "high"
+                              ? "ثقة مرتفعة"
+                              : level === "medium"
+                              ? "ثقة متوسطة"
+                              : "تقدير مبدئي (بيانات ناقصة)"}
+                          </span>
+                          <div className="text-[11px] text-[var(--dusty-blue)] mt-0.5 leading-relaxed line-clamp-2">
+                            {reason || (level === "high" ? "بيانات موثقة ومطابقة" : "بيانات ناقصة تستدعي المعاينة")}
+                          </div>
+                        </div>
+                        {isBest && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-[var(--navy)] shrink-0"
+                            title="الأعلى موثوقية في البيانات"
+                          />
+                        )}
+                      </div>
                     </td>
                   );
                 })}
@@ -302,6 +389,15 @@ export function ComparisonMatrix({ items }: ComparisonMatrixProps) {
             key_unknowns: activePropertyForSheet.key_unknowns,
             engineering_score: activePropertyForSheet.engineering_score,
             price_per_sqm: activePropertyForSheet.price_per_sqm,
+            weighted_fit_score: activePropertyForSheet.weighted_fit_score,
+            dimensions: activePropertyForSheet.dimensions,
+            dimension_weights: activePropertyForSheet.dimension_weights,
+            top_pros: activePropertyForSheet.top_pros,
+            top_cons: activePropertyForSheet.top_cons,
+            ranking_reason_ar: activePropertyForSheet.ranking_reason_ar,
+            missing_information: activePropertyForSheet.missing_information,
+            confidence: activePropertyForSheet.confidence,
+            is_certain: activePropertyForSheet.is_certain,
           }}
         />
       )}

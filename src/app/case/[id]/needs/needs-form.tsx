@@ -304,7 +304,7 @@ export function NeedsForm({ caseId, initialData, city }: NeedsFormProps) {
       <section className="text-center max-w-3xl mx-auto space-y-3">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--paper)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium shadow-xs">
           <ShieldCheck className="w-4 h-4 text-[var(--navy)]" />
-          <span>المرحلة الأولى • صياغة المعايير الهندسية والمالية</span>
+          <span>المرحلة الأولى • ملف المشتري ومعايير القرار</span>
           {city && (
             <>
               <span className="text-[var(--mist)]">•</span>

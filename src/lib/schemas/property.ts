@@ -88,6 +88,21 @@ export const manualPropertySchema = z
         .int("يجب أن يكون رقم الدور عدداً صحيحاً")
         .optional()
     ),
+    building_age_years: z.preprocess(
+      (val) => (val === "" || val === null || val === undefined ? undefined : val),
+      z.coerce
+        .number({ message: "عمر المبنى يجب أن يكون رقماً" })
+        .int("يجب أن يكون عمر المبنى عدداً صحيحاً")
+        .min(0, "عمر المبنى لا يمكن أن يكون سالباً")
+        .max(100, "الحد الأقصى لعمر المبنى 100 سنة")
+        .optional()
+    ),
+    reference_url: z
+      .string()
+      .trim()
+      .max(2048, "الحد الأقصى لطول الرابط 2048 حرفاً")
+      .optional()
+      .nullable(),
     notes: z
       .string()
       .trim()

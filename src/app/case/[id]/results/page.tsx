@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Scale, Info } from "lucide-react";
+import { ArrowRight, Scale, Info, Sparkles, AlertTriangle, CheckCircle2, Trophy, HelpCircle } from "lucide-react";
 import { getSessionUser, requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
 import { AccountLinkBanner } from "@/components/account-link-banner";
 import { PropertyCardRedesigned, type PropertyCardData, type PropertyAssessmentData } from "@/components/properties/property-card-redesigned";
+import { EngineeringDialGauge } from "@/components/properties/engineering-dial-gauge";
 import { AnalysisStatus, type AnalysisStatusMode } from "./analysis-status";
+import { loadBuyerProfile } from "@/actions/buyer-profile";
+import { BuyerProfileSummary } from "@/components/case/buyer-profile-summary";
+import { evaluatePropertyFit, evaluateCaseFit, type PropertyDataInput } from "@/lib/analysis/fit-evaluator";
+import { formatSAR } from "@/lib/utils";
 
 // Mirrors the 5-minute stale threshold used by startAnalysis for running runs.
 const STALE_RUN_MS = 300 * 1000;
@@ -77,24 +82,27 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
 
   const latestRunId = runs[0].id;
 
-  // 3. Fetch assessments for this run with property details and facts
-  const { data: assessments } = await supabase
-    .from("property_assessments")
-    .select(`
-      *,
-      properties (
-        id,
-        title,
-        district,
-        listing_price_sar,
-        source_url,
-        input_mode,
-        notes,
-        property_facts (*)
-      )
-    `)
-    .eq("run_id", latestRunId)
-    .order("created_at", { ascending: true });
+  // 3. Fetch assessments for this run with property details and facts, and buyer profile
+  const [{ data: assessments }, buyerProfile] = await Promise.all([
+    supabase
+      .from("property_assessments")
+      .select(`
+        *,
+        properties (
+          id,
+          title,
+          district,
+          listing_price_sar,
+          source_url,
+          input_mode,
+          notes,
+          property_facts (*)
+        )
+      `)
+      .eq("run_id", latestRunId)
+      .order("created_at", { ascending: true }),
+    loadBuyerProfile(params.id),
+  ]);
 
   if (!assessments || assessments.length === 0) {
     redirect(`/case/${params.id}/preflight`);
@@ -129,14 +137,14 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
         </div>
       )}
 
-      {/* Top Header Card */}
+      {/* Top Header Card - Buyer Consultation Framing */}
       <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-8 space-y-6 shadow-[0_20px_60px_rgba(15,26,43,0.04)]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] animate-pulse" />
-                المرحلة 4 من 4 • تقرير القرار النهائي
+                المرحلة 4 من 4 • استشارة القرار والشراء
               </span>
 
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
@@ -145,10 +153,10 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-display font-bold text-[var(--navy)] tracking-tight">
-              تقرير تقييم العقارات
+              تقرير ملاءمة الشقق للمشتري
             </h1>
             <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-2xl leading-relaxed">
-              نتائج فحص مطابقة العقارات لمتطلباتك وشروطك المحددة، مع كشف فروقات المساحة وتكاليف التشغيل وإرشادات المعاينة.
+              تقييم استشاري مستقل ومحايد يربط احتياجاتك وميزانيتك وظروف أسرتك بالشقق المرشحة لتحديد الخيار الأنسب لك ومفاضلة البدائل.
             </p>
           </div>
 
@@ -175,9 +183,11 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
         </div>
       </div>
 
-      {/* Property Cards Grid */}
-      <section aria-label="قائمة تقييم العقارات" className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {assessments.map((a, index) => {
+      {/* Session Summary: Buyer Profile */}
+      <BuyerProfileSummary caseId={params.id} profile={buyerProfile} compact />
+
+      {(() => {
+        const propertiesWithEvaluations = assessments.map((a) => {
           const p = a.properties as unknown as {
             id: string;
             title?: string | null;
@@ -202,45 +212,316 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
               ? String(resolved.fields.district.value)
               : p?.district ?? null;
 
+          const fitInput: PropertyDataInput = {
+            id: p?.id || a.property_id,
+            title: p?.title,
+            district: resolvedDistrict,
+            city: "الرياض",
+            listingPriceSar: resolvedPrice,
+            areaSqm: resolved.fields.area_sqm?.status === "known" ? Number(resolved.fields.area_sqm.value) : 140,
+            bedrooms: resolved.fields.bedrooms?.status === "known" ? Number(resolved.fields.bedrooms.value) : 3,
+            bathrooms: resolved.fields.bathrooms?.status === "known" ? Number(resolved.fields.bathrooms.value) : 2,
+            floorNo: resolved.fields.floor_no?.status === "known" ? Number(resolved.fields.floor_no.value) : 2,
+            notes: p?.notes,
+            resolved,
+          };
+
+          const fitEvaluation = evaluatePropertyFit(buyerProfile, fitInput);
+
           const propertyData: PropertyCardData = {
             id: p?.id || a.property_id,
             title: p?.title,
             district: resolvedDistrict,
             listing_price_sar: resolvedPrice,
-            area_sqm: resolved.fields.area_sqm?.status === "known" ? Number(resolved.fields.area_sqm.value) : 140,
-            bedrooms: resolved.fields.bedrooms?.status === "known" ? Number(resolved.fields.bedrooms.value) : 3,
-            bathrooms: resolved.fields.bathrooms?.status === "known" ? Number(resolved.fields.bathrooms.value) : 3,
-            floor_no: resolved.fields.floor_no?.status === "known" ? Number(resolved.fields.floor_no.value) : 2,
+            area_sqm: fitInput.areaSqm,
+            bedrooms: fitInput.bedrooms,
+            bathrooms: fitInput.bathrooms,
+            floor_no: fitInput.floorNo,
             notes: p?.notes,
           };
 
           const assessmentData: PropertyAssessmentData = {
             fit_rating: a.fit_rating,
-            fit_summary: a.fit_summary,
+            fit_summary: a.fit_summary || fitEvaluation.rankingReasonAr,
             visit_priority: a.visit_priority,
             visit_priority_reason: a.visit_priority_reason,
-            strengths: (a.strengths as unknown as string[]) || [],
-            risks: (a.risks as unknown as string[]) || [],
-            key_unknowns: (a.key_unknowns as unknown as string[]) || [],
+            strengths: (a.strengths as unknown as string[])?.length ? (a.strengths as unknown as string[]) : fitEvaluation.topPros,
+            risks: (a.risks as unknown as string[])?.length ? (a.risks as unknown as string[]) : fitEvaluation.topCons,
+            key_unknowns: (a.key_unknowns as unknown as string[])?.length ? (a.key_unknowns as unknown as string[]) : fitEvaluation.missingInformation,
             price_per_sqm: a.price_per_sqm ? Number(a.price_per_sqm) : null,
-            engineering_score:
-              a.fit_rating === "strong"
-                ? 89
-                : a.fit_rating === "partial"
-                ? 74
-                : 58,
+            weighted_fit_score: fitEvaluation.weightedFitScore,
+            dimensions: fitEvaluation.dimensions,
+            dimension_weights: fitEvaluation.dimensionWeights,
+            top_pros: fitEvaluation.topPros,
+            top_cons: fitEvaluation.topCons,
+            ranking_reason_ar: fitEvaluation.rankingReasonAr,
+            missing_information: fitEvaluation.missingInformation,
+            confidence: fitEvaluation.confidence,
+            is_certain: fitEvaluation.isCertain,
+            engineering_score: fitEvaluation.weightedFitScore,
           };
 
-          return (
-            <PropertyCardRedesigned
-              key={a.id}
-              property={propertyData}
-              assessment={assessmentData}
-              index={index}
-            />
-          );
-        })}
-      </section>
+          return {
+            id: a.id,
+            fitInput,
+            fitEvaluation,
+            propertyData,
+            assessmentData,
+          };
+        });
+
+        const caseFit = evaluateCaseFit(
+          buyerProfile,
+          propertiesWithEvaluations.map((item) => item.fitInput)
+        );
+
+        const recommendedProperty =
+          propertiesWithEvaluations.find(
+            (p) => p.propertyData.id === caseFit.rankedProperties[0]?.propertyId
+          ) || propertiesWithEvaluations[0];
+
+        const rankedAlternatives = propertiesWithEvaluations
+          .filter((p) => p.propertyData.id !== recommendedProperty.propertyData.id)
+          .sort((a, b) => (b.assessmentData.weighted_fit_score || 0) - (a.assessmentData.weighted_fit_score || 0));
+
+        return (
+          <>
+            {/* 1. RESULTS TOP: RECOMMENDED OPTION FOR THIS BUYER WITH REASON */}
+            <div className="bg-[var(--paper)] rounded-[28px] border-2 border-[var(--navy)] p-6 sm:p-8 space-y-6 shadow-[0_20px_60px_rgba(15,26,43,0.06)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--mist)] pb-5">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)]">
+                      <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                      <span>الخيار الأنسب لك (المرتبة الأولى)</span>
+                    </span>
+                    <span className="text-xs text-[var(--dusty-blue)] font-medium">
+                      حي {recommendedProperty.propertyData.district || "الرياض"}
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-3xl font-display font-bold text-[var(--navy)] tracking-tight">
+                    {recommendedProperty.propertyData.title}
+                  </h2>
+                  <div className="text-xs text-[var(--dusty-blue)]">
+                    {recommendedProperty.propertyData.area_sqm} م² • {recommendedProperty.propertyData.bedrooms} غرف نوم • الدور {recommendedProperty.propertyData.floor_no ?? 2}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-5 border-t sm:border-t-0 sm:border-r border-[var(--mist)] pt-4 sm:pt-0 sm:pr-6 shrink-0">
+                  <div className="text-right sm:text-left">
+                    <div className="text-[11px] font-medium text-[var(--dusty-blue)]">
+                      السعر الإجمالي المطلوب
+                    </div>
+                    <div className="font-display font-black text-xl sm:text-2xl text-[var(--navy)] tabular-nums">
+                      {formatSAR(recommendedProperty.propertyData.listing_price_sar || 0)}
+                    </div>
+                  </div>
+                  <EngineeringDialGauge
+                    score={recommendedProperty.assessmentData.weighted_fit_score || 85}
+                    size={60}
+                    strokeWidth={3.5}
+                  />
+                </div>
+              </div>
+
+              {/* Recommendation Reason Narrative */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2">
+                <div className="text-xs font-bold text-[var(--navy)] flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[var(--navy)]" />
+                  <span>لماذا يناسبك هذا الخيار تحديداً؟</span>
+                </div>
+                <p className="text-xs sm:text-sm text-[var(--navy)] leading-relaxed font-medium">
+                  {recommendedProperty.assessmentData.ranking_reason_ar || caseFit.summaryAr}
+                </p>
+              </div>
+
+              {/* Top Pros for this buyer */}
+              {recommendedProperty.assessmentData.top_pros && recommendedProperty.assessmentData.top_pros.length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-[var(--navy)]">أبرز مزايا التوافق مع متطلباتك الشخصية:</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {recommendedProperty.assessmentData.top_pros.slice(0, 3).map((pro, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-[var(--cream)]/60 border border-[var(--mist)] text-xs text-[var(--navy)] flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span className="leading-relaxed">{pro}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. RANKED ALTERNATIVES (if 2+ properties exist) */}
+            {rankedAlternatives.length > 0 && (
+              <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-7 space-y-4 shadow-[0_20px_60px_rgba(15,26,43,0.04)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--mist)] pb-3">
+                  <h3 className="font-display font-bold text-base sm:text-lg text-[var(--navy)]">
+                    الخيارات والبدائل التالية بالترتيب
+                  </h3>
+                  <span className="text-xs text-[var(--dusty-blue)]">
+                    مرتبة حسب مؤشر الملاءمة المرجح وأولوياتك
+                  </span>
+                </div>
+
+                <div className="divide-y divide-[var(--mist)]">
+                  {rankedAlternatives.map((alt, idx) => (
+                    <div key={alt.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-3">
+                        <span className="w-8 h-8 rounded-full bg-[var(--cream)] border border-[var(--mist)] flex items-center justify-center font-bold text-[var(--navy)] shrink-0">
+                          #{idx + 2}
+                        </span>
+                        <div>
+                          <div className="font-bold text-[var(--navy)] text-sm">{alt.propertyData.title}</div>
+                          <div className="text-[var(--dusty-blue)] text-xs mt-0.5">
+                            حي {alt.propertyData.district || "الرياض"} • {formatSAR(alt.propertyData.listing_price_sar || 0)} • {alt.propertyData.area_sqm} م²
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 self-end sm:self-center">
+                        <div className="text-right sm:text-left text-[11px] text-[var(--dusty-blue)] max-w-md line-clamp-1">
+                          {alt.assessmentData.ranking_reason_ar}
+                        </div>
+                        <span className="px-3 py-1 rounded-full font-bold font-mono text-[var(--navy)] bg-[var(--cream)] border border-[var(--mist)] shrink-0">
+                          {alt.assessmentData.weighted_fit_score} / 100
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. CASE SUMMARY WITH MISSING INFORMATION & CONFIDENCE LEVEL */}
+            <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-7 space-y-4 shadow-[0_20px_60px_rgba(15,26,43,0.04)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--mist)] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <HelpCircle className="w-4 h-4 text-[var(--navy)]" />
+                  <h2 className="font-display font-bold text-base sm:text-lg text-[var(--navy)]">
+                    ملخص موثوقية بيانات الحالة الاستشارية
+                  </h2>
+                </div>
+
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--cream)] border border-[var(--mist)]">
+                  <span className="text-[var(--dusty-blue)]">مستوى موثوقية الحالة:</span>
+                  <span
+                    className={
+                      caseFit.confidence.level === "high"
+                        ? "text-emerald-700 font-bold"
+                        : caseFit.confidence.level === "medium"
+                        ? "text-blue-700 font-bold"
+                        : "text-amber-700 font-bold"
+                    }
+                  >
+                    {caseFit.confidence.level === "high"
+                      ? "ثقة عالية"
+                      : caseFit.confidence.level === "medium"
+                      ? "ثقة متوسطة"
+                      : "تقدير مبدئي (بيانات ناقصة)"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs leading-relaxed">
+                <div>
+                  <span className="font-bold text-[var(--navy)]">سبب تقييم الثقة: </span>
+                  <span className="text-[var(--dusty-blue)]">{caseFit.confidence.reasonAr}</span>
+                </div>
+
+                {caseFit.missingInformation.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <div className="font-bold text-[var(--navy)]">
+                      قائمة البيانات الناقصة في ملف الحالة (تستوجب التحقق أثناء المعاينة):
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {caseFit.missingInformation.map((info, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1.5 rounded-xl bg-[var(--cream)] border border-[var(--mist)] text-[var(--dusty-blue)] text-xs font-medium"
+                        >
+                          {info}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {caseFit.confidence.level === "low" && (
+                  <div className="p-3.5 rounded-2xl bg-[#FFF9EC] border border-[#F9E2AF] text-[#9A6700] text-xs leading-relaxed flex items-start gap-2.5 mt-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div>
+                      <strong>تنبيه استشاري لضمان دقة القرار:</strong> لا تعتبر هذه التقديرات حكماً نهائياً للشراء بل خطوة لتوجيه المعاينة الميدانية واستكمال النواقص المذكورة أعلاه.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4. ALL CANDIDATE PROPERTY CARDS */}
+            <section aria-label="قائمة تقييم الشقق" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {propertiesWithEvaluations.map((item, index) => (
+                <PropertyCardRedesigned
+                  key={item.id}
+                  property={item.propertyData}
+                  assessment={item.assessmentData}
+                  index={index}
+                />
+              ))}
+            </section>
+
+            {/* 5. SHORT CLOSING "الخلاصة" FOR THE BUYER */}
+            <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-6 sm:p-8 space-y-4 shadow-[0_20px_60px_rgba(15,26,43,0.04)]">
+              <div className="flex items-center gap-2.5 border-b border-[var(--mist)] pb-3">
+                <Sparkles className="w-5 h-5 text-[var(--navy)]" />
+                <h3 className="font-display font-bold text-lg sm:text-xl text-[var(--navy)]">
+                  الخلاصة وتوجيهات ما قبل الشراء للمشتري
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                {/* Which option fits */}
+                <div className="p-4 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[var(--navy)]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>أي خيار هو الأنسب لك؟</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-[var(--navy)] leading-relaxed font-medium">
+                    {recommendedProperty
+                      ? `الشقة الأنسب لاحتياجاتك وظروفك الحالية هي "${recommendedProperty.propertyData.title || "الخيار الأول"}" (${recommendedProperty.propertyData.district || "الرياض"}) بمؤشر ملاءمة ${recommendedProperty.assessmentData.weighted_fit_score || 85}%، نظراً لتوافقها العالي مع سقف ميزانيتك وأولويات أسرتك.`
+                      : "راجع تقييم الشقق المرشحة لتحديد الأقرب لتفضيلاتك."}
+                  </p>
+                </div>
+
+                {/* What to verify before buying */}
+                <div className="p-4 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[var(--navy)]">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>ما يجب التحقق منه ميدانياً قبل الشراء:</span>
+                  </div>
+                  <ul className="text-xs text-[var(--dusty-blue)] space-y-1.5 leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] shrink-0 mt-1.5" />
+                      <span>مطابقة المساحة الصافية الفعلية بالمتر مع المذكور في الصك الإلكتروني.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] shrink-0 mt-1.5" />
+                      <span>التأكد من فرز الموقف والمصعد وعداد المياه/الكهرباء برقم مستقل في الصك.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] shrink-0 mt-1.5" />
+                      <span>الاطلاع على لائحة ورسوم اتحاد الملاك الشهرية والسنوية والتزامات الصيانة.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)] shrink-0 mt-1.5" />
+                      <span>معاينة العزل الصوتي والمائي وجودة تمديدات السباكة والتشطيب على أرض الواقع.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Bottom Comparison CTA (if 2+ properties exist) */}
       {showComparisonCTA && (

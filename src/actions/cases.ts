@@ -5,10 +5,17 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { ensureSession, requireCase, ALLOWED_CITIES } from "@/lib/auth";
+import { ensureSession, requireCase } from "@/lib/auth";
 import type { Database } from "@/types/database";
+import {
+  SUPPORTED_CITIES,
+  SUPPORTED_PROPERTY_TYPES,
+  EXPANSION_PROPERTY_TYPES,
+  ACTIVE_STRATEGIC_GOALS,
+  EXPANSION_TYPES,
+} from "@/config/product";
 
-const CitySchema = z.enum(ALLOWED_CITIES);
+const CitySchema = z.enum(SUPPORTED_CITIES);
 
 export async function startCase(formData: FormData) {
   const rawCity = formData.get("city");
@@ -34,17 +41,34 @@ export async function startCase(formData: FormData) {
     throw new Error(error?.message || "Failed to create case");
   }
 
-  const typology = formData.get("typology")?.toString();
-  const intent = formData.get("purchase_intent")?.toString();
+  // Validate property typology
+  const rawTypology = formData.get("typology")?.toString()?.toLowerCase();
+  const normalizedTypology = rawTypology === "apt" ? "apartment" : rawTypology;
+  const allowedTypologies = (
+    EXPANSION_TYPES ? EXPANSION_PROPERTY_TYPES : SUPPORTED_PROPERTY_TYPES
+  ) as readonly string[];
+  const validTypology =
+    normalizedTypology && allowedTypologies.includes(normalizedTypology)
+      ? normalizedTypology
+      : SUPPORTED_PROPERTY_TYPES[0];
+
+  // Validate strategic goal (hide investment unless EXPANSION_TYPES)
+  const rawIntent = formData.get("purchase_intent")?.toString()?.toLowerCase();
+  const allowedIntents = ACTIVE_STRATEGIC_GOALS.map((g) => g.id);
+  const validIntent =
+    rawIntent && allowedIntents.includes(rawIntent)
+      ? rawIntent
+      : ACTIVE_STRATEGIC_GOALS[0].id;
+
   const title = formData.get("session_title")?.toString();
 
   const searchParams = new URLSearchParams();
-  if (typology) searchParams.set("typology", typology);
-  if (intent) searchParams.set("intent", intent);
+  if (validTypology) searchParams.set("typology", validTypology);
+  if (validIntent) searchParams.set("intent", validIntent);
   if (title) searchParams.set("title", title);
 
   const qs = searchParams.toString() ? `?${searchParams.toString()}` : "";
-  redirect(`/case/${data.id}/needs${qs}`);
+  redirect(`/case/${data.id}/profile${qs}`);
 }
 
 export async function deleteCase(caseId: string) {

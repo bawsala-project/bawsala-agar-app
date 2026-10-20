@@ -10,6 +10,7 @@ import { loadPreflightData } from "@/lib/preflight/load";
 import { evaluatePreflight } from "@/lib/preflight/evaluate";
 import { initiateCheckoutAction } from "@/actions/payments";
 import { AccountLinkBanner } from "@/components/account-link-banner";
+import { PRICE_PER_CONSULTATION_SAR } from "@/config/product";
 
 interface CheckoutPageProps {
   params: { id: string };
@@ -19,7 +20,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   await requireCase(params.id);
 
   const evaluation = evaluatePreflight(await loadPreflightData(params.id));
-  if (!evaluation.ready) {
+  if (!evaluation.ready || (evaluation.readiness && !evaluation.readiness.isReady)) {
     redirect(`/case/${params.id}/preflight`);
   }
 
@@ -76,19 +77,22 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               تقرير تحليل واستشارة شراء الشقة
             </h1>
             <p className="text-xs text-[var(--dusty-blue)] leading-relaxed">
-              دراسة قطعية شاملة لمطابقة العقارات، كشف التناقضات، وإرشادات المعاينة الميدانية.
+              دراسة شاملة لمطابقة الشقق مع ميزانيتك وأولوياتك وحساب أبعاد الملاءمة الخمسة.
             </p>
           </div>
 
           {/* Price Box */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-1">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] space-y-1.5">
             <span className="text-xs font-medium text-[var(--dusty-blue)] block">المبلغ الإجمالي المستحق:</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-display font-bold text-[var(--navy)] tabular-nums tracking-tight">10.00</span>
+              <span className="text-3xl font-display font-bold text-[var(--navy)] tabular-nums tracking-tight">{PRICE_PER_CONSULTATION_SAR}.00</span>
               <span className="text-sm font-medium text-[var(--dusty-blue)]">ر.س</span>
             </div>
-            <p className="text-xs text-[var(--dusty-blue)] pt-1 tabular-nums">
-              المبلغ المستحق: 10.00 ر.س (شامل كافة التحليلات وقائمة المعاينة الميدانية)
+            <p className="text-xs font-bold text-[var(--navy)] pt-1">
+              10 ريالات لكل حالة استشارة، وليس لكل عقار
+            </p>
+            <p className="text-[11px] text-[var(--dusty-blue)]">
+              دفعة واحدة تغطي دراسة ومقارنة من 1 إلى 5 شقق مرشحة للاستشارة.
             </p>
           </div>
 
@@ -96,7 +100,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           <div className="space-y-2.5 pt-2 border-t border-[var(--mist)] text-xs text-[var(--dusty-blue)]">
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-[#1E6B43] shrink-0" />
-              <span className="text-[var(--navy)]">تدقيق قطعي للصك والمخطط وتفادي متوسطات الأسعار المضللة</span>
+              <span className="text-[var(--navy)]">تحليل أبعاد الملاءمة الخمسة: الاحتياج، الميزانية، أثر الموقع، الجودة، والمخاطر</span>
             </div>
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-[#1E6B43] shrink-0" />
@@ -104,7 +108,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             </div>
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-[#1E6B43] shrink-0" />
-              <span className="text-[var(--navy)]">قائمة المعاينة الميدانية التفاعلية المخصصة لكل عقار</span>
+              <span className="text-[var(--navy)]">عناصر داعمة للقرار تشمل مطابقة الصكوك وتكاليف التشغيل وقائمة المعاينة</span>
             </div>
             <div className="flex items-center gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-[#1E6B43] shrink-0" />
@@ -119,7 +123,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               className="btn-primary w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-semibold text-base shadow-sm transition-all active:scale-[0.98] cursor-pointer opacity-100"
             >
               <CreditCard className="w-4 h-4 text-[var(--cream)] opacity-100 shrink-0" />
-              <span className="text-[var(--cream)] text-base font-semibold opacity-100">إتمام الدفع التجريبي (10 ر.س)</span>
+              <span className="text-[var(--cream)] text-base font-semibold opacity-100">سداد رسوم الاستشارة والبدء بالتحليل</span>
             </button>
           </form>
 

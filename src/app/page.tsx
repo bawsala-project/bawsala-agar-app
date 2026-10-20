@@ -30,7 +30,11 @@ interface DecisionCaseWithProperties {
   properties?: { id: string }[];
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: { intro?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -54,8 +58,8 @@ export default async function HomePage() {
       lang="ar"
       className="min-h-screen bg-[var(--cream)] text-[var(--navy)] font-body antialiased selection:bg-[var(--mist)] selection:text-[var(--navy)] relative overflow-x-hidden"
     >
-      {/* Opening Intro Animation Overlay (plays once per session) */}
-      <IntroOverlay />
+      {/* Opening Intro Animation Overlay (plays once per session, forcePlay with ?intro=force) */}
+      <IntroOverlay forcePlay={searchParams?.intro === "force"} />
 
       {/* Floating Centered Island Navbar */}
       <BawsalaNavbar
@@ -81,14 +85,14 @@ export default async function HomePage() {
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-display font-bold text-[var(--navy)]">
-                  جلسات القرار النشطة
+                  استشارات القرار العقاري
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-[var(--paper)] text-[var(--navy)] text-[11px] font-bold border border-[var(--mist)]">
-                  {cases.length} {cases.length === 1 ? "جلسة" : "جلسات"}
+                  {cases.length} {cases.length === 1 ? "استشارة" : "استشارات"}
                 </span>
               </div>
               <p className="text-xs text-[var(--dusty-blue)] mt-1">
-                تابع إدخال العقارات أو استخرج التقرير الهندسي الشامل
+                تابع إدخال الشقق أو استخرج قرار التوصية والمقارنة الشامل
               </p>
             </div>
 
@@ -98,7 +102,7 @@ export default async function HomePage() {
                 type="button"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
-                <span>تصفية الجلسات</span>
+                <span>تصفية الاستشارات</span>
               </button>
             )}
           </div>
@@ -109,10 +113,10 @@ export default async function HomePage() {
                 <Inbox className="w-6 h-6 text-[var(--dusty-blue)]" />
               </div>
               <h3 className="text-base font-display font-bold text-[var(--navy)]">
-                لا توجد جلسات دراسة سابقة
+                لا توجد حالات استشارة سابقة
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] max-w-sm mx-auto leading-relaxed">
-                ابدأ جلستك الاستشارية الأولى باختيار المدينة المستهدفة أعلاه، وسيتم حفظ مسار دراستك تلقائياً هنا.
+                ابدأ استشارتك الأولى لاختيار شقتك بتحديد المدينة أعلاه، وسيتم حفظ مسار قرارك تلقائياً هنا.
               </p>
             </div>
           ) : (
@@ -133,7 +137,7 @@ export default async function HomePage() {
                   };
                 } else if (propCount === 1) {
                   statusBadge = {
-                    text: "بانتظار إضافة بقية العقارات",
+                    text: "بانتظار إضافة بقية الشقق",
                     dotClass: "bg-[var(--status-warn)]",
                     bgClass: "bg-[var(--cream)] text-[var(--status-warn)] border-[var(--mist)]",
                   };
@@ -156,7 +160,7 @@ export default async function HomePage() {
                           {c.city}
                         </span>
                         <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-[11px] font-medium">
-                          عقار سكني
+                          شقة سكنية
                         </span>
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusBadge.bgClass}`}
@@ -167,7 +171,7 @@ export default async function HomePage() {
                       </div>
 
                       <h3 className="text-base font-display font-bold text-[var(--navy)]">
-                        دراسة قرار شراء عقار في {c.city}
+                        دراسة قرار شراء شقة في {c.city}
                       </h3>
 
                       <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--dusty-blue)] font-normal">
@@ -177,7 +181,7 @@ export default async function HomePage() {
                         </span>
                         <span className="flex items-center gap-1.5 text-[var(--navy)] font-semibold">
                           <Building2 className="w-3.5 h-3.5 text-[var(--dusty-blue)]" />
-                          {propCount} {propCount === 1 ? "عقار مضاف" : "عقارات مرشحة"}
+                          {propCount} {propCount === 1 ? "شقة مرشحة" : "شقق مرشحة"}
                         </span>
                       </div>
                     </div>
@@ -208,7 +212,7 @@ export default async function HomePage() {
               لماذا تختلف بوصلة العقار؟
             </h2>
             <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-lg mx-auto">
-              معايير مكتب استشاري وهندسي مستقل مصممة لحماية أموالك، بعيداً عن أساليب التسويق العقاري
+              مستشار ذكي مستقل يساعدك في اتخاذ قرار شراء شقتك وفق ميزانيتك وأولوياتك بـ 10 ريالات للحالة
             </p>
           </div>
 
@@ -222,7 +226,7 @@ export default async function HomePage() {
                 حياد استشاري 100%
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
-                لا نتقاضى عمولات تسويقية من أي مطور، ولا نروج لعقار على حساب آخر. مصلحتك كطرف مشترٍ هي غايتنا الوحيدة.
+                لا نروج لأي مطور ولا نتقاضى عمولات تسويق. نزن ملاءمة الشقة لظروفك وميزانيتك كطرف مشترٍ فقط.
               </p>
             </div>
 
@@ -235,7 +239,7 @@ export default async function HomePage() {
                 كشف تضارب المساحات والصكوك
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
-                نكشف الهدر الإعلاني ونطابق المساحة الصافية القابلة للعيش، مع تدقيق ملكية المواقف والارتدادات والتراخيص الرسمية.
+                نكشف الفروقات بين المواصفات المعروضة والواقع الفعلي، مع مطابقة الصك والمواقف والمساحة الصافية كأدلة داعمة.
               </p>
             </div>
 
@@ -248,7 +252,7 @@ export default async function HomePage() {
                 تحليل تكلفة الامتلاك (TCO)
               </h3>
               <p className="text-xs text-[var(--dusty-blue)] leading-relaxed font-normal">
-                لا ننظر لسعر الشراء فقط، بل نحسب مصاريف اتحاد الملاك، كفاءة استهلاك الطاقة، والصيانة الدورية المتوقعة لـ 10 سنوات قادمة.
+                لا نكتفي بسعر الشراء، بل نزن تكاليف اتحاد الملاك والصيانة وأثر الموقع على مشاويرك اليومية.
               </p>
             </div>
           </div>
@@ -264,10 +268,10 @@ export default async function HomePage() {
             </div>
             <span className="font-display font-black text-sm text-[var(--navy)]">بوصلة العقار</span>
             <span>•</span>
-            <span>منظومة استشارية وهندسية مستقلة</span>
+            <span>مستشارك الذكي المستقل لقرار الشراء</span>
           </div>
           <div className="text-[var(--dusty-blue)] font-normal">
-            متوافق مع كود البناء السعودي ومعايير الصكوك المحدثة
+            مخصص للشقق السكنية في السعودية وفق أولويات المشتري وميزانيته
           </div>
         </div>
 

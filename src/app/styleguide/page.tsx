@@ -1738,11 +1738,11 @@ export default function StyleguidePage() {
                       H1 • Alexandria 900 • 52px / 1.15
                     </span>
                     <h1 className="font-display font-black text-3xl sm:text-5xl text-[var(--buttercream)] headline-tight">
-                      فحص فني وهندسي{" "}
+                      اتخذ قرار شراء شقتك{" "}
                       <span className="stretch text-[var(--buttercream)] border-b-2 border-[var(--dusty-blue)]">
-                        {elongateWord("مستقل", tatweelCount)}
+                        {elongateWord("بوضوح", tatweelCount)}
                       </span>{" "}
-                      للعقار
+                      وثقة
                     </h1>
                   </div>
 
@@ -1752,9 +1752,9 @@ export default function StyleguidePage() {
                       H2 • Alexandria 800 • 36px / 1.15
                     </span>
                     <h2 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--buttercream)] headline-tight">
-                      أرقام قطعية وتدقيق هندسي{" "}
+                      مطابقة الشقق لميزانيتك{" "}
                       <span className="stretch">
-                        {elongateWord("محايد", tatweelCount)}
+                        {elongateWord("وأولوياتك", tatweelCount)}
                       </span>{" "}
                       قبل الشراء
                     </h2>

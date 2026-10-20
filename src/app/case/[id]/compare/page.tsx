@@ -105,7 +105,17 @@ export default async function ComparePage({ params }: ComparePageProps) {
       risks: it.risks,
       key_unknowns: it.key_unknowns,
       engineering_score:
-        it.fit_rating === "strong" ? 89 : it.fit_rating === "partial" ? 74 : 58,
+        it.weighted_fit_score ??
+        (it.fit_rating === "strong" ? 89 : it.fit_rating === "partial" ? 74 : 58),
+      weighted_fit_score: it.weighted_fit_score,
+      dimensions: it.dimensions,
+      dimension_weights: it.dimension_weights,
+      top_pros: it.top_pros,
+      top_cons: it.top_cons,
+      ranking_reason_ar: it.ranking_reason_ar,
+      missing_information: it.missing_information,
+      confidence: it.confidence,
+      is_certain: it.is_certain,
     };
   });
 
@@ -189,6 +199,47 @@ export default async function ComparePage({ params }: ComparePageProps) {
           </p>
         </div>
       </div>
+
+      {/* Confidence & Missing Information Banner */}
+      {comparison.confidence && (
+        <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[var(--navy)]">مستوى موثوقية المقارنة:</span>
+              <span
+                className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                  comparison.confidence.level === "high"
+                    ? "bg-[#E9F4EE] text-[#1E6B43]"
+                    : comparison.confidence.level === "medium"
+                    ? "bg-[#EEF2F6] text-[var(--navy)]"
+                    : "bg-[#FFF9EC] text-[#9A6700]"
+                }`}
+              >
+                {comparison.confidence.level === "high"
+                  ? "ثقة عالية"
+                  : comparison.confidence.level === "medium"
+                  ? "ثقة متوسطة"
+                  : "تقدير مبدئي (بيانات ناقصة)"}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--dusty-blue)]">{comparison.confidence.reasonAr}</p>
+          </div>
+
+          {comparison.missing_information && comparison.missing_information.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-center">
+              <span className="text-[11px] text-[var(--dusty-blue)] font-medium">معلومات غير مؤكدة:</span>
+              {comparison.missing_information.slice(0, 3).map((m, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-0.5 rounded-lg bg-[var(--cream)] border border-[var(--mist)] text-[11px] text-[var(--navy)]"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Close Options Notice */}
       {close_options && (

@@ -23,8 +23,8 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
   const rawHouseY = useTransform(scrollYProgress, [0, 1], [0, 40]);
   const houseParallaxY = useSpring(rawHouseY, { stiffness: 90, damping: 24 });
 
-  // Stretched kashida representation for "هندسي محايد"
-  const kashidaPhrase = "هندسيـــــ محايـــــد";
+  // Stretched kashida representation for "وفق أولوياتك"
+  const kashidaPhrase = "وفقـــــ أولوياتـــــك";
 
   return (
     <section
@@ -46,7 +46,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
         <div className="w-full lg:max-w-[620px] lg:mr-0 lg:ml-auto space-y-6 sm:space-y-8 text-right relative z-30">
           {/* Headline: Navy Display Font on 3 Comfortable Lines with Masked Rise */}
           <div className="space-y-1 sm:space-y-2">
-            {/* Line 1: اتخذ قرار شراء مسكنك */}
+            {/* Line 1: اتخذ قرار شراء شقتك */}
             <div className="overflow-hidden py-1">
               <motion.h1
                 initial={{ y: "115%", opacity: 0 }}
@@ -54,11 +54,11 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
                 className="font-display font-black text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.3]"
               >
-                اتخذ قرار شراء مسكنك
+                اتخذ قرار شراء شقتك
               </motion.h1>
             </div>
 
-            {/* Line 2: بأرقام قطعية وتدقيق */}
+            {/* Line 2: بوضوح كامل وثقة */}
             <div className="overflow-hidden py-1">
               <motion.div
                 initial={{ y: "115%", opacity: 0 }}
@@ -66,11 +66,11 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
                 className="font-display font-black text-3xl sm:text-5xl lg:text-[54px] xl:text-[58px] text-[var(--navy)] tracking-tight leading-[1.3]"
               >
-                بأرقام قطعية وتدقيق
+                بوضوح كامل وثقة
               </motion.div>
             </div>
 
-            {/* Line 3: هندسي محايد (with Stretched Kashida in --midnight) */}
+            {/* Line 3: وفق أولوياتك (with Stretched Kashida in --midnight) */}
             <div className="overflow-hidden py-1">
               <motion.div
                 initial={{ y: "115%", opacity: 0 }}
@@ -90,7 +90,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
             transition={{ duration: 0.65, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="text-[var(--dusty-blue)] text-base sm:text-lg leading-[1.8] max-w-[52ch] font-normal"
           >
-            نكشف الفوارق الخفية بين المساحات الترويجية والواقع الفعلي للصك ومخطط البناء، ونزن تكاليف التشغيل المخفية قبل دفع أي عربون أو توقيع تمويل عقاري.
+            مستشارك الذكي المستقل لمفاضلة واختيار الشقق السكنية في السعودية، نربط مواصفات كل شقة باحتياجات أسرتك وميزانيتك وأولوياتك بـ 10 ريالات للاستشارة.
           </motion.p>
 
           {/* TWO BUTTONS ONLY: Primary (Navy Fill) & Ghost (1px Navy Border) */}
@@ -109,13 +109,13 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
               ابدأ دراسة قرار جديدة
             </MagneticButton>
 
-            {/* Ghost Button (1px Navy Border: استعراض جلسات التقييم) */}
+            {/* Ghost Button (1px Navy Border: استعراض حالات الاستشارة) */}
             <MagneticButton
               href="#active-sessions"
               variant="ghost"
               showArrow={false}
             >
-              استعراض جلسات التقييم
+              استعراض حالات الاستشارة
             </MagneticButton>
           </motion.div>
         </div>
@@ -148,7 +148,7 @@ export function HeroSection({ onStartClick, className = "" }: HeroSectionProps) 
             {/* Cutout House with subtle hover window brightening */}
             <Image
               src="/images/house-cutout.png"
-              alt="نموذج فيلا سكنية حديثة خاضعة للتدقيق الهندسي - بوصلة العقار"
+              alt="نموذج شقة سكنية حديثة لمطابقة ملاءمة القرار - بوصلة العقار"
               width={1100}
               height={691}
               priority

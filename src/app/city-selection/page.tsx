@@ -64,7 +64,7 @@ export default function CitySelectionPage() {
                   تم تحديد نطاق {confirmedData.name} بنجاح
                 </div>
                 <div className="text-[11px] text-[var(--dusty-blue)]">
-                  جاهز لبدء نمذجة الفحص الهندسي والمالي
+                  جاهز لبدء دراسة القرار ومطابقة شقق الشراء
                 </div>
               </div>
             </div>

@@ -13,6 +13,10 @@ import { ANALYSIS_RUNTIME_VERSION } from "@/lib/ai/version";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
 import { FIELD_REGISTRY, FieldKey } from "@/lib/evidence/fields";
 
+import { PRICE_PER_CONSULTATION_SAR } from "@/config/product";
+import { loadBuyerProfile } from "@/actions/buyer-profile";
+import { evaluatePropertyFit } from "@/lib/analysis/fit-evaluator";
+
 export interface AnalysisActionState {
   success?: boolean;
   error?: string;
@@ -29,7 +33,8 @@ export async function startAnalysis(
   // 1. Guard access via RLS
   const currentCase = await requireCase(caseId);
 
-  // Gate: analysis requires a paid payment for this case
+  // Gate: analysis requires a paid consultation case or paid payment record
+  const isCaseStatusPaid = currentCase.status === "paid";
   const { data: paidPayment } = await adminSupabase
     .from("payments")
     .select("id")
@@ -37,10 +42,10 @@ export async function startAnalysis(
     .eq("status", "paid")
     .maybeSingle();
 
-  if (!paidPayment) {
+  if (!isCaseStatusPaid && !paidPayment) {
     return {
       success: false,
-      error: "يلزم سداد رسوم الاستشارة (10 ر.س) قبل بدء التحليل.",
+      error: `يلزم سداد رسوم الاستشارة (${PRICE_PER_CONSULTATION_SAR} ر.س) قبل بدء التحليل.`,
       redirectTo: `/case/${caseId}/checkout`,
     };
   }
@@ -135,12 +140,27 @@ export async function startAnalysis(
 
   // 6. Prepare inputs and execute per-property AI assessments in parallel
   const requirements = preflightData.requirements!;
+  const buyerProfile = await loadBuyerProfile(caseId);
   const admittedAssessments: AdmittedPropertyAssessment[] = [];
 
   try {
     const propertyTasks = preflightData.properties.map(async (prop) => {
       const constraints = evaluateConstraints(requirements, prop.resolved);
       const perSqm = pricePerSqm(prop.resolved);
+
+      const resolvedDistrict =
+        prop.resolved.fields.district?.status === "known"
+          ? String(prop.resolved.fields.district.value)
+          : undefined;
+
+      // Evaluate pure Buyer-Property Fit across the 5 dimensions
+      const fitEvaluation = evaluatePropertyFit(buyerProfile, {
+        id: prop.id,
+        title: prop.label,
+        district: resolvedDistrict,
+        city: currentCase.city,
+        resolved: prop.resolved,
+      });
 
       const knownFacts: Array<{
         field: string;
@@ -216,6 +236,7 @@ export async function startAnalysis(
         constraintResults: constraints,
         pricePerSqm: perSqm,
         criticalFieldsKnownCount,
+        confidenceLevel: fitEvaluation.confidence.level,
       });
 
       // If admission rejected, retry once automatically
@@ -229,6 +250,7 @@ export async function startAnalysis(
             constraintResults: constraints,
             pricePerSqm: perSqm,
             criticalFieldsKnownCount,
+            confidenceLevel: fitEvaluation.confidence.level,
           });
         } catch {
           // retry failed

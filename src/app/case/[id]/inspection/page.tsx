@@ -102,13 +102,13 @@ export default async function InspectionPage({
           </div>
 
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] shadow-xs">
-            {items.length} بنود فحص موصى بها
+            {items.length} بنود معاينة داعمة للقرار
           </span>
         </div>
 
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold font-display text-[var(--navy)] tracking-tight">
-            فحص {getPropertyLabel(activeProperty, 0)}
+            معاينة {getPropertyLabel(activeProperty, 0)}
           </h1>
           <p className="text-xs sm:text-sm text-[var(--dusty-blue)] max-w-2xl leading-relaxed">
             قائمة عملية مستهدفة لتسجيل شواهدك الميدانية لكل بند (سليم / مشكلة / لم أتحقق)، للمساعدة في حسم
@@ -128,12 +128,12 @@ export default async function InspectionPage({
       {properties.length > 1 && (
         <div className="space-y-2.5">
           <label className="text-xs font-medium text-[var(--dusty-blue)] block">
-            اختر العقار لاستعراض وتسجيل قائمته:
+            اختر الشقة لاستعراض وتسجيل عناصر المعاينة الداعمة:
           </label>
           <div
             className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar"
             role="tablist"
-            aria-label="قوائم فحص العقارات"
+            aria-label="قوائم معاينة الشقق الداعمة"
           >
             {properties.map((prop, idx) => {
               const isActive = prop.id === activeProperty.id;

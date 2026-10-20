@@ -153,7 +153,7 @@ export function FindingItem({
                 : "bg-[var(--cream)] text-[var(--dusty-blue)] border-[var(--mist)]"
             )}
           >
-            {priority === "high" ? "أولوية مرتفعة" : priority === "medium" ? "أولوية متوسطة" : "أولوية منخفضة"}
+            {priority === "high" ? "عاجل" : priority === "medium" ? "مهم" : "إرشادي"}
           </span>
 
           <span className="px-2.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--dusty-blue)] border border-[var(--mist)] text-[11px] font-medium">

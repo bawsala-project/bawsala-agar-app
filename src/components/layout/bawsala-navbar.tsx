@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Home, Building2, ClipboardCheck, Scale } from "lucide-react";
+import { Home, Building2, UserCheck, Scale } from "lucide-react";
 import { BawsalaCompass } from "@/components/brand/bawsala-compass";
 
 export interface NavLinkItem {
@@ -39,18 +39,18 @@ export function BawsalaNavbar({
       icon: Home,
     },
     {
+      id: "profile",
+      label: "ملف المشتري",
+      mobileLabel: "المشتري",
+      href: latestCaseId ? `/case/${latestCaseId}/profile` : "#consultation-card",
+      icon: UserCheck,
+    },
+    {
       id: "properties",
       label: "العقارات المرشحة",
       mobileLabel: "العقارات",
       href: latestCaseId ? `/case/${latestCaseId}/properties` : "#consultation-card",
       icon: Building2,
-    },
-    {
-      id: "inspection",
-      label: "الفحص الهندسي",
-      mobileLabel: "الفحص",
-      href: latestCaseId ? `/case/${latestCaseId}/inspection` : "#consultation-card",
-      icon: ClipboardCheck,
     },
     {
       id: "compare",
@@ -95,19 +95,37 @@ export function BawsalaNavbar({
               : "py-2.5 sm:py-3 px-5 sm:px-8 gap-4 sm:gap-6"
           }`}
         >
-          {/* RIGHT: Logo Lockup without double border */}
+          {/* RIGHT: Logo Lockup without double border (Compass-Left, Wordmark-Right in LTR order) */}
           <Link
             href="/"
-            aria-label="الصفحة الرئيسية لبوصلة العقار"
-            className="flex items-center gap-2.5 group shrink-0 min-h-[44px] focus-visible:ring-2 focus-visible:ring-[var(--navy)] rounded-full px-1 no-underline"
+            aria-label="BAWSALA - بوصلة العقار"
+            className="group shrink-0 min-h-[44px] flex items-center focus-visible:ring-2 focus-visible:ring-[var(--navy)] rounded-full px-1 no-underline"
             onClick={() => setActiveTab("home")}
           >
-            <div className="text-[var(--navy)] flex items-center justify-center">
-              <BawsalaCompass size={24} animateHover />
+            <div
+              dir="ltr"
+              lang="en"
+              style={{ direction: "ltr", unicodeBidi: "isolate" }}
+              aria-label="BAWSALA"
+              className="flex items-center gap-2.5"
+            >
+              <div className="text-[var(--navy)] flex items-center justify-center shrink-0">
+                <BawsalaCompass size={26} fullOpacity animateHover />
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="font-wordmark font-normal text-sm sm:text-base text-[var(--navy)] uppercase tracking-[0.2em] leading-none"
+                  style={{ letterSpacing: "0.2em" }}
+                >
+                  BAWSALA
+                </span>
+                <span className="text-[var(--mist)] text-xs hidden sm:inline select-none">•</span>
+                <span className="font-display font-bold text-xs sm:text-sm text-[var(--dusty-blue)] tracking-tight whitespace-nowrap pr-0.5">
+                  بوصلة العقار
+                </span>
+              </div>
             </div>
-            <span className="font-display font-bold text-base sm:text-lg text-[var(--navy)] tracking-tight whitespace-nowrap">
-              بوصلة العقار
-            </span>
           </Link>
 
           {/* CENTER: Navigation Links */}
@@ -154,11 +172,11 @@ export function BawsalaNavbar({
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="#active-sessions"
-              aria-label={`جلسات التقييم: ${sessionCount}`}
+              aria-label={`حالات الاستشارة: ${sessionCount}`}
               className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-xs text-[var(--dusty-blue)] hover:text-[var(--navy)] hover:border-[var(--navy)] transition-all group shadow-xs min-h-[40px] focus-visible:ring-2 focus-visible:ring-[var(--navy)] no-underline"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--navy)]" />
-              <span className="text-xs font-medium whitespace-nowrap">جلسات التقييم</span>
+              <span className="text-xs font-medium whitespace-nowrap">حالات الاستشارة</span>
               <span className="px-1.5 py-0.2 rounded-full bg-[var(--paper)] text-[var(--navy)] text-[11px] font-mono font-bold border border-[var(--mist)]">
                 {sessionCount}
               </span>

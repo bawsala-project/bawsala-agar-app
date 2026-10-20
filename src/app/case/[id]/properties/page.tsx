@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createSignedImageUrls } from "@/lib/storage";
+import { loadBuyerProfile } from "@/actions/buyer-profile";
 import { PropertiesView } from "./properties-view";
 
 export const maxDuration = 60;
@@ -12,7 +13,7 @@ export default async function PropertiesPage({
 }) {
   const supabase = createClient();
 
-  // Guard: if requirements do not exist for the case, redirect from /properties to /needs
+  // Guard: if requirements do not exist for the case, redirect from /properties to /profile
   const { data: requirements } = await supabase
     .from("requirements")
     .select("case_id")
@@ -20,16 +21,17 @@ export default async function PropertiesPage({
     .maybeSingle();
 
   if (!requirements) {
-    redirect(`/case/${params.id}/needs`);
+    redirect(`/case/${params.id}/profile`);
   }
 
-  // Fetch case city and properties with latest extraction runs and extracted facts
-  const [{ data: caseData }, { data: properties }] = await Promise.all([
+  // Fetch case city, buyer profile, and properties with latest extraction runs and extracted facts
+  const [{ data: caseData }, profile, { data: properties }] = await Promise.all([
     supabase
       .from("decision_cases")
       .select("city")
       .eq("id", params.id)
       .maybeSingle(),
+    loadBuyerProfile(params.id),
     supabase
       .from("properties")
       .select(`
@@ -70,6 +72,7 @@ export default async function PropertiesPage({
       city={caseData?.city ?? null}
       properties={properties || []}
       signedThumbnails={signedThumbnails}
+      profile={profile}
     />
   );
 }

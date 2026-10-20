@@ -379,10 +379,10 @@ export function PropertyCard({
           <div className="flex items-center justify-between pt-1 text-xs text-[var(--mist)] opacity-85 group-hover:opacity-100 transition-opacity">
             <span className="flex items-center gap-1 font-medium">
               <Sparkles className="w-3.5 h-3.5 text-[var(--buttercream)]" />
-              انقر لفتح الفحص والمقارنة الهندسية
+              انقر لاستعراض أبعاد الملاءمة والمقارنة
             </span>
             <span className="flex items-center gap-1 font-bold text-[var(--buttercream)] group-hover:-translate-x-1 transition-transform">
-              عرض تفاصيل الصك والتكاليف
+              عرض تفاصيل الملاءمة والتحليل
               <ChevronLeft className="w-4 h-4" />
             </span>
           </div>

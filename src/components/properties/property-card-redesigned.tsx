@@ -6,6 +6,9 @@ import { formatSAR } from "@/lib/utils";
 import { EngineeringDialGauge } from "./engineering-dial-gauge";
 import { PropertyDetailSheet } from "./property-detail-sheet";
 
+import type { PropertyFitEvaluation, ConfidenceAssessment } from "@/lib/analysis/fit-evaluator";
+import type { DimensionWeights } from "@/lib/analysis/weights";
+
 export interface PropertyCardData {
   id: string;
   title?: string | null;
@@ -30,6 +33,15 @@ export interface PropertyAssessmentData {
   key_unknowns?: string[];
   engineering_score?: number;
   price_per_sqm?: number | null;
+  weighted_fit_score?: number;
+  dimensions?: PropertyFitEvaluation["dimensions"];
+  dimension_weights?: DimensionWeights;
+  top_pros?: string[];
+  top_cons?: string[];
+  ranking_reason_ar?: string;
+  missing_information?: string[];
+  confidence?: ConfidenceAssessment;
+  is_certain?: boolean;
 }
 
 interface PropertyCardRedesignedProps {
@@ -52,9 +64,9 @@ const FALLBACK_IMAGES = [
  * Minimalist Editorial Property Card:
  * - Image on top (rounded 24px), zooms to 1.04 on hover
  * - City and title below
- * - One price line, one score (tick-ring gauge)
+ * - One price line, one fit score (tick-ring gauge)
+ * - Low-confidence indicator when data is incomplete (never present as certain)
  * - Paper surface, 28px radius, 1px mist border
- * - Maximum 2 font sizes, spacious whitespace
  */
 export function PropertyCardRedesigned({
   property,
@@ -77,13 +89,17 @@ export function PropertyCardRedesigned({
   const price = property.listing_price_sar || 850000;
   const area = property.area_sqm || 140;
 
+  // Use pure computed fit score first, fallback to engineering_score or rating
   const score =
-    assessment?.engineering_score ||
+    assessment?.weighted_fit_score ??
+    assessment?.engineering_score ??
     (assessment?.fit_rating === "strong"
       ? 89
       : assessment?.fit_rating === "partial"
       ? 74
       : 58);
+
+  const isCertain = assessment?.is_certain !== false && assessment?.confidence?.level !== "low";
 
   const handleCardClick = () => {
     if (onOpenDetail) {
@@ -124,6 +140,14 @@ export function PropertyCardRedesigned({
           <div className="absolute top-3.5 right-3.5 px-3 py-1 rounded-full bg-[var(--paper)]/95 border border-[var(--mist)] text-[var(--navy)] text-xs font-semibold tabular-nums shadow-xs">
             {area} م²
           </div>
+
+          {/* Low-confidence badge: never present as certain when confidence is low */}
+          {!isCertain && (
+            <div className="absolute top-3.5 left-3.5 px-2.5 py-1 rounded-full bg-[#FFF9EC]/95 border border-[#F9E2AF] text-[#9A6700] text-[10px] font-bold shadow-xs flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#9A6700] animate-pulse" />
+              <span>تقدير مبدئي غير قطعي</span>
+            </div>
+          )}
         </div>
 
         {/* 2. City and Title Below */}
@@ -134,6 +158,56 @@ export function PropertyCardRedesigned({
           <h3 className="font-display font-bold text-lg sm:text-xl text-[var(--navy)] tracking-tight leading-snug line-clamp-1">
             {title}
           </h3>
+
+          {/* Confidence Level & Missing Information List */}
+          <div className="pt-1.5 space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                  assessment?.confidence?.level === "high"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : assessment?.confidence?.level === "medium"
+                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                    : "bg-amber-50 text-amber-800 border-amber-200"
+                }`}
+              >
+                <span>مستوى الثقة:</span>
+                <span>
+                  {assessment?.confidence?.level === "high"
+                    ? "مرتفعة"
+                    : assessment?.confidence?.level === "medium"
+                    ? "متوسطة"
+                    : "منخفضة (بيانات ناقصة)"}
+                </span>
+              </span>
+
+              {assessment?.confidence?.reasonAr && (
+                <span className="text-[10px] text-[var(--dusty-blue)] line-clamp-1">
+                  • {assessment.confidence.reasonAr}
+                </span>
+              )}
+            </div>
+
+            {/* Missing Info List */}
+            {assessment?.missing_information && assessment.missing_information.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span className="text-[10px] font-semibold text-[var(--navy)]">بيانات ناقصة:</span>
+                {assessment.missing_information.slice(0, 2).map((item, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 rounded-md bg-[var(--cream)] border border-[var(--mist)] text-[10px] text-[var(--dusty-blue)]"
+                  >
+                    {item}
+                  </span>
+                ))}
+                {assessment.missing_information.length > 2 && (
+                  <span className="text-[10px] text-[var(--dusty-blue)]">
+                    +{assessment.missing_information.length - 2} أخرى
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 3. One Price Line & One Score */}
@@ -147,8 +221,22 @@ export function PropertyCardRedesigned({
             </div>
           </div>
 
-          {/* Engineering Score Dial Gauge */}
-          <div className="shrink-0 flex items-center gap-2">
+          {/* Fit Score Dial Gauge */}
+          <div className="shrink-0 flex items-center gap-2.5">
+            <div className="text-left pl-1 hidden sm:block">
+              <div className="text-[10px] font-medium text-[var(--dusty-blue)]">
+                مؤشر ملاءمة العقار
+              </div>
+              {!isCertain ? (
+                <div className="text-[10px] font-bold text-[#9A6700]">
+                  بيانات ناقصة
+                </div>
+              ) : (
+                <div className="text-[10px] font-bold text-[var(--navy)]">
+                  {score >= 80 ? "توافق ممتاز" : score >= 65 ? "توافق جيد" : "توافق محدود"}
+                </div>
+              )}
+            </div>
             <EngineeringDialGauge
               score={score}
               size={48}

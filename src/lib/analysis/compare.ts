@@ -1,6 +1,7 @@
 import type { ConstraintResult, RequirementsRow } from "@/lib/analysis/constraints";
 import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
 import { formatSAR } from "@/lib/utils";
+import { MAX_PROPERTIES } from "@/config/product";
 
 export interface PropertyAssessmentWithProperty {
   id: string;
@@ -47,6 +48,15 @@ export interface PropertyAssessmentWithProperty {
   resolvedDistrict?: string | null;
 }
 
+import {
+  evaluatePropertyFit,
+  type PropertyFitEvaluation,
+  type DimensionEvaluation,
+  type ConfidenceAssessment,
+} from "./fit-evaluator";
+import { DEFAULT_BUYER_PROFILE, type BuyerProfile } from "@/lib/schemas/buyer-profile";
+import type { DimensionWeights } from "./weights";
+
 export interface RankedItem {
   property_id: string;
   assessment_id: string;
@@ -72,6 +82,21 @@ export interface RankedItem {
   strengths: string[];
   risks: string[];
   key_unknowns: string[];
+  weighted_fit_score?: number;
+  dimensions?: {
+    suitability: DimensionEvaluation;
+    priceAffordability: DimensionEvaluation;
+    locationDailyLife: DimensionEvaluation;
+    propertyQuality: DimensionEvaluation;
+    risks: DimensionEvaluation;
+  };
+  dimension_weights?: DimensionWeights;
+  top_pros?: [string, string, string];
+  top_cons?: [string, string, string];
+  ranking_reason_ar?: string;
+  missing_information?: string[];
+  confidence?: ConfidenceAssessment;
+  is_certain?: boolean;
 }
 
 export type ComparisonMode = "ranked" | "provisional" | "insufficient";
@@ -82,6 +107,8 @@ export interface ComparisonResult {
   summaryAr: string;
   close_options: boolean;
   tradeoff_summary_ar?: string;
+  missing_information?: string[];
+  confidence?: ConfidenceAssessment;
 }
 
 const FIT_SCORES: Record<string, number> = {
@@ -93,10 +120,11 @@ const FIT_SCORES: Record<string, number> = {
 
 export function resolveComparison(
   assessments: PropertyAssessmentWithProperty[],
-  requirements?: RequirementsRow | null
+  requirements?: RequirementsRow | null,
+  profileOverride?: BuyerProfile | null
 ): ComparisonResult {
-  // 1. Eligibility: max 3 properties from current run
-  const pool = (assessments || []).slice(0, 3);
+  // 1. Eligibility: max MAX_PROPERTIES properties from current run
+  const pool = (assessments || []).slice(0, MAX_PROPERTIES);
 
   // If < 2 properties: mode = 'insufficient'
   if (pool.length < 2) {
@@ -185,6 +213,23 @@ export function resolveComparison(
   }
 
   // 2. Prepare normalized items
+  let profile = profileOverride;
+  if (!profile) {
+    const rawPreferences =
+      requirements?.preferences && typeof requirements.preferences === "object"
+        ? (requirements.preferences as Record<string, unknown>)
+        : null;
+    const embeddedProfile = (rawPreferences?.buyer_profile || rawPreferences) as Partial<BuyerProfile> | null;
+    profile = {
+      ...DEFAULT_BUYER_PROFILE,
+      ...(embeddedProfile || {}),
+      max_budget_sar: Number(requirements?.max_budget_sar) || DEFAULT_BUYER_PROFILE.max_budget_sar,
+      min_bedrooms: Number(requirements?.min_bedrooms) || DEFAULT_BUYER_PROFILE.min_bedrooms,
+      min_area_sqm: requirements?.min_area_sqm ? Number(requirements.min_area_sqm) : DEFAULT_BUYER_PROFILE.min_area_sqm,
+      family_members_count: Number(requirements?.household_size) || DEFAULT_BUYER_PROFILE.family_members_count,
+    };
+  }
+
   interface NormalizedCandidate {
     raw: PropertyAssessmentWithProperty;
     property_id: string;
@@ -204,6 +249,7 @@ export function resolveComparison(
     failCount: number;
     unknownCount: number;
     hasUnknownCriticalConstraint: boolean;
+    fitEvaluation: PropertyFitEvaluation;
   }
 
   const budget = requirements?.max_budget_sar || null;
@@ -266,6 +312,17 @@ export function resolveComparison(
     const deltaBudget = price !== null && budget !== null ? price - budget : null;
     const fit_rating = (item.fit_rating as RankedItem["fit_rating"]) || "insufficient_evidence";
 
+    const fitEvaluation = evaluatePropertyFit(profile, {
+      id: item.property_id,
+      title,
+      district,
+      listingPriceSar: price,
+      areaSqm: area,
+      bedrooms,
+      floorNo: p?.floor_no,
+      resolved: resolved || undefined,
+    });
+
     return {
       raw: item,
       property_id: item.property_id,
@@ -285,14 +342,16 @@ export function resolveComparison(
       failCount,
       unknownCount,
       hasUnknownCriticalConstraint,
+      fitEvaluation,
     };
   });
 
   // 3. Sorting
   // Rule A: 0 failed constraints rank above properties with failed constraints
-  // Rule B: Sort by fit rating (strong > partial > weak > insufficient)
-  // Rule C: Price per sqm (lower is better value)
-  // Rule D: Price (lower is better)
+  // Rule B: Higher fit rating (strong > partial > weak > insufficient)
+  // Rule C: Higher weighted fit score
+  // Rule D: Price per sqm (lower is better value)
+  // Rule E: Price (lower is better)
   candidates.sort((a, b) => {
     // Fewer failed constraints wins
     if (a.failCount !== b.failCount) {
@@ -302,6 +361,11 @@ export function resolveComparison(
     // Higher fit score wins
     if (a.fit_score !== b.fit_score) {
       return b.fit_score - a.fit_score;
+    }
+
+    // Higher weighted fit score wins
+    if (a.fitEvaluation.weightedFitScore !== b.fitEvaluation.weightedFitScore) {
+      return b.fitEvaluation.weightedFitScore - a.fitEvaluation.weightedFitScore;
     }
 
     // More passed constraints wins
@@ -442,6 +506,15 @@ export function resolveComparison(
       strengths: c.raw.strengths || [],
       risks: c.raw.risks || [],
       key_unknowns: c.raw.key_unknowns || [],
+      weighted_fit_score: c.fitEvaluation.weightedFitScore,
+      dimensions: c.fitEvaluation.dimensions,
+      dimension_weights: c.fitEvaluation.dimensionWeights,
+      top_pros: c.fitEvaluation.topPros,
+      top_cons: c.fitEvaluation.topCons,
+      ranking_reason_ar: c.fitEvaluation.rankingReasonAr,
+      missing_information: c.fitEvaluation.missingInformation,
+      confidence: c.fitEvaluation.confidence,
+      is_certain: c.fitEvaluation.isCertain,
     };
   });
 
@@ -454,11 +527,28 @@ export function resolveComparison(
     ? "الخيارات الأولى متقاربة جداً في السعر ومستوى التوافق، ويعتمد الاختيار النهائي على المزايا النوعية والمعاينة."
     : undefined;
 
+  const allMissing = Array.from(
+    new Set(candidates.flatMap((c) => c.fitEvaluation.missingInformation))
+  );
+
+  const lowConfidence = candidates.some((c) => c.fitEvaluation.confidence.level === "low");
+
   return {
     mode,
     items: rankedItems,
     summaryAr,
     close_options: closeOptions,
     tradeoff_summary_ar: tradeoffSummary,
+    missing_information: allMissing,
+    confidence: {
+      level: lowConfidence ? "low" : "high",
+      score: Math.round(
+        candidates.reduce((acc, c) => acc + c.fitEvaluation.confidence.score, 0) /
+          candidates.length
+      ),
+      reasonAr: lowConfidence
+        ? "بيانات غير مكتملة أو تحتوي على تعارضات؛ النتيجة تقديرية مبدئية"
+        : "بيانات متكاملة للمقارنة بثقة عالية",
+    },
   };
 }

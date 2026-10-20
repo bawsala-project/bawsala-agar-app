@@ -6,6 +6,12 @@ import { CheckCircle2, Info, ArrowLeft, Loader2, Compass, X } from "lucide-react
 import { startCase } from "@/actions/cases";
 import type { AllowedCity } from "@/lib/constants/cities";
 import { CityArcSelector } from "@/components/city-wheel";
+import {
+  MAX_PROPERTIES,
+  MIN_PROPERTIES,
+  EXPANSION_TYPES,
+  ACTIVE_STRATEGIC_GOALS,
+} from "@/config/product";
 
 interface ConsultationCardProps {
   allowedCities: readonly AllowedCity[];
@@ -24,13 +30,13 @@ function SubmitButton() {
         <>
           <Loader2 className="w-4 h-4 animate-spin text-[var(--cream)] opacity-100 shrink-0" />
           <span className="text-[var(--cream)] text-base font-semibold opacity-100">
-            جاري إعداد الجلسة الاستشارية…
+            جاري إعداد دراسة القرار…
           </span>
         </>
       ) : (
         <>
           <span className="text-[var(--cream)] text-base font-semibold tracking-tight opacity-100">
-            بدء دراسة القرار العقاري
+            بدء استشارة اختيار الشقة
           </span>
           <ArrowLeft className="w-4 h-4 text-[var(--cream)] opacity-100 transition-transform duration-200 group-hover:-translate-x-1.5 shrink-0" />
         </>
@@ -41,8 +47,8 @@ function SubmitButton() {
 
 export function ConsultationCard({ allowedCities }: ConsultationCardProps) {
   const [selectedCity, setSelectedCity] = useState<string>(allowedCities[0] ?? "الرياض");
-  const [selectedTypology, setSelectedTypology] = useState<string>("apt");
-  const [selectedIntent, setSelectedIntent] = useState<string>("family");
+  const [selectedTypology, setSelectedTypology] = useState<string>("apartment");
+  const [selectedIntent, setSelectedIntent] = useState<string>(ACTIVE_STRATEGIC_GOALS[0]?.id ?? "family");
   const [showArcModal, setShowArcModal] = useState<boolean>(false);
 
   // Step 3 City Selector Wheel Refs
@@ -252,10 +258,10 @@ export function ConsultationCard({ allowedCities }: ConsultationCardProps) {
         <div>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[var(--navy)]" />
-            <h2 className="text-xl font-display font-bold text-[var(--navy)]">بدء دراسة قرار استشاري جديدة</h2>
+            <h2 className="text-xl font-display font-bold text-[var(--navy)]">بدء دراسة قرار شراء شقة</h2>
           </div>
           <p className="text-xs text-[var(--dusty-blue)] mt-1">
-            حدد الإطار السكني والجغرافي لتطبيق معايير التدقيق الفني المعتمدة
+            حدد المدينة والهدف لمطابقة خيارات الشقق مع ميزانيتك واحتياجاتك
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-[var(--cream)] text-[var(--navy)] border border-[var(--mist)] text-xs font-semibold">
@@ -310,116 +316,144 @@ export function ConsultationCard({ allowedCities }: ConsultationCardProps) {
           </div>
         </div>
 
-        {/* Parameter 2: Property Typology (Selection Cards) */}
+        {/* Parameter 2: Property Typology */}
         <div className="space-y-3">
           <label className="block text-xs font-bold text-[var(--navy)] uppercase tracking-wider">
             نوع العقار المستهدف
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" id="typologyOptions">
-            {/* Apartment */}
-            <button
-              type="button"
-              onClick={() => setSelectedTypology("apt")}
-              className={`p-5 rounded-[20px] border flex items-center gap-3.5 transition-all duration-200 text-right cursor-pointer ${
-                selectedTypology === "apt"
-                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm"
-                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
-              }`}
-            >
-              <span
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  selectedTypology === "apt"
-                    ? "bg-[var(--midnight)] text-[var(--cream)]"
-                    : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
+          {EXPANSION_TYPES ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" id="typologyOptions">
+              {/* Apartment */}
+              <button
+                type="button"
+                onClick={() => setSelectedTypology("apartment")}
+                className={`p-5 rounded-[20px] border flex items-center gap-3.5 transition-all duration-200 text-right cursor-pointer ${
+                  selectedTypology === "apartment"
+                    ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm"
+                    : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
                 }`}
               >
-                <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h1m4 0h1m-6 4h1m4 0h1m-6 4h1m4 0h1m-3 5v-3a1 1 0 011-1h2a1 1 0 011 1v3"
-                  />
-                </svg>
-              </span>
-              <div>
-                <div className="text-xs font-bold">شقة تمليك</div>
-                <div className={`text-[11px] font-normal mt-0.5 ${selectedTypology === "apt" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
-                  مبنى مستقل أو مجمع مغلق
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    selectedTypology === "apartment"
+                      ? "bg-[var(--midnight)] text-[var(--cream)]"
+                      : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
+                  }`}
+                >
+                  <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h1m4 0h1m-6 4h1m4 0h1m-6 4h1m4 0h1m-3 5v-3a1 1 0 011-1h2a1 1 0 011 1v3"
+                    />
+                  </svg>
+                </span>
+                <div>
+                  <div className="text-xs font-bold">شقة تمليك</div>
+                  <div className={`text-[11px] font-normal mt-0.5 ${selectedTypology === "apartment" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
+                    مبنى مستقل أو مجمع مغلق
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
 
-            {/* Villa */}
-            <button
-              type="button"
-              onClick={() => setSelectedTypology("villa")}
-              className={`p-5 rounded-[20px] border flex items-center gap-3.5 transition-all duration-200 text-right cursor-pointer ${
-                selectedTypology === "villa"
-                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm"
-                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
-              }`}
-            >
-              <span
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+              {/* Villa */}
+              <button
+                type="button"
+                onClick={() => setSelectedTypology("villa")}
+                className={`p-5 rounded-[20px] border flex items-center gap-3.5 transition-all duration-200 text-right cursor-pointer ${
                   selectedTypology === "villa"
-                    ? "bg-[var(--midnight)] text-[var(--cream)]"
-                    : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
+                    ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm"
+                    : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
                 }`}
               >
-                <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 20v-9.5z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6"
-                  />
-                </svg>
-              </span>
-              <div>
-                <div className="text-xs font-bold">فيلا مستقلة / دوبلكس</div>
-                <div className={`text-[11px] font-normal mt-0.5 ${selectedTypology === "villa" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
-                  وحدات سكنية منفصلة
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    selectedTypology === "villa"
+                      ? "bg-[var(--midnight)] text-[var(--cream)]"
+                      : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
+                  }`}
+                >
+                  <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 20v-9.5z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 21v-6a1 1 0 011-1h4a1 1 0 011 1v6"
+                    />
+                  </svg>
+                </span>
+                <div>
+                  <div className="text-xs font-bold">فيلا مستقلة / دوبلكس</div>
+                  <div className={`text-[11px] font-normal mt-0.5 ${selectedTypology === "villa" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
+                    وحدات سكنية منفصلة
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
 
-            {/* Townhouse */}
-            <button
-              type="button"
-              onClick={() => setSelectedTypology("townhouse")}
-              className={`p-5 rounded-[20px] border flex items-center gap-3.5 transition-all duration-200 text-right cursor-pointer ${
-                selectedTypology === "townhouse"
-                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm"
-                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
-              }`}
-            >
-              <span
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+              {/* Townhouse */}
+              <button
+                type="button"
+                onClick={() => setSelectedTypology("townhouse")}
+                className={`p-5 rounded-[20px] border flex items-center gap-3.5 transition-all duration-200 text-right cursor-pointer ${
                   selectedTypology === "townhouse"
-                    ? "bg-[var(--midnight)] text-[var(--cream)]"
-                    : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
+                    ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm"
+                    : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
                 }`}
               >
-                <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2 21h20M3 21V9.5L8.5 5 14 9.5V21M14 9.5L18.5 6 21 8.5V21M6.5 13h1.5m-1.5 3.5h1.5M10 21v-3.5a1 1 0 00-1-1H7.5a1 1 0 00-1 1V21m10.5-7.5h1.5M17 21v-3.5"
-                  />
-                </svg>
-              </span>
-              <div>
-                <div className="text-xs font-bold">تاون هاوس</div>
-                <div className={`text-[11px] font-normal mt-0.5 ${selectedTypology === "townhouse" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
-                  نمط عصري مشترك
+                <span
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                    selectedTypology === "townhouse"
+                      ? "bg-[var(--midnight)] text-[var(--cream)]"
+                      : "bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)]"
+                  }`}
+                >
+                  <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2 21h20M3 21V9.5L8.5 5 14 9.5V21M14 9.5L18.5 6 21 8.5V21M6.5 13h1.5m-1.5 3.5h1.5M10 21v-3.5a1 1 0 00-1-1H7.5a1 1 0 00-1 1V21m10.5-7.5h1.5M17 21v-3.5"
+                    />
+                  </svg>
+                </span>
+                <div>
+                  <div className="text-xs font-bold">تاون هاوس</div>
+                  <div className={`text-[11px] font-normal mt-0.5 ${selectedTypology === "townhouse" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
+                    نمط عصري مشترك
+                  </div>
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div
+              id="typologyOptions"
+              className="p-5 rounded-[20px] border border-[var(--navy)] bg-[var(--navy)] text-[var(--cream)] flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[var(--midnight)] text-[var(--cream)]">
+                  <svg className="w-5 h-5 fill-none stroke-current stroke-[1.8]" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h1m4 0h1m-6 4h1m4 0h1m-6 4h1m4 0h1m-3 5v-3a1 1 0 011-1h2a1 1 0 011 1v3"
+                    />
+                  </svg>
+                </span>
+                <div>
+                  <div className="text-xs font-bold">شقة تمليك سكنية</div>
+                  <div className="text-[11px] font-normal mt-0.5 text-[var(--cream)]/80">
+                    مبنى مستقل أو مجمع مغلق
+                  </div>
                 </div>
               </div>
-            </button>
-          </div>
+              <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-[var(--midnight)] text-[var(--cream)] border border-[var(--mist)]/20">
+                محدد تلقائياً
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Parameter 3: Strategic Purchase Intent (Selection Cards) */}
@@ -428,57 +462,37 @@ export function ConsultationCard({ allowedCities }: ConsultationCardProps) {
             الهدف الاستراتيجي من الشراء
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" id="intentOptions">
-            <button
-              type="button"
-              onClick={() => setSelectedIntent("family")}
-              className={`p-4 rounded-[20px] border transition-all duration-200 text-center cursor-pointer ${
-                selectedIntent === "family"
-                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm font-bold"
-                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
-              }`}
-            >
-              <span className="block text-xs font-bold">سكن عائلي أول</span>
-              <span className={`block text-[11px] mt-0.5 font-normal ${selectedIntent === "family" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
-                أولوية الخصوصية والراحة
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedIntent("upgrade")}
-              className={`p-4 rounded-[20px] border transition-all duration-200 text-center cursor-pointer ${
-                selectedIntent === "upgrade"
-                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm font-bold"
-                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
-              }`}
-            >
-              <span className="block text-xs font-bold">ترقية مسكن</span>
-              <span className={`block text-[11px] mt-0.5 font-normal ${selectedIntent === "upgrade" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
-                تحسين الموقع وجودة البناء
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedIntent("invest")}
-              className={`p-4 rounded-[20px] border transition-all duration-200 text-center cursor-pointer ${
-                selectedIntent === "invest"
-                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm font-bold"
-                  : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
-              }`}
-            >
-              <span className="block text-xs font-bold">استثمار عقاري</span>
-              <span className={`block text-[11px] mt-0.5 font-normal ${selectedIntent === "invest" ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"}`}>
-                عائد الإيجار ونمو رأس المال
-              </span>
-            </button>
+            {ACTIVE_STRATEGIC_GOALS.map((goal) => {
+              const isSelected = selectedIntent === goal.id;
+              return (
+                <button
+                  key={goal.id}
+                  type="button"
+                  onClick={() => setSelectedIntent(goal.id)}
+                  className={`p-4 rounded-[20px] border transition-all duration-200 text-center cursor-pointer ${
+                    isSelected
+                      ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] scale-[1.02] shadow-sm font-bold"
+                      : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:-translate-y-1 hover:border-[var(--navy)]"
+                  }`}
+                >
+                  <span className="block text-xs font-bold">{goal.label}</span>
+                  <span
+                    className={`block text-[11px] mt-0.5 font-normal ${
+                      isSelected ? "text-[var(--cream)]/80" : "text-[var(--dusty-blue)]"
+                    }`}
+                  >
+                    {goal.sublabel}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Session Workspace Title (Rounded Cream Well) */}
         <div className="space-y-2">
           <label className="block text-xs font-bold text-[var(--navy)]" htmlFor="session_title">
-            عنوان جلسة التقييم (اختياري)
+            عنوان ملف الاستشارة (اختياري)
           </label>
           <input
             name="session_title"
@@ -493,7 +507,7 @@ export function ConsultationCard({ allowedCities }: ConsultationCardProps) {
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[var(--mist)]">
           <div className="flex items-center gap-2 text-xs text-[var(--dusty-blue)]">
             <Info className="w-4 h-4 text-[var(--dusty-blue)] shrink-0" />
-            <span>يمكنك إدخال من 2 إلى 5 عقارات فور بدء الجلسة للمقارنة التلقائية</span>
+            <span>يمكنك مقارنة من {MIN_PROPERTIES} إلى {MAX_PROPERTIES} شقق سكنية لكل حالة استشارة (10 ر.س فقط)</span>
           </div>
           <SubmitButton />
         </div>

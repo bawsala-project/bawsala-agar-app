@@ -2,6 +2,8 @@ import type { Database } from "@/types/database";
 import { FIELD_REGISTRY, ResolvableFieldKey } from "@/lib/evidence/fields";
 import type { ResolveFactsResult } from "@/lib/evidence/resolve";
 
+import { MIN_PROPERTIES, MAX_PROPERTIES } from "@/config/product";
+
 export type BlockerCode =
   | "NO_REQUIREMENTS"
   | "NO_PROPERTIES"
@@ -31,6 +33,11 @@ export type RequirementsRow = Database["public"]["Tables"]["requirements"]["Row"
 export interface PreflightPropertyInput {
   id: string;
   label: string;
+  district?: string | null;
+  listingPriceSar?: number | null;
+  areaSqm?: number | null;
+  floorNo?: number | null;
+  buildingAgeYears?: number | null;
   latestRun?: { status: string; error_code?: string | null } | null;
   resolved: ResolveFactsResult;
 }
@@ -40,10 +47,37 @@ export interface PreflightInput {
   properties: PreflightPropertyInput[];
 }
 
+export interface PropertyReadiness {
+  propertyId: string;
+  label: string;
+  isComplete: boolean;
+  status: "complete" | "missing_items";
+  missingItems: string[];
+  fields: {
+    price: boolean;
+    area: boolean;
+    district: boolean;
+    floor: boolean;
+    buildingAge: boolean;
+  };
+}
+
+export interface CaseReadiness {
+  isReady: boolean;
+  status: "complete" | "missing_items";
+  buyerProfileComplete: boolean;
+  buyerProfileMissing: string[];
+  propertyCountValid: boolean;
+  propertyCount: number;
+  properties: PropertyReadiness[];
+  allMissingItems: string[];
+}
+
 export interface PreflightResult {
   ready: boolean;
   blockers: Issue[];
   warnings: Issue[];
+  readiness: CaseReadiness;
 }
 
 const CONSTRAINT_FIELD_MAPPING: Record<string, ResolvableFieldKey> = {
@@ -204,9 +238,171 @@ export function evaluatePreflight(input: PreflightInput): PreflightResult {
     }
   }
 
+  // 4. Commercial Flow: Free Readiness Check Evaluation
+  // 4a. Buyer Profile completeness
+  let buyerProfileComplete = false;
+  const buyerProfileMissing: string[] = [];
+
+  if (!input.requirements) {
+    buyerProfileMissing.push("ملف وتفضيلات المشتري والميزانية غير مسجلة");
+  } else {
+    const budget = Number(input.requirements.max_budget_sar);
+    if (!budget || isNaN(budget) || budget <= 0) {
+      buyerProfileMissing.push("الميزانية القصوى للشراء");
+    }
+
+    const household = Number(input.requirements.household_size);
+    if (!household || isNaN(household) || household < 1) {
+      buyerProfileMissing.push("عدد أفراد الأسرة");
+    }
+
+    const bedrooms = Number(input.requirements.min_bedrooms);
+    if (!bedrooms || isNaN(bedrooms) || bedrooms < 1) {
+      buyerProfileMissing.push("الحد الأدنى لغرف النوم");
+    }
+
+    // If mortgage, check monthly installment ceiling if profile present
+    const rawPreferences =
+      input.requirements.preferences && typeof input.requirements.preferences === "object"
+        ? (input.requirements.preferences as Record<string, unknown>)
+        : null;
+    const embeddedProfile = (rawPreferences?.buyer_profile || rawPreferences) as Record<string, unknown> | null;
+    const paymentMethod =
+      embeddedProfile?.payment_method ??
+      (input.requirements.purchase_method === "finance" ? "mortgage" : "cash");
+
+    if (paymentMethod === "mortgage") {
+      const ceiling = Number(embeddedProfile?.monthly_installment_ceiling_sar);
+      if (
+        embeddedProfile?.monthly_installment_ceiling_sar !== undefined &&
+        embeddedProfile?.monthly_installment_ceiling_sar !== null &&
+        (!ceiling || isNaN(ceiling) || ceiling <= 0)
+      ) {
+        buyerProfileMissing.push("سقف القسط الشهري للتمويل العقاري");
+      }
+    }
+
+    buyerProfileComplete = buyerProfileMissing.length === 0;
+  }
+
+  // 4b. Properties count check (1 to 5 properties)
+  const propList = input.properties || [];
+  const propertyCount = propList.length;
+  const propertyCountValid = propertyCount >= MIN_PROPERTIES && propertyCount <= MAX_PROPERTIES;
+  const propertyCountMissing: string[] = [];
+
+  if (propertyCount === 0) {
+    propertyCountMissing.push(`يلزم إدخال شقة واحدة على الأقل للمقارنة (المسموح من ${MIN_PROPERTIES} إلى ${MAX_PROPERTIES} شقق)`);
+  } else if (propertyCount > MAX_PROPERTIES) {
+    propertyCountMissing.push(`تجاوز الحد الأقصى المسموح للشقق (${propertyCount} شقق مضافة، والحد الأقصى ${MAX_PROPERTIES})`);
+  }
+
+  // 4c. Per-property minimum required fields check (price, area, district, floor, building age)
+  const propertiesReadiness: PropertyReadiness[] = propList.map((prop) => {
+    // Price
+    const hasPrice =
+      (prop.resolved.fields.listing_price_sar.status === "known" &&
+        Number(prop.resolved.fields.listing_price_sar.value) > 0) ||
+      (prop.listingPriceSar !== null && prop.listingPriceSar !== undefined && prop.listingPriceSar > 0);
+
+    // Area
+    const hasArea =
+      (prop.resolved.fields.area_sqm.status === "known" &&
+        Number(prop.resolved.fields.area_sqm.value) > 0) ||
+      (prop.areaSqm !== null && prop.areaSqm !== undefined && prop.areaSqm > 0);
+
+    // District
+    const districtField = prop.resolved.fields.district;
+    const hasDistrict =
+      (districtField.status === "known" &&
+        typeof districtField.value === "string" &&
+        districtField.value.trim().length > 0) ||
+      (typeof prop.district === "string" && prop.district.trim().length > 0) ||
+      (typeof prop.label === "string" &&
+        prop.label.trim().length > 0 &&
+        prop.label !== "عقار بدون عنوان" &&
+        !prop.label.startsWith("صور العقار"));
+
+    // Floor
+    const floorField = prop.resolved.fields.floor_no;
+    const hasFloor =
+      (floorField.status === "known" &&
+        floorField.value !== null &&
+        floorField.value !== undefined &&
+        !isNaN(Number(floorField.value))) ||
+      (prop.floorNo !== null && prop.floorNo !== undefined && !isNaN(Number(prop.floorNo)));
+
+    // Age of building
+    const ageField = prop.resolved.fields.property_age_years;
+    const hasBuildingAge =
+      (ageField.status === "known" &&
+        ageField.value !== null &&
+        ageField.value !== undefined &&
+        !isNaN(Number(ageField.value))) ||
+      (prop.buildingAgeYears !== null &&
+        prop.buildingAgeYears !== undefined &&
+        !isNaN(Number(prop.buildingAgeYears)));
+
+    const missingItems: string[] = [];
+    if (!hasPrice) missingItems.push("سعر العرض");
+    if (!hasArea) missingItems.push("المساحة (م²)");
+    if (!hasDistrict) missingItems.push("الحي");
+    if (!hasFloor) missingItems.push("رقم الدور");
+    if (!hasBuildingAge) missingItems.push("عمر المبنى");
+
+    const isComplete = missingItems.length === 0;
+
+    return {
+      propertyId: prop.id,
+      label: prop.label,
+      isComplete,
+      status: isComplete ? "complete" : "missing_items",
+      missingItems,
+      fields: {
+        price: hasPrice,
+        area: hasArea,
+        district: hasDistrict,
+        floor: hasFloor,
+        buildingAge: hasBuildingAge,
+      },
+    };
+  });
+
+  // 4d. Overall Case Readiness
+  const allPropertiesComplete =
+    propertyCountValid &&
+    propertiesReadiness.length > 0 &&
+    propertiesReadiness.every((p) => p.isComplete);
+
+  const isCaseReady =
+    buyerProfileComplete &&
+    propertyCountValid &&
+    allPropertiesComplete &&
+    blockers.length === 0;
+
+  const allMissingItems: string[] = [
+    ...buyerProfileMissing,
+    ...propertyCountMissing,
+    ...propertiesReadiness
+      .filter((p) => !p.isComplete)
+      .map((p) => `العقار (${p.label}): ينقص [${p.missingItems.join("، ")}]`),
+  ];
+
+  const readiness: CaseReadiness = {
+    isReady: isCaseReady,
+    status: isCaseReady ? "complete" : "missing_items",
+    buyerProfileComplete,
+    buyerProfileMissing,
+    propertyCountValid,
+    propertyCount,
+    properties: propertiesReadiness,
+    allMissingItems,
+  };
+
   return {
     ready: blockers.length === 0,
     blockers,
     warnings,
+    readiness,
   };
 }

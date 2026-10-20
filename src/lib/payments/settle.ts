@@ -136,6 +136,12 @@ export async function settlePayment(
       throw new Error("Failed to update operation effect");
     }
 
+    // Persist payment status on the consultation case
+    await adminSupabase
+      .from("decision_cases")
+      .update({ status: "paid", updated_at: completedAt })
+      .eq("id", payment.case_id);
+
     return { outcome: "paid", caseId: payment.case_id };
   }
 

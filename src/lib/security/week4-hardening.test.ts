@@ -256,7 +256,7 @@ describe("Week 4 end-to-end: guest -> preflight -> checkout -> paid analysis -> 
 
     const { data: prop, error: propErr } = await adminSupabase
       .from("properties")
-      .insert({ case_id: caseId, input_mode: "manual", title: "شقة الياسمين" })
+      .insert({ case_id: caseId, input_mode: "manual", title: "شقة الياسمين", district: "الياسمين" })
       .select("id")
       .single();
     if (propErr || !prop) throw propErr ?? new Error("property insert failed");
@@ -265,6 +265,8 @@ describe("Week 4 end-to-end: guest -> preflight -> checkout -> paid analysis -> 
       { field: "listing_price_sar", value: 700000 },
       { field: "area_sqm", value: 130 },
       { field: "bedrooms", value: 3 },
+      { field: "floor_no", value: 2 },
+      { field: "property_age_years", value: 1 },
     ];
     const { error: factsErr } = await adminSupabase
       .from("property_facts")

@@ -81,7 +81,7 @@ export function EngineeringDialGauge({
     <div
       className={`relative inline-flex items-center justify-center select-none ${className}`}
       style={{ width: size, height: size }}
-      title={`التقييم الهندسي: ${clampedScore}%`}
+      title={`مؤشر جودة العقار: ${clampedScore}%`}
     >
       <svg
         viewBox="0 0 100 100"

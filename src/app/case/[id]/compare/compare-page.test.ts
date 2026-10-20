@@ -226,36 +226,18 @@ describe("Compare Page - Acceptance 2 & 3", () => {
     expect(html).toContain("#1");
     expect(html).toContain("#2");
 
-    // Row 1: Fit rating & Visit priority
-    expect(html).toContain("توافق قوي");
-    expect(html).toContain("توافق ضعيف");
-    expect(html).toContain("معاينة مرتفعة");
-    expect(html).toContain("معاينة منخفضة");
+    // Table rows
+    expect(html).toContain("محاور الملاءمة ومقارنة الخيارات");
+    expect(html).toContain("مؤشر ملاءمة العقار");
+    expect(html).toContain("السعر والقدرة المالية");
+    expect(html).toContain("الموقع وأثر الحياة اليومية");
+    expect(html).toContain("جودة العقار وحالته");
+    expect(html).toContain("المخاطر وجوانب الحذر");
+    expect(html).toContain("مستوى الثقة وموثوقية البيانات");
 
-    // Row 2: Price SAR & Price/m² & Delta vs budget
+    // Prices
     expect(html).toContain(formatSAR(800_000));
     expect(html).toContain(formatSAR(1_100_000));
-    expect(html).toContain("توفير"); // Savings for prop 1
-    expect(html).toContain("يتجاوز الميزانية"); // Over budget for prop 2
-
-    // Row 3: Area & Bedrooms
-    expect(html).toContain("130 م²");
-    expect(html).toContain("150 م²");
-    expect(html).toContain("3 غرف نوم");
-    expect(html).toContain("4 غرف نوم");
-
-    // Row 4: Hard constraints summary
-    expect(html).toContain("الشروط الملزمة");
-
-    // Row 5: لماذا هذا الترتيب؟
-    expect(html).toContain("لماذا هذا الترتيب؟");
-
-    // Row 6: ما الذي قد يغيّر الترتيب؟
-    expect(html).toContain("ما الذي قد يغيّر الترتيب؟");
-
-    // Row 7: Action buttons linking to inspection
-    expect(html).toContain(`/case/${caseId}/inspection?propertyId=prop-1`);
-    expect(html).toContain(`/case/${caseId}/inspection?propertyId=prop-2`);
 
     // Back link
     expect(html).toContain("العودة إلى النتائج الفردية");

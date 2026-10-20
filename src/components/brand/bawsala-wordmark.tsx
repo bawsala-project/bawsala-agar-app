@@ -48,10 +48,14 @@ export function BawsalaWordmark({
   return (
     <div
       dir="ltr"
+      lang="en"
+      style={{ direction: "ltr", unicodeBidi: "isolate" }}
+      aria-label="BAWSALA"
       className={`inline-flex flex-col items-center justify-center select-none text-current ${className}`}
     >
       <span
-        className={`wordmark-latin font-wordmark font-light uppercase leading-none ${sizeConfig.title}`}
+        aria-hidden="true"
+        className={`wordmark-latin font-wordmark font-normal uppercase leading-none ${sizeConfig.title}`}
         style={{ letterSpacing: tracking }}
       >
         BAWSALA
@@ -59,6 +63,7 @@ export function BawsalaWordmark({
 
       {withSubtitle && (
         <span
+          aria-hidden="true"
           className={`wordmark-latin uppercase text-[var(--mist)] mt-1.5 opacity-75 font-normal ${sizeConfig.subtitle}`}
         >
           {subtitleText}

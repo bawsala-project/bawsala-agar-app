@@ -26,8 +26,9 @@ export function admitPropertyAssessment(input: {
   constraintResults: ConstraintResult[];
   pricePerSqm: number | null;
   criticalFieldsKnownCount: number;
+  confidenceLevel?: "high" | "medium" | "low";
 }): AdmissionResult {
-  const { modelOutput, knownFactFields, constraintResults, pricePerSqm, criticalFieldsKnownCount } = input;
+  const { modelOutput, knownFactFields, constraintResults, pricePerSqm, criticalFieldsKnownCount, confidenceLevel } = input;
 
   // 1. Evidence fields grounding check: every cited field must be in knownFactFields
   const knownSet = new Set(knownFactFields);
@@ -93,6 +94,12 @@ export function admitPropertyAssessment(input: {
 
   // Override B: Fewer than 2 critical fields known -> fit_rating and visit_priority = 'insufficient_evidence'
   if (criticalFieldsKnownCount < 2) {
+    fitRating = "insufficient_evidence";
+    visitPriority = "insufficient_evidence";
+  }
+
+  // Override C: Low confidence from incomplete / unverifiable data -> 'insufficient_evidence'
+  if (confidenceLevel === "low") {
     fitRating = "insufficient_evidence";
     visitPriority = "insufficient_evidence";
   }

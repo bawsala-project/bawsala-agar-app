@@ -5,10 +5,11 @@ import { requireCase } from "@/lib/auth";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { loadPreflightData } from "@/lib/preflight/load";
 import { evaluatePreflight } from "@/lib/preflight/evaluate";
-import { MockPaymentProvider } from "@/lib/payments/mock";
+import { getPaymentProvider } from "@/lib/payments/gate";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { PRICE_PER_CONSULTATION_SAR } from "@/config/product";
 
-const CHECKOUT_AMOUNT_SAR = 10.0;
+const CHECKOUT_AMOUNT_SAR = PRICE_PER_CONSULTATION_SAR;
 const IN_FLIGHT_WINDOW_MS = 2 * 60 * 1000;
 
 export interface CheckoutActionResult {
@@ -25,14 +26,14 @@ export async function initiateCheckoutAction(caseId: string): Promise<CheckoutAc
   }
 
   const preflight = evaluatePreflight(await loadPreflightData(caseId));
-  if (!preflight.ready) {
+  if (!preflight.ready || (preflight.readiness && !preflight.readiness.isReady)) {
     return {
       success: false,
       error: "الحالة غير جاهزة للدفع بعد، يرجى إكمال متطلبات الفحص المبدئي أولاً.",
     };
   }
 
-  const adapter = new MockPaymentProvider();
+  const adapter = getPaymentProvider();
   const returnUrl = `/case/${caseId}/results`;
 
   const { data: existing, error: existingErr } = await adminSupabase

@@ -11,6 +11,9 @@ export interface ManualPropertyInput {
   area_sqm?: number | null;
   bedrooms?: number | null;
   floor_no?: number | null;
+  property_age_years?: number | null;
+  building_age_years?: number | null;
+  notes?: string | null;
 }
 
 export function createManualFacts(property: ManualPropertyInput): PropertyFactInsert[] {
@@ -92,6 +95,28 @@ export function createManualFacts(property: ManualPropertyInput): PropertyFactIn
       value: property.title.trim(),
       raw_text: property.title,
       scope: "unit",
+      source: "manual",
+      evidence_text: null,
+      evidence_verified: false,
+    });
+  }
+
+  const explicitAge = property.property_age_years ?? property.building_age_years;
+  let parsedAge = explicitAge;
+  if ((parsedAge === undefined || parsedAge === null) && property.notes) {
+    const match = property.notes.match(/عمر المبنى:\s*(\d+)/);
+    if (match) {
+      parsedAge = Number(match[1]);
+    }
+  }
+
+  if (parsedAge !== null && parsedAge !== undefined && !isNaN(Number(parsedAge))) {
+    facts.push({
+      property_id: propertyId,
+      field: "property_age_years",
+      value: Number(parsedAge),
+      raw_text: String(parsedAge),
+      scope: "building",
       source: "manual",
       evidence_text: null,
       evidence_verified: false,

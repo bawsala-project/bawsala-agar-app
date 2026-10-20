@@ -6,6 +6,7 @@ import { propertySchema } from "@/lib/schemas/property";
 import { deletePropertyImages } from "@/lib/storage";
 import { runExtraction } from "@/lib/extraction/run-extraction";
 import { enforceRateLimit } from "@/lib/security/rate-limit";
+import { MAX_PROPERTIES } from "@/config/product";
 
 export interface PropertyActionState {
   errors?: Record<string, string[] | undefined>;
@@ -53,6 +54,8 @@ export async function addProperty(
       area_sqm: payload.get("area_sqm") || undefined,
       bedrooms: payload.get("bedrooms") || undefined,
       floor_no: payload.get("floor_no") || undefined,
+      building_age_years: payload.get("building_age_years") || undefined,
+      reference_url: payload.get("reference_url") || undefined,
       notes: payload.get("notes") || undefined,
     };
   } else if (typeof payload === "object" && payload !== null) {
@@ -75,10 +78,25 @@ export async function addProperty(
 
   const supabase = createClient();
 
+  let manualNotes = parsed.data.notes || null;
+  if (
+    parsed.data.input_mode === "manual" &&
+    parsed.data.building_age_years !== undefined &&
+    parsed.data.building_age_years !== null
+  ) {
+    const ageTag = `[عمر المبنى: ${parsed.data.building_age_years} سنوات]`;
+    manualNotes = manualNotes ? `${manualNotes} ${ageTag}` : ageTag;
+  }
+
   const insertPayload = {
     case_id: caseId,
     input_mode: parsed.data.input_mode,
-    source_url: parsed.data.input_mode === "url" ? parsed.data.source_url : null,
+    source_url:
+      parsed.data.input_mode === "url"
+        ? parsed.data.source_url
+        : parsed.data.input_mode === "manual"
+        ? parsed.data.reference_url || null
+        : null,
     image_paths: parsed.data.input_mode === "image" ? parsed.data.image_paths : [],
     title: parsed.data.input_mode === "manual" ? parsed.data.title || null : null,
     district: parsed.data.input_mode === "manual" ? parsed.data.district || null : null,
@@ -87,7 +105,7 @@ export async function addProperty(
     area_sqm: parsed.data.input_mode === "manual" ? parsed.data.area_sqm ?? null : null,
     bedrooms: parsed.data.input_mode === "manual" ? parsed.data.bedrooms ?? null : null,
     floor_no: parsed.data.input_mode === "manual" ? parsed.data.floor_no ?? null : null,
-    notes: parsed.data.notes || null,
+    notes: manualNotes,
   };
 
   const { data: insertedProp, error: insertError } = await supabase
@@ -115,7 +133,7 @@ export async function addProperty(
     ) {
       return {
         errors: {
-          form: ["الحد الأقصى 5 عقارات"],
+          form: [`الحد الأقصى ${MAX_PROPERTIES} عقارات`],
         },
       };
     }

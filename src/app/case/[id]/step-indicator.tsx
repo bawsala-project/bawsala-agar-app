@@ -13,13 +13,16 @@ export function StepIndicator({ caseId }: StepIndicatorProps) {
   const segment = useSelectedLayoutSegment();
 
   const steps = [
-    { key: "needs", label: "الاحتياج", href: `/case/${caseId}/needs`, stepNum: 1 },
+    { key: "needs", label: "ملف المشتري", href: `/case/${caseId}/profile`, stepNum: 1 },
     { key: "properties", label: "العقارات", href: `/case/${caseId}/properties`, stepNum: 2 },
     { key: "preflight", label: "الفحص المبدئي", href: `/case/${caseId}/preflight`, stepNum: 3 },
     { key: "results", label: "النتائج", href: `/case/${caseId}/results`, stepNum: 4 },
   ];
 
   const currentStepIndex = steps.findIndex((s) => {
+    if (s.key === "needs") {
+      return segment === "needs" || segment === "profile";
+    }
     if (s.key === "results") {
       return segment === "results" || segment === "compare";
     }

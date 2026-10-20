@@ -1152,11 +1152,13 @@ describe("Block 4: Financial Integrity, Reconciliation & Webhook Idempotency (T3
   it("T33 (Side-Effect Timeout & Reconcile [CRITICAL GATE]): Network timeouts during payment trigger reconciliation before retrying (zero blind retries)", async () => {
     const caseId = await createCase(guestAId);
     await seedRequirements(caseId, { max_budget_sar: 800000 });
-    const propId = await seedProperty(caseId, "شقة الدفع");
+    const propId = await seedProperty(caseId, "شقة الدفع", "الياسمين");
     await seedFacts(propId, [
       { field: "listing_price_sar", value: 700000 },
       { field: "area_sqm", value: 120 },
       { field: "bedrooms", value: 3 },
+      { field: "floor_no", value: 2 },
+      { field: "property_age_years", value: 1 },
     ]);
 
     // 1. Initial checkout initiation creates attempt 1

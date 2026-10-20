@@ -2,6 +2,7 @@ import { requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadPreflightData } from "@/lib/preflight/load";
 import { evaluatePreflight } from "@/lib/preflight/evaluate";
+import { loadBuyerProfile } from "@/actions/buyer-profile";
 import { PreflightView } from "./preflight-view";
 
 export const maxDuration = 120;
@@ -14,8 +15,11 @@ export default async function PreflightPage({ params }: PreflightPageProps) {
   // 1. Ensure user has access to case
   await requireCase(params.id);
 
-  // 2. Load preflight inputs through RLS client
-  const preflightData = await loadPreflightData(params.id);
+  // 2. Load preflight inputs and buyer profile
+  const [preflightData, profile] = await Promise.all([
+    loadPreflightData(params.id),
+    loadBuyerProfile(params.id),
+  ]);
 
   // 3. Evaluate dynamically
   const evaluation = evaluatePreflight(preflightData);
@@ -35,6 +39,7 @@ export default async function PreflightPage({ params }: PreflightPageProps) {
       evaluation={evaluation}
       isPaid={isPaid}
       propertyCount={preflightData.properties.length}
+      profile={profile}
     />
   );
 }

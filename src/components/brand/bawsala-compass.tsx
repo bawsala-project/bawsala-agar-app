@@ -9,7 +9,7 @@ interface BawsalaCompassProps {
   className?: string;
   /** Rotation of the outer dial / ticks in degrees (default: 0) */
   dialRotation?: number;
-  /** Rotation of the diamond needle in degrees (default: 15) */
+  /** Rotation of the diamond needle in degrees (default: 20) */
   needleRotation?: number;
   /** Whether to show a faint soft radial glow behind the dial */
   showGlow?: boolean;
@@ -17,6 +17,10 @@ interface BawsalaCompassProps {
   isHovered?: boolean;
   /** Automatic micro-animation on hover */
   animateHover?: boolean;
+  /** Custom stroke width for outer ring (default: 0.85, fullOpacity: 1.5) */
+  strokeWidth?: number;
+  /** Whether to render at full opacity (no grey, solid navy) */
+  fullOpacity?: boolean;
 }
 
 const TICK_COUNT = 60;
@@ -52,17 +56,19 @@ const DIAL_TICKS = Array.from({ length: TICK_COUNT }, (_, i) => {
  * BawsalaCompass: Clean inline SVG compass with independent groups for:
  * 1. Outer Ring (hairline circle + inner concentric guide)
  * 2. Tick Marks (60 radial ticks on the dial)
- * 3. Needle (slim diamond needle slightly tilted at ~15deg)
+ * 3. Needle (slim diamond needle slightly tilted at ~20deg)
  * Uses currentColor to adapt to any context seamlessly.
  */
 export function BawsalaCompass({
   size = 48,
   className = "",
   dialRotation = 0,
-  needleRotation = 15,
+  needleRotation = 20,
   showGlow = false,
   isHovered = false,
   animateHover = false,
+  strokeWidth,
+  fullOpacity = false,
 }: BawsalaCompassProps) {
   // If animateHover is enabled and hovered, apply a subtle rotational offset
   const effectiveDialRotation = animateHover && isHovered ? dialRotation + 45 : dialRotation;
@@ -101,8 +107,8 @@ export function BawsalaCompass({
             cy="50"
             r="42"
             stroke="currentColor"
-            strokeWidth="0.85"
-            strokeOpacity="0.4"
+            strokeWidth={strokeWidth ?? (fullOpacity ? 1.5 : 0.85)}
+            strokeOpacity={fullOpacity ? 1 : 0.4}
             fill="none"
           />
           {/* Inner concentric hairline reference circle */}
@@ -111,8 +117,8 @@ export function BawsalaCompass({
             cy="50"
             r="35"
             stroke="currentColor"
-            strokeWidth="0.5"
-            strokeOpacity="0.18"
+            strokeWidth={fullOpacity ? 0.8 : 0.5}
+            strokeOpacity={fullOpacity ? 0.35 : 0.18}
             strokeDasharray="1.5 2.5"
             fill="none"
           />
@@ -120,7 +126,7 @@ export function BawsalaCompass({
           <polygon
             points="50,3.5 51.5,6.5 50,8.5 48.5,6.5"
             fill="currentColor"
-            opacity="0.85"
+            opacity={fullOpacity ? 1 : 0.85}
           />
         </g>
 
@@ -139,9 +145,9 @@ export function BawsalaCompass({
               x2={tick.x2}
               y2={tick.y2}
               stroke="currentColor"
-              strokeWidth={tick.strokeWidth}
+              strokeWidth={fullOpacity ? tick.strokeWidth * 1.15 : tick.strokeWidth}
               strokeLinecap="round"
-              opacity={tick.opacity}
+              opacity={fullOpacity ? (tick.opacity > 0.6 ? 1 : 0.75) : tick.opacity}
             />
           ))}
         </motion.g>
@@ -153,24 +159,24 @@ export function BawsalaCompass({
           animate={{ rotate: effectiveNeedleRotation }}
           transition={{
             type: "spring",
-            damping: 14,
-            stiffness: 110,
+            damping: 12,
+            stiffness: 90,
           }}
         >
           {/* Needle Right Facet (Solid Shaded) */}
           <polygon
             points="50,9 53.5,50 50,91"
             fill="currentColor"
-            fillOpacity="0.95"
+            fillOpacity={fullOpacity ? 1 : 0.95}
           />
 
-          {/* Needle Left Facet (Muted Contrast) */}
+          {/* Needle Left Facet (Muted Contrast or Solid) */}
           <polygon
             points="50,9 46.5,50 50,91"
             fill="currentColor"
-            fillOpacity="0.32"
+            fillOpacity={fullOpacity ? 0.82 : 0.32}
             stroke="currentColor"
-            strokeWidth="0.75"
+            strokeWidth={fullOpacity ? 1.0 : 0.75}
             strokeLinejoin="round"
           />
 

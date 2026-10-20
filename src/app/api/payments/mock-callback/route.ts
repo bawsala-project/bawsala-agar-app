@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
-import { MockPaymentProvider } from "@/lib/payments/mock";
+import { getPaymentProvider } from "@/lib/payments/gate";
 import { settlePayment } from "@/lib/payments/settle";
 import { enforceRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Payment not found" }, { status: 404 });
   }
 
-  // The mock gateway reports exactly what was initiated for this key.
-  const adapter = new MockPaymentProvider();
+  // The payment gateway reports exactly what was initiated for this key.
+  const adapter = getPaymentProvider();
   const payload = {
     eventId: `mock_evt_${key}`,
     caseId: payment.case_id,

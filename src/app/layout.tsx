@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
+import { Italiana } from "next/font/google";
 import "./globals.css";
 import { InstrumentCursor } from "@/components/ui/instrument-cursor";
 
+const italiana = Italiana({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-wordmark",
+  display: "swap",
+  fallback: ["Cormorant Garamond", "serif"],
+});
+
 export const metadata: Metadata = {
-  title: "بوصلة العقار | مستشارك الهندسي والمالي المحايد",
-  description: "فحص فني وهندسي مستقل لقرار التملك بأرقام قطعية وتدقيق محايد",
+  title: "بوصلة العقار | مستشارك الذكي لقرار شراء شقتك",
+  description: "مستشارك الذكي المستقل لمفاضلة واختيار الشقق السكنية في السعودية وفق ميزانيتك وأولوياتك بـ 10 ريالات للاستشارة",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -20,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className="scroll-smooth">
+    <html lang="ar" dir="rtl" className={`scroll-smooth ${italiana.variable}`}>
       <head>
         {/* Preload primary Thmanyah fonts */}
         <link

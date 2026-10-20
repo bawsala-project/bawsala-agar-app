@@ -1,31 +1,32 @@
+import { requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { NeedsForm } from "./needs-form";
+import { loadBuyerProfile } from "@/actions/buyer-profile";
+import { BuyerProfileForm } from "../profile/buyer-profile-form";
+
+export const maxDuration = 60;
 
 export default async function NeedsPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const supabase = createClient();
+  await requireCase(params.id);
 
-  const [{ data: requirements }, { data: caseData }] = await Promise.all([
-    supabase
-      .from("requirements")
-      .select("*")
-      .eq("case_id", params.id)
-      .maybeSingle(),
+  const supabase = createClient();
+  const [{ data: caseData }, initialProfile] = await Promise.all([
     supabase
       .from("decision_cases")
       .select("city")
       .eq("id", params.id)
       .maybeSingle(),
+    loadBuyerProfile(params.id),
   ]);
 
   return (
-    <NeedsForm
+    <BuyerProfileForm
       caseId={params.id}
-      initialData={requirements}
-      city={caseData?.city ?? null}
+      initialProfile={initialProfile}
+      city={caseData?.city || null}
     />
   );
 }

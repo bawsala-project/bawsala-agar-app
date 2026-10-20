@@ -90,9 +90,13 @@ export function CompassPageTransition({
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.3 }}
-                className="font-wordmark font-light text-xs tracking-[0.4em] text-[var(--navy)] uppercase"
+                dir="ltr"
+                lang="en"
+                style={{ direction: "ltr", unicodeBidi: "isolate" }}
+                aria-label="BAWSALA"
+                className="font-wordmark font-normal text-xs tracking-[0.25em] text-[var(--navy)] uppercase"
               >
-                BAWSALA
+                <span aria-hidden="true">BAWSALA</span>
               </motion.div>
             </div>
           </motion.div>

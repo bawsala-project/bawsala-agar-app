@@ -125,7 +125,7 @@
   --font-display: 'Thmanyah Serif Display', 'Thmanyah Sans', serif;
   --font-body: 'Thmanyah Sans', 'Thmanyah Serif Text', sans-serif;
   --font-heading: 'Thmanyah Serif Display', 'Thmanyah Sans', serif;
-  --font-wordmark: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --font-wordmark: var(--font-italiana), 'Italiana', 'Cormorant Garamond', serif;
 
   --leading-headline: 1.3;
   --leading-snug: 1.4;

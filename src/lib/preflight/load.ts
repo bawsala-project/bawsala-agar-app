@@ -58,9 +58,34 @@ export async function loadPreflightData(
     // Resolve facts
     const resolved = resolveFacts((p.property_facts as PropertyFact[]) || []);
 
+    // Extract age of building if present in resolved facts or notes tag
+    let buildingAgeYears: number | null = null;
+    if (
+      resolved.fields.property_age_years?.status === "known" &&
+      resolved.fields.property_age_years.value !== null &&
+      !isNaN(Number(resolved.fields.property_age_years.value))
+    ) {
+      buildingAgeYears = Number(resolved.fields.property_age_years.value);
+    } else if (p.notes) {
+      const match = p.notes.match(/عمر المبنى:\s*(\d+)/);
+      if (match) {
+        buildingAgeYears = Number(match[1]);
+      }
+    }
+
     return {
       id: p.id,
       label,
+      district: p.district || null,
+      listingPriceSar:
+        p.listing_price_sar !== null && p.listing_price_sar !== undefined
+          ? Number(p.listing_price_sar)
+          : null,
+      areaSqm:
+        p.area_sqm !== null && p.area_sqm !== undefined ? Number(p.area_sqm) : null,
+      floorNo:
+        p.floor_no !== null && p.floor_no !== undefined ? Number(p.floor_no) : null,
+      buildingAgeYears,
       latestRun,
       resolved,
     };
