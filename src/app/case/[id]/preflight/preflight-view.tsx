@@ -152,6 +152,12 @@ function buildPropertyGroups(
           keyFacts.push(`${fields.bedrooms.value} غرف`);
         }
         if (
+          fields.bathrooms?.status === "known" &&
+          fields.bathrooms.value != null
+        ) {
+          keyFacts.push(`${fields.bathrooms.value} دورات مياه`);
+        }
+        if (
           fields.district?.status === "known" &&
           typeof fields.district.value === "string" &&
           fields.district.value.trim() &&

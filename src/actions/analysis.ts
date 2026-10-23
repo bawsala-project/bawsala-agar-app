@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireCase } from "@/lib/auth";
 import { loadPreflightData } from "@/lib/preflight/load";
@@ -298,6 +299,14 @@ export async function startAnalysis(
     return {
       error: "تعذر إكمال التحليل. حاول مرة أخرى.",
     };
+  }
+
+  try {
+    revalidatePath(`/case/${caseId}/results`);
+    revalidatePath(`/case/${caseId}/compare`);
+    revalidatePath(`/case/${caseId}/preflight`);
+  } catch {
+    // Ignore in non-request test contexts
   }
 
   // 8. Success: Redirect to results page

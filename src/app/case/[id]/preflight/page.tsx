@@ -4,6 +4,7 @@ import { loadPreflightData } from "@/lib/preflight/load";
 import { evaluatePreflight } from "@/lib/preflight/evaluate";
 import { PreflightView } from "./preflight-view";
 
+export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 interface PreflightPageProps {

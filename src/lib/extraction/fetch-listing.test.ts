@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { fetchListing, htmlToPlainText, isBlockedIp } from "./fetch-listing";
+import {
+  fetchListing,
+  htmlToPlainText,
+  isBlockedIp,
+  isBotBlockedInterstitial,
+} from "./fetch-listing";
+import { verifyEvidenceInSource } from "./run-extraction";
+import { getExtractionFailureExplanation } from "@/app/case/[id]/properties/properties-view";
 
 describe("isBlockedIp", () => {
   it("blocks loopback and private IPv4", () => {
@@ -191,5 +198,49 @@ describe("htmlToPlainText", () => {
     expect(text).not.toContain("console.log");
     expect(text).not.toContain("قائمة الموقع");
     expect(text).not.toContain("جميع الحقوق محفوظة");
+  });
+});
+
+describe("Note #4: Bot-Block Detection, Evidence Verification & Failure Explanations", () => {
+  it("detects Cloudflare / WAF block interstitials and returns http_error instead of treating block HTML as listing text", async () => {
+    expect(isBotBlockedInterstitial("Attention Required! | Cloudflare")).toBe(true);
+    expect(isBotBlockedInterstitial("Sorry, you have been blocked")).toBe(true);
+    expect(isBotBlockedInterstitial("Just a moment... Enable JavaScript and cookies to continue")).toBe(true);
+
+    const mockDns = async () => [{ address: "93.184.216.34", family: 4 }];
+    const mockFetch = async () => {
+      return new Response(
+        "<html><head><title>Attention Required! | Cloudflare</title></head><body>You have been blocked</body></html>",
+        {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        }
+      );
+    };
+
+    const res = await fetchListing("https://example.com/blocked-ad", {
+      dnsLookup: mockDns,
+      fetchImpl: mockFetch as unknown as typeof fetch,
+    });
+    expect(res).toEqual({ ok: false, code: "http_error" });
+  });
+
+  it("verifies URL evidence resiliently across thousands commas and Arabic digits while rejecting hallucinated quotes", () => {
+    const source = "شقة فاخرة للبيع في حي الملقا السعر: 850,000 ريال والمساحة ١٥٠ م²";
+    expect(verifyEvidenceInSource(source, "السعر: 850000 ريال")).toBe(true);
+    expect(verifyEvidenceInSource(source, "السعر: 850,000 ريال")).toBe(true);
+    expect(verifyEvidenceInSource(source, "المساحة 150 م²")).toBe(true);
+    expect(verifyEvidenceInSource(source, "السعر: 999000 ريال")).toBe(false);
+    expect(verifyEvidenceInSource(source, "نص غير موجود إطلاقاً")).toBe(false);
+  });
+
+  it("provides clear Arabic reasons and manual completion guidance for both URL and Image failures", () => {
+    const urlBlocked = getExtractionFailureExplanation("url", "http_error");
+    expect(urlBlocked.title).toContain("منصة الإعلان تحجب القراءة الآلية");
+    expect(urlBlocked.reason).toContain("يدوياً");
+
+    const imageEmpty = getExtractionFailureExplanation("image", "no_facts_extracted");
+    expect(imageEmpty.title).toContain("لم تظهر أرقام واضحة داخل الصورة");
+    expect(imageEmpty.reason).toContain("يدوياً");
   });
 });

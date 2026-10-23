@@ -456,8 +456,12 @@ export function evaluateDecisionAxes(
     budgetDeltaSar < 0 &&
     (unknownConstraints.length > 0 || keyUnknowns.length > 0)
   ) {
+    const rawUnknown = unknownConstraints[0]?.labelAr || keyUnknowns[0] || "";
+    const cleanedUnknown = rawUnknown
+      .replace(/^التحقق(\s+الميداني)?\s+من\s+/, "")
+      .replace(/\.+$/, "");
     tradeoffs.push(
-      `مقايضة السعر مقابل عدم اليقين: توفر الشقة وفراً مالياً (${Math.abs(budgetDeltaSar).toLocaleString()} ر.س تحت الميزانية) مقابل الحاجة للتحقق الميداني من (${unknownConstraints[0]?.labelAr || keyUnknowns[0]}).`
+      `مقايضة السعر مقابل عدم اليقين: توفر الشقة وفراً مالياً (${Math.abs(budgetDeltaSar).toLocaleString()} ر.س تحت الميزانية) مقابل الحاجة للتحقق الميداني من (${cleanedUnknown}).`
     );
   }
 

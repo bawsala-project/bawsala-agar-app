@@ -64,16 +64,40 @@ export function AskBawsala({ caseId }: { caseId: string }) {
 
   return (
     <>
-      {/* Floating Action Button — physical bottom-right */}
+      {/* Integrated Inline Prompt Bar inside DecisionFollowupQA */}
+      <div className="pt-2 border-t border-[var(--mist)]/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[var(--navy)] text-[var(--cream)] flex items-center justify-center shrink-0">
+            <BawsalaCompass size={20} />
+          </div>
+          <div>
+            <p className="text-xs sm:text-sm font-bold text-[var(--navy)]">
+              هل لديك سؤال محدد لم يُذكر أعلاه؟
+            </p>
+            <p className="text-[11px] text-[var(--dusty-blue)]">
+              اسأل مساعد بوصلة الذكي مباشرة حول شقق هذه الحالة وميزانيتك
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={open}
+          className="h-10 px-4 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs font-bold inline-flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0"
+        >
+          <span>اسأل بوصلة العقار (AI)</span>
+        </button>
+      </div>
+
+      {/* Floating Action Button — shown only on wide desktop (xl+) where outer margin exists */}
       <button
         type="button"
         onClick={open}
         aria-haspopup="dialog"
         aria-label="اسأل بوصلة العقار — مساعد الذكاء الاصطناعي"
-        className="bawsala-ai-fab isolate fixed bottom-5 right-5 sm:bottom-7 sm:right-7 z-[60] w-16 h-16 rounded-full bg-[var(--navy)] text-[var(--cream)] flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+        className="bawsala-ai-fab isolate hidden xl:flex fixed bottom-6 left-6 z-[60] w-14 h-14 rounded-full bg-[var(--navy)] text-[var(--cream)] items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform"
       >
-        <BawsalaCompass size={34} />
-        <span className="absolute -top-1 -left-1 px-1.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] text-[10px] font-black border border-[var(--mist)] shadow-sm">
+        <BawsalaCompass size={28} />
+        <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-[var(--cream)] text-[var(--navy)] text-[10px] font-black border border-[var(--mist)] shadow-sm">
           AI
         </span>
       </button>

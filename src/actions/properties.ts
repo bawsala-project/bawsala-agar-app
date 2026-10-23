@@ -52,6 +52,7 @@ export async function addProperty(
       listing_price_sar: payload.get("listing_price_sar") || undefined,
       area_sqm: payload.get("area_sqm") || undefined,
       bedrooms: payload.get("bedrooms") || undefined,
+      bathrooms: payload.get("bathrooms") || undefined,
       floor_no: payload.get("floor_no") || undefined,
       notes: payload.get("notes") || undefined,
     };
@@ -134,9 +135,20 @@ export async function addProperty(
     .eq("id", caseId);
 
   // Run extraction pipeline immediately and await it
-  await runExtraction(insertedProp.id);
+  if (
+    parsed.data.input_mode === "manual" &&
+    parsed.data.bathrooms !== undefined &&
+    parsed.data.bathrooms !== null
+  ) {
+    await runExtraction(insertedProp.id, {
+      manualExtras: { bathrooms: parsed.data.bathrooms },
+    });
+  } else {
+    await runExtraction(insertedProp.id);
+  }
 
   revalidatePath(`/case/${caseId}/properties`);
+  revalidatePath(`/case/${caseId}/preflight`);
 
   return {
     success: true,

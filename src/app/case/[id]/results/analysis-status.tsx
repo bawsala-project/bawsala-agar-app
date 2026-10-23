@@ -28,7 +28,12 @@ export function AnalysisStatus({ caseId, mode }: AnalysisStatusProps) {
     try {
       const result = await startAnalysis(caseId);
       if (result?.error) {
-        setError(result.error);
+        // If another request is already running the analysis, keep waiting smoothly without showing an error alert
+        if (result.error.includes("التحليل قيد المعالجة")) {
+          setError(null);
+        } else {
+          setError(result.error);
+        }
       }
     } catch {
       // Next.js redirect() from server action is handled by router; trigger refresh as fallback

@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowRight,
@@ -96,6 +97,7 @@ function QuickSelectPill({
   active?: boolean;
   onSuccess?: () => void;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   const handleClick = () => {
@@ -105,6 +107,7 @@ function QuickSelectPill({
         value,
       });
       if (!res?.errors) {
+        router.refresh();
         onSuccess?.();
       }
     });
@@ -138,6 +141,7 @@ function AdoptCandidateButton({
   field: FieldKey;
   value: unknown;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -150,6 +154,8 @@ function AdoptCandidateButton({
       });
       if (res?.errors) {
         setError(res.errors[field]?.[0] || res.errors.form?.[0] || "تعذر اعتماد القيمة");
+      } else {
+        router.refresh();
       }
     });
   };
@@ -187,6 +193,7 @@ function InlineCorrectionForm({
   placeholder,
   buttonLabel = "حفظ",
   compact = false,
+  initialValue,
   onSuccess,
 }: {
   caseId: string;
@@ -196,11 +203,19 @@ function InlineCorrectionForm({
   placeholder?: string;
   buttonLabel?: string;
   compact?: boolean;
+  initialValue?: string;
   onSuccess?: () => void;
 }) {
-  const [val, setVal] = useState("");
+  const router = useRouter();
+  const [val, setVal] = useState(initialValue ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (initialValue !== undefined) {
+      setVal(initialValue);
+    }
+  }, [initialValue]);
 
   const def = FIELD_REGISTRY[field];
 
@@ -217,7 +232,10 @@ function InlineCorrectionForm({
       if (res?.errors) {
         setError(res.errors[field]?.[0] || res.errors.form?.[0] || "قيمة غير صالحة");
       } else {
-        setVal("");
+        if (initialValue === undefined) {
+          setVal("");
+        }
+        router.refresh();
         onSuccess?.();
       }
     });
@@ -253,6 +271,8 @@ function InlineCorrectionForm({
         <input
           id={`corr-${field}`}
           name="value"
+          type="text"
+          inputMode={def.valueType === "number" ? "numeric" : undefined}
           value={val}
           onChange={(e) => setVal(e.target.value)}
           placeholder={placeholder || `أدخل ${label}...`}
@@ -364,6 +384,7 @@ export function PropertyDetailsView({
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`/case/${caseId}/properties`}
+                prefetch={false}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)] hover:bg-[var(--navy)] text-[var(--navy)] hover:text-[var(--cream)] border border-[var(--mist)] hover:border-[var(--navy)] text-xs font-medium transition-all"
               >
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -427,7 +448,7 @@ export function PropertyDetailsView({
 
           {/* Left: Primary Next Step CTA */}
           <div className="flex items-center gap-3 shrink-0">
-            <Link href={`/case/${caseId}/preflight`} className="w-full md:w-auto">
+            <Link href={`/case/${caseId}/preflight`} prefetch={false} className="w-full md:w-auto">
               <button
                 type="button"
                 className="w-full md:w-auto px-6 py-3 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer active:scale-[0.98]"
@@ -674,6 +695,11 @@ export function PropertyDetailsView({
                         label={def.label}
                         buttonLabel="حفظ"
                         compact
+                        initialValue={
+                          res.value !== undefined && res.value !== null
+                            ? String(res.value)
+                            : ""
+                        }
                         onSuccess={() => setEditingField(null)}
                       />
                     </div>
@@ -967,4 +993,3 @@ export function PropertyDetailsView({
     </div>
   );
 }
-

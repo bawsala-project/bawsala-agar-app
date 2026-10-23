@@ -61,6 +61,9 @@ export interface PropertyDetailSheetProps {
     main_advantage_ar?: string;
     main_tradeoff_ar?: string;
     what_could_change_rank_ar?: string;
+    ranking_reason_ar?: string;
+    preferences_impact_ar?: string;
+    score_vs_rank_note_ar?: string;
     strengths: string[];
     risks: string[];
     key_unknowns?: string[];
@@ -471,10 +474,10 @@ export function PropertyDetailSheet({
                 </div>
 
                 {/* Fit & Recommendation Summary */}
-                <div className="bg-[var(--paper)] p-3.5 rounded-xl border border-[var(--mist)] space-y-1.5">
+                <div className="bg-[var(--paper)] p-3.5 rounded-xl border border-[var(--mist)] space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs font-bold text-[var(--navy)]">
-                      الخلاصة
+                      الخلاصة وسبب الترتيب
                     </span>
                   </div>
                   <p className="text-sm text-[var(--navy)] leading-relaxed">
@@ -482,6 +485,22 @@ export function PropertyDetailSheet({
                       assessment.visit_priority_reason ||
                       "قُيّم حسب الشواهد المتوفرة."}
                   </p>
+                  {assessment.ranking_reason_ar && (
+                    <p className="text-sm text-[var(--navy)] pt-1.5 border-t border-[var(--mist)]/60 leading-relaxed">
+                      <strong className="text-[#1E6B43]">سبب الترتيب: </strong>
+                      {assessment.ranking_reason_ar}
+                    </p>
+                  )}
+                  {assessment.preferences_impact_ar && (
+                    <p className="text-sm text-[var(--dusty-blue)] pt-1 border-t border-[var(--mist)]/60 leading-relaxed">
+                      {assessment.preferences_impact_ar}
+                    </p>
+                  )}
+                  {assessment.score_vs_rank_note_ar && (
+                    <p className="text-xs text-[#9A6700] bg-[#FFF9EC] border border-[#F9E2AF] rounded-xl px-3 py-2 font-medium leading-relaxed">
+                      {assessment.score_vs_rank_note_ar}
+                    </p>
+                  )}
                   {assessment.confidence_reason_ar && (
                     <p className="text-sm text-[var(--dusty-blue)] pt-1 border-t border-[var(--mist)]/60">
                       <strong className="text-[var(--navy)]">الثقة: </strong>

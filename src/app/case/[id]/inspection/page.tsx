@@ -7,6 +7,8 @@ import { getOrGenerateInspectionItems, type InspectionItemRow } from "@/actions/
 import { InspectionView } from "./inspection-view";
 import { cn } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 interface InspectionPageProps {
   params: { id: string };
   searchParams?: { propertyId?: string };

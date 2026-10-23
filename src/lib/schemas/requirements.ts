@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { preprocessNumericInput } from "@/lib/utils/arabic-numbers";
 
 export const PURCHASE_METHODS = ["cash", "finance", "undecided"] as const;
 export type PurchaseMethod = (typeof PURCHASE_METHODS)[number];
@@ -34,10 +35,13 @@ export const hardConstraintItemSchema = z.discriminatedUnion("key", [
   z.object({
     key: z.literal("max_floor"),
     label: z.string().min(1, "يرجى تحديد وصف الشرط"),
-    value: z.coerce
-      .number({ message: "يرجى إدخال رقم الدور كعدد صحيح" })
-      .int("يجب أن يكون رقم الدور عدداً صحيحاً")
-      .min(0, "رقم الدور يجب أن يكون 0 أو أكثر"),
+    value: z.preprocess(
+      preprocessNumericInput,
+      z.coerce
+        .number({ message: "يرجى إدخال رقم الدور كعدد صحيح" })
+        .int("يجب أن يكون رقم الدور عدداً صحيحاً")
+        .min(0, "رقم الدور يجب أن يكون 0 أو أكثر")
+    ),
   }),
   z.object({
     key: z.literal("custom"),
@@ -89,7 +93,7 @@ export type ImportantLocation = z.infer<typeof importantLocationItemSchema>;
 
 export const requirementsSchema = z.object({
   max_budget_sar: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    preprocessNumericInput,
     z.coerce
       .number({ message: "الميزانية يجب أن تكون رقماً" })
       .gt(0, "الميزانية يجب أن تكون أكبر من صفر")
@@ -98,7 +102,7 @@ export const requirementsSchema = z.object({
     message: "يرجى اختيار طريقة الشراء",
   }),
   household_size: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    preprocessNumericInput,
     z.coerce
       .number({ message: "عدد أفراد الأسرة مطلوب" })
       .int("يجب أن يكون عدداً صحيحاً")
@@ -106,7 +110,7 @@ export const requirementsSchema = z.object({
       .max(20, "عدد أفراد الأسرة يجب أن يكون بين 1 و 20")
   ),
   min_bedrooms: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    preprocessNumericInput,
     z.coerce
       .number({ message: "عدد غرف النوم مطلوب" })
       .int("يجب أن يكون عدداً صحيحاً")
@@ -114,7 +118,7 @@ export const requirementsSchema = z.object({
       .max(10, "عدد الغرف يجب أن يكون بين 1 و 10")
   ),
   min_area_sqm: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    preprocessNumericInput,
     z.coerce
       .number({ message: "المساحة يجب أن تكون رقماً" })
       .gt(0, "المساحة يجب أن تكون أكبر من صفر")

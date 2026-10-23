@@ -15,12 +15,15 @@ import { requireCase } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatSAR, cn } from "@/lib/utils";
 import { reassessPropertyAction } from "@/actions/analysis";
+import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
 import type {
   ReassessmentDiff,
   FitRating,
   VisitPriority,
 } from "@/lib/analysis/reassess";
 import type { ConfidenceLevel } from "@/lib/analysis/axes";
+
+export const dynamic = "force-dynamic";
 
 interface ReassessPageProps {
   params: { id: string };
@@ -109,11 +112,11 @@ export default async function ReassessPage({
 
   const supabase = createClient();
 
-  // 2. Fetch properties for this case
+  // 2. Fetch properties for this case (with property_facts so user-corrected values appear)
   const { data: properties, error: propErr } = await supabase
     .from("properties")
     .select(
-      "id, title, district, listing_price_sar, area_sqm, bedrooms, floor_no"
+      "id, title, district, listing_price_sar, area_sqm, bedrooms, floor_no, property_facts(*)"
     )
     .eq("case_id", params.id)
     .order("created_at", { ascending: true });
@@ -126,6 +129,21 @@ export default async function ReassessPage({
   const activePropertyId = searchParams?.propertyId || properties[0].id;
   const activeProperty =
     properties.find((p) => p.id === activePropertyId) || properties[0];
+
+  const activeFacts = Array.isArray(
+    (activeProperty as { property_facts?: PropertyFact[] }).property_facts
+  )
+    ? ((activeProperty as { property_facts?: PropertyFact[] }).property_facts ?? [])
+    : [];
+  const activeResolved = resolveFacts(activeFacts);
+  const displayPrice =
+    activeResolved.fields.listing_price_sar?.status === "known"
+      ? Number(activeResolved.fields.listing_price_sar.value)
+      : activeProperty.listing_price_sar;
+  const displayArea =
+    activeResolved.fields.area_sqm?.status === "known"
+      ? Number(activeResolved.fields.area_sqm.value)
+      : activeProperty.area_sqm;
 
   // 3. Fetch latest committed run
   const { data: runs } = await supabase
@@ -357,8 +375,8 @@ export default async function ReassessPage({
               السعر المعروض
             </span>
             <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
-              {activeProperty.listing_price_sar
-                ? formatSAR(Number(activeProperty.listing_price_sar))
+              {displayPrice
+                ? formatSAR(Number(displayPrice))
                 : "غير محدد"}
             </span>
           </div>
@@ -368,8 +386,8 @@ export default async function ReassessPage({
               المساحة
             </span>
             <span className="font-bold text-[var(--navy)] tabular-nums text-sm sm:text-base font-body">
-              {activeProperty.area_sqm
-                ? `${activeProperty.area_sqm} م²`
+              {displayArea
+                ? `${displayArea} م²`
                 : "غير محددة"}
             </span>
           </div>

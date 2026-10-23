@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { preprocessNumericInput } from "@/lib/utils/arabic-numbers";
 
 export const INPUT_MODES = ["url", "image", "manual"] as const;
 export type InputMode = (typeof INPUT_MODES)[number];
@@ -59,21 +60,21 @@ export const manualPropertySchema = z
       .optional()
       .nullable(),
     listing_price_sar: z.preprocess(
-      (val) => (val === "" || val === null || val === undefined ? undefined : val),
+      preprocessNumericInput,
       z.coerce
         .number({ message: "السعر يجب أن يكون رقماً" })
         .gt(0, "السعر يجب أن يكون أكبر من صفر")
         .optional()
     ),
     area_sqm: z.preprocess(
-      (val) => (val === "" || val === null || val === undefined ? undefined : val),
+      preprocessNumericInput,
       z.coerce
         .number({ message: "المساحة يجب أن تكون رقماً" })
         .gt(0, "المساحة يجب أن تكون أكبر من صفر")
         .optional()
     ),
     bedrooms: z.preprocess(
-      (val) => (val === "" || val === null || val === undefined ? undefined : val),
+      preprocessNumericInput,
       z.coerce
         .number({ message: "عدد غرف النوم يجب أن يكون رقماً" })
         .int("يجب أن يكون عدد الغرف عدداً صحيحاً")
@@ -81,8 +82,17 @@ export const manualPropertySchema = z
         .max(50, "الحد الأقصى لعدد الغرف 50")
         .optional()
     ),
+    bathrooms: z.preprocess(
+      preprocessNumericInput,
+      z.coerce
+        .number({ message: "عدد دورات المياه يجب أن يكون رقماً" })
+        .int("يجب أن يكون عدد دورات المياه عدداً صحيحاً")
+        .min(0, "عدد دورات المياه لا يمكن أن يكون سالباً")
+        .max(50, "الحد الأقصى لعدد دورات المياه 50")
+        .optional()
+    ),
     floor_no: z.preprocess(
-      (val) => (val === "" || val === null || val === undefined ? undefined : val),
+      preprocessNumericInput,
       z.coerce
         .number({ message: "رقم الدور يجب أن يكون رقماً" })
         .int("يجب أن يكون رقم الدور عدداً صحيحاً")

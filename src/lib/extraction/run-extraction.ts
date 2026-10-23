@@ -5,7 +5,7 @@ import { extractFactsFromText, extractFactsFromImages, ImageAttachment } from "@
 import { PROMPT_VERSION, ExtractionFact } from "@/lib/ai/prompts/extraction";
 import { normalizeDigits, normalizeField } from "@/lib/evidence/normalize";
 import { FIELD_REGISTRY, FieldKey } from "@/lib/evidence/fields";
-import { createManualFacts } from "@/lib/evidence/manual";
+import { createManualFacts, type ManualPropertyInput } from "@/lib/evidence/manual";
 import type { LanguageModel } from "@/lib/ai/client";
 import type { Json } from "@/types/database";
 
@@ -16,11 +16,34 @@ export type RunExtractionResult =
 const MAX_RUNS_PER_PROPERTY = 5;
 const STALE_RUN_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
 
+function normalizeForEvidenceCheck(text: string): string {
+  return normalizeDigits(text)
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/(\d)\s*[,،٬]\s*(\d)/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function verifyEvidenceInSource(
+  sourceText: string,
+  evidenceText: string
+): boolean {
+  const normSource = normalizeDigits(sourceText).replace(/\s+/g, " ").trim();
+  const normEvidence = normalizeDigits(evidenceText).replace(/\s+/g, " ").trim();
+  if (!normEvidence) return false;
+  if (normSource.includes(normEvidence)) return true;
+
+  const cleanSource = normalizeForEvidenceCheck(sourceText);
+  const cleanEvidence = normalizeForEvidenceCheck(evidenceText);
+  return cleanEvidence.length > 0 && cleanSource.includes(cleanEvidence);
+}
+
 export async function runExtraction(
   propertyId: string,
   options?: {
     modelOverride?: LanguageModel;
     initialSourceText?: string;
+    manualExtras?: Partial<ManualPropertyInput>;
   }
 ): Promise<RunExtractionResult> {
   // 1. Check attempt limit: at most 5 extraction runs per property
@@ -112,7 +135,10 @@ export async function runExtraction(
     // Branch based on input_mode
     if (property.input_mode === "manual") {
       // Manual mode: no model call; use manual.ts
-      const manualFacts = createManualFacts(property);
+      const manualFacts = createManualFacts({
+        ...property,
+        ...options?.manualExtras,
+      });
 
       const { error: rpcErr } = await adminSupabase.rpc("replace_extracted_facts", {
         p_run_id: runId,
@@ -167,15 +193,12 @@ export async function runExtraction(
         evidence_verified: boolean;
       }> = [];
 
-      const normSource = normalizeDigits(fetchResult.text).replace(/\s+/g, " ").trim();
-
       for (const f of rawFacts) {
         const normalized = normalizeField(f.field as FieldKey, f.raw);
         if (normalized === null) continue;
 
-        // Evidence verification for URL
-        const normEvidence = normalizeDigits(f.evidence).replace(/\s+/g, " ").trim();
-        const verified = normEvidence.length > 0 && normSource.includes(normEvidence);
+        // Evidence verification for URL (resilient to thousands commas & diacritics)
+        const verified = verifyEvidenceInSource(fetchResult.text, f.evidence);
 
         // For URL mode: drop the fact if evidence does not appear
         if (!verified) continue;
@@ -193,6 +216,10 @@ export async function runExtraction(
           evidence_text: f.evidence.slice(0, 300),
           evidence_verified: true,
         });
+      }
+
+      if (preparedFacts.length === 0) {
+        return await markRunFailed("no_facts_extracted");
       }
 
       const { error: rpcErr } = await adminSupabase.rpc("replace_extracted_facts", {
@@ -273,6 +300,10 @@ export async function runExtraction(
           evidence_text: f.evidence.slice(0, 300),
           evidence_verified: false, // Image facts keep evidence_verified = false
         });
+      }
+
+      if (preparedFacts.length === 0) {
+        return await markRunFailed("no_facts_extracted");
       }
 
       const { error: rpcErr } = await adminSupabase.rpc("replace_extracted_facts", {

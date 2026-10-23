@@ -6,12 +6,7 @@ import { settlePayment } from "@/lib/payments/settle";
 import { enforceRateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export async function GET(request: NextRequest) {
-  // Next.js Server Action redirect pre-flight sends `RSC: 1` to probe if the target
-  // is an RSC page. Returning 204 prevents Node's internal fetch from following the 303
-  // redirect into `/results` while keeping the browser URL stuck on `/api/payments/mock-callback`.
-  if (request.headers.get("rsc") === "1") {
-    return new NextResponse(null, { status: 204 });
-  }
+  const isRscPreflight = request.headers.get("rsc") === "1";
 
   // Security Gate (C1): Mock callback is strictly forbidden in production unless mock payments are explicitly enabled.
   if (process.env.NODE_ENV === "production" && process.env.ENABLE_MOCK_PAYMENTS !== "true") {
@@ -35,6 +30,9 @@ export async function GET(request: NextRequest) {
 
   // Fast-path if already settled (e.g. refreshing callback URL): redirect to results without rate-limit penalty.
   if (payment.status === "paid" || payment.status === "duplicate_paid") {
+    if (isRscPreflight) {
+      return new NextResponse(null, { status: 204 });
+    }
     return NextResponse.redirect(new URL(`/case/${payment.case_id}/results`, request.url), 303);
   }
 
@@ -61,6 +59,11 @@ export async function GET(request: NextRequest) {
   switch (result.outcome) {
     case "paid":
     case "duplicate":
+      // Always settle the payment BEFORE returning 204 for RSC preflight so the DB row
+      // is guaranteed to be 'paid' when the browser navigates to /results.
+      if (isRscPreflight) {
+        return new NextResponse(null, { status: 204 });
+      }
       return NextResponse.redirect(new URL(`/case/${result.caseId}/results`, request.url), 303);
     case "mismatch":
       return NextResponse.json(

@@ -1,3 +1,6 @@
+import crypto from "crypto";
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   CreditCard,
@@ -10,7 +13,11 @@ import { createClient } from "@/lib/supabase/server";
 import { loadPreflightData } from "@/lib/preflight/load";
 import { evaluatePreflight } from "@/lib/preflight/evaluate";
 import { initiateCheckoutAction } from "@/actions/payments";
+import { MockPaymentProvider } from "@/lib/payments/mock";
+import { settlePayment } from "@/lib/payments/settle";
 import { AccountLinkBanner } from "@/components/account-link-banner";
+
+export const dynamic = "force-dynamic";
 
 interface CheckoutPageProps {
   params: { id: string };
@@ -46,18 +53,62 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
   async function startCheckout(): Promise<void> {
     "use server";
-    const result = await initiateCheckoutAction(params.id);
-    if (result) {
-      redirect(`/case/${params.id}/preflight`);
+    let redirectUrl: string | null = null;
+    try {
+      const result = await initiateCheckoutAction(params.id);
+      if (result) {
+        redirect(`/case/${params.id}/preflight`);
+      }
+    } catch (err: unknown) {
+      const digest = (err as { digest?: string })?.digest;
+      if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT;")) {
+        const parts = digest.split(";");
+        redirectUrl = parts[2] || null;
+      } else {
+        throw err;
+      }
+    }
+
+    if (redirectUrl) {
+      // If initiateCheckoutAction redirected to the mock payment callback, settle the payment
+      // directly on the server and redirect straight to /case/[id]/results so the user never
+      // gets stuck on /api/payments/mock-callback or redirected back to /preflight.
+      if (redirectUrl.startsWith("/api/payments/mock-callback")) {
+        const parsedUrl = new URL(redirectUrl, "http://localhost");
+        const key = parsedUrl.searchParams.get("key");
+        if (key) {
+          const adapter = new MockPaymentProvider();
+          const payload = {
+            eventId: `mock_evt_${key}`,
+            caseId: params.id,
+            amountSar: 10,
+          };
+          const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+          const signature = secret
+            ? crypto.createHmac("sha256", secret).update(JSON.stringify(payload)).digest("hex")
+            : undefined;
+          const verified = await adapter.verifyWebhook(payload, signature);
+          const settled = await settlePayment(key, verified);
+          if (settled.outcome === "paid" || settled.outcome === "duplicate") {
+            revalidatePath(`/case/${params.id}/preflight`);
+            revalidatePath(`/case/${params.id}/checkout`);
+            revalidatePath(`/case/${params.id}/results`);
+            redirect(`/case/${params.id}/results`);
+          }
+        }
+      }
+      redirect(redirectUrl);
     }
   }
 
   const user = await getSessionUser();
+  const verifiedCookieEmail = cookies().get("bawsala_verified_email")?.value;
+  const showEmailBanner = Boolean(user?.is_anonymous && !verifiedCookieEmail);
   const propertyCount = preflightData.properties.length;
 
   return (
     <>
-      {user?.is_anonymous && <AccountLinkBanner nextPath={`/case/${params.id}/checkout`} />}
+      {showEmailBanner && <AccountLinkBanner nextPath={`/case/${params.id}/checkout`} />}
       <div className="w-full max-w-xl mx-auto px-4 sm:px-6 py-8 md:py-12 space-y-6 font-body text-[var(--navy)]" dir="rtl">
         {/* Invoice Card */}
         <div className="bg-[var(--paper)] rounded-[28px] border border-[var(--mist)] shadow-[0_20px_60px_rgba(15,26,43,0.04)] p-6 sm:p-8 space-y-6">
@@ -100,7 +151,6 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               <span className="text-3xl font-body font-extrabold text-[var(--navy)] tabular-nums tracking-tight">10.00</span>
               <span className="text-sm font-medium text-[var(--dusty-blue)]">ر.س · مرة واحدة</span>
             </div>
-            
           </div>
 
           {/* Feature Inclusions */}
@@ -143,9 +193,6 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               </span>
             </button>
           </form>
-
-          
-          
         </div>
       </div>
     </>

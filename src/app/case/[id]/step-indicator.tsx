@@ -31,16 +31,38 @@ export function StepIndicator({ caseId }: StepIndicatorProps) {
 
   return (
     <>
-    {/* Mobile compact progress (below sm) */}
-    <div className="sm:hidden w-full select-none">
-      <div className="flex items-center justify-between text-sm font-bold text-[var(--navy)] mb-1.5">
+    {/* Mobile compact progress & clickable step navigation (below sm) */}
+    <div className="sm:hidden w-full select-none space-y-2">
+      <div className="flex items-center justify-between text-xs font-bold text-[var(--navy)]">
         <span>الخطوة {activeStep.stepNum} من {steps.length} · {activeStep.label}</span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-[var(--mist)]/50 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[var(--navy)] transition-all"
-          style={{ width: `${(activeStep.stepNum / steps.length) * 100}%` }}
-        />
+      <div className="grid grid-cols-4 gap-1.5" role="navigation" aria-label="مراحل القرار للجوال">
+        {steps.map((step, idx) => {
+          const isActive = idx === currentStepIndex;
+          const isPast = idx < currentStepIndex;
+          return (
+            <Link
+              key={step.key}
+              href={step.href}
+              prefetch={false}
+              className={cn(
+                "px-2 py-1.5 rounded-xl text-[11px] flex items-center justify-center gap-1 text-center transition-all no-underline border",
+                isActive
+                  ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] font-bold shadow-xs"
+                  : isPast
+                  ? "bg-[var(--paper)] text-[var(--navy)] border-[var(--mist)] font-semibold"
+                  : "bg-[var(--cream)]/60 text-[var(--dusty-blue)] border-[var(--mist)]/60 font-medium"
+              )}
+            >
+              {isPast ? (
+                <CheckCircle2 className="w-3 h-3 text-[#1E6B43] shrink-0" />
+              ) : (
+                <span className="text-[10px] font-bold">{step.stepNum}.</span>
+              )}
+              <span className="truncate">{step.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
     <nav aria-label="مراحل القرار" className="hidden sm:flex items-center gap-1.5 p-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-xs font-semibold text-[var(--dusty-blue)] select-none">

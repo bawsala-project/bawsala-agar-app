@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, requireCase } from "@/lib/auth";
@@ -16,6 +17,8 @@ import { formatSAR } from "@/lib/utils";
 import type { Database } from "@/types/database";
 import type { ConstraintResult } from "@/lib/analysis/constraints";
 import { Scale, SlidersHorizontal, Building2 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 const STALE_RUN_MS = 300 * 1000;
 
@@ -43,9 +46,11 @@ export default async function ResultsPage({
   // 1. Guard access via RLS
   const currentCase = await requireCase(params.id);
   const user = await getSessionUser();
-  const banner = user?.is_anonymous ? (
-    <AccountLinkBanner nextPath={`/case/${params.id}/results`} />
-  ) : null;
+  const verifiedCookieEmail = cookies().get("bawsala_verified_email")?.value;
+  const banner =
+    user?.is_anonymous && !verifiedCookieEmail ? (
+      <AccountLinkBanner nextPath={`/case/${params.id}/results`} />
+    ) : null;
 
   const supabase = createClient();
 
@@ -253,11 +258,12 @@ export default async function ResultsPage({
         ? resolved.fields.floor_no.value
         : (prop.floor_no ?? null);
 
-    const constraints: ConstraintResult[] = Array.isArray(
-      rawAssessment?.constraint_results
-    )
-      ? (rawAssessment!.constraint_results as unknown as ConstraintResult[])
-      : rankedItem.constraints;
+    const constraints: ConstraintResult[] =
+      rankedItem.constraints && rankedItem.constraints.length > 0
+        ? rankedItem.constraints
+        : Array.isArray(rawAssessment?.constraint_results)
+          ? (rawAssessment!.constraint_results as unknown as ConstraintResult[])
+          : [];
 
     const decisionFitScore = poolScores[idx] ?? 75;
 
@@ -284,6 +290,9 @@ export default async function ResultsPage({
         main_advantage_ar: rankedItem.main_advantage_ar,
         main_tradeoff_ar: rankedItem.main_tradeoff_ar,
         what_could_change_rank_ar: rankedItem.what_could_change_rank_ar,
+        ranking_reason_ar: rankedItem.ranking_reason_ar,
+        preferences_impact_ar: rankedItem.preferences_impact_ar,
+        score_vs_rank_note_ar: rankedItem.score_vs_rank_note_ar,
         strengths: rankedItem.strengths,
         risks: rankedItem.risks,
         key_unknowns: rankedItem.key_unknowns,
@@ -321,26 +330,29 @@ export default async function ResultsPage({
     : 0;
 
   return (
-    <div className="space-y-6 sm:space-y-8" dir="rtl">
+    <div className="max-w-[1040px] mx-auto space-y-6 sm:space-y-8" dir="rtl">
       {banner}
-      {/* Header: one line of context, one headline, desktop actions */}
-      <header className="space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
-          <div className="space-y-1.5">
-            <p className="text-sm font-semibold text-[var(--dusty-blue)]">
-              {isStandalone ? "1 عقار محلل" : `${propertyCount} عقارات محللة`}
-              {currentCase.city ? ` · ${currentCase.city}` : ""}
-            </p>
-            <h1 className="text-[28px] sm:text-4xl font-extrabold text-[var(--navy)] tracking-tight font-display leading-tight">
+      {/* Header: Unified executive header card with balanced title, action & criteria bar */}
+      <header className="rounded-[24px] bg-[var(--paper)] border border-[var(--mist)] p-5 sm:p-6 shadow-[0_12px_36px_rgba(15,26,43,0.04)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[var(--dusty-blue)]">
+              <span className="w-2 h-2 rounded-full bg-[#1E6B43]" aria-hidden="true" />
+              <span>
+                {isStandalone ? "1 عقار محلل" : `${propertyCount} عقارات محللة`}
+                {currentCase.city ? ` · ${currentCase.city}` : ""}
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-[var(--navy)] tracking-tight font-display leading-tight">
               {isStandalone ? "نتيجة قرار الشراء" : "ترتيب الشقق المرشحة"}
             </h1>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
+          <div className="hidden sm:flex items-center gap-2.5 shrink-0">
             {propertyCount >= 2 ? (
               <Link
                 href={`/case/${params.id}/compare`}
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-sm font-bold transition-all no-underline"
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs sm:text-sm font-bold transition-all no-underline shadow-xs"
               >
                 <Scale className="w-4 h-4" />
                 <span>{`مقارنة الخيارات (${propertyCount} عقارات) ←`}</span>
@@ -348,7 +360,7 @@ export default async function ResultsPage({
             ) : (
               <Link
                 href={`/case/${params.id}/properties`}
-                className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-sm font-bold transition-all no-underline"
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[var(--navy)] hover:bg-[var(--midnight)] text-[var(--cream)] text-xs sm:text-sm font-bold transition-all no-underline shadow-xs"
               >
                 <Building2 className="w-4 h-4" />
                 <span>إضافة عقار آخر +</span>
@@ -357,34 +369,39 @@ export default async function ResultsPage({
           </div>
         </div>
 
-        {/* Your criteria — one scannable strip, swipeable on mobile */}
+        {/* Your criteria — balanced wrap strip with inline edit action */}
         {requirements && (
-          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex items-center gap-2 overflow-x-auto [scrollbar-width:none] text-sm">
-            {[
-              requirements.max_budget_sar
-                ? `حتى ${formatSAR(Number(requirements.max_budget_sar))}`
-                : null,
-              purchaseMethodLabel !== "غير محدد" ? purchaseMethodLabel : null,
-              requirements.household_size
-                ? `${requirements.household_size} أفراد · ${requirements.min_bedrooms}+ غرف`
-                : null,
-              hardConstraintsCount > 0 ? `${hardConstraintsCount} شروط ملزمة` : null,
-            ]
-              .filter(Boolean)
-              .map((chip) => (
-                <span
-                  key={chip as string}
-                  className="shrink-0 px-3.5 py-1.5 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] font-semibold tabular-nums whitespace-nowrap"
-                >
-                  {chip}
-                </span>
-              ))}
+          <div className="pt-3.5 border-t border-[var(--mist)]/70 flex flex-wrap items-center justify-between gap-2.5 text-xs sm:text-sm">
+            <div className="flex flex-wrap [flex-wrap:balance] items-center gap-2">
+              <span className="text-xs font-bold text-[var(--dusty-blue)] me-1">
+                معاييرك:
+              </span>
+              {[
+                requirements.max_budget_sar
+                  ? `حتى ${formatSAR(Number(requirements.max_budget_sar))}`
+                  : null,
+                purchaseMethodLabel !== "غير محدد" ? purchaseMethodLabel : null,
+                requirements.household_size
+                  ? `${requirements.household_size} أفراد · ${requirements.min_bedrooms}+ غرف`
+                  : null,
+                hardConstraintsCount > 0 ? `${hardConstraintsCount} شروط ملزمة` : null,
+              ]
+                .filter(Boolean)
+                .map((chip) => (
+                  <span
+                    key={chip as string}
+                    className="shrink-0 px-3 py-1 rounded-full bg-[var(--cream)] border border-[var(--mist)] text-[var(--navy)] font-semibold tabular-nums whitespace-nowrap"
+                  >
+                    {chip}
+                  </span>
+                ))}
+            </div>
             <Link
               href={`/case/${params.id}/needs`}
-              className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[var(--dusty-blue)] hover:text-[var(--navy)] font-semibold whitespace-nowrap no-underline"
+              className="ms-auto shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cream)]/70 hover:bg-[var(--cream)] border border-transparent hover:border-[var(--mist)] text-[var(--dusty-blue)] hover:text-[var(--navy)] text-xs font-bold whitespace-nowrap transition-colors no-underline"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              تعديل
+              تعديل المعايير
             </Link>
           </div>
         )}
@@ -453,21 +470,21 @@ export default async function ResultsPage({
       />
 
       {/* Mobile thumb-zone action bar */}
-      <div className="lg:hidden sticky bottom-0 z-30 -mx-4 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--mist)] flex items-center gap-2.5">
+      <div className="sm:hidden sticky bottom-0 z-30 -mx-4 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--mist)] flex items-center gap-2.5">
         {propertyCount >= 2 ? (
           <Link
             href={`/case/${params.id}/compare`}
-            className="flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] active:scale-[0.98] text-[var(--cream)] text-base font-bold transition-transform no-underline"
+            className="flex-1 h-12 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] active:scale-[0.98] text-[var(--cream)] text-sm font-bold transition-transform no-underline"
           >
-            <Scale className="w-5 h-5" />
+            <Scale className="w-4 h-4" />
             <span>{`مقارنة الخيارات (${propertyCount} عقارات)`}</span>
           </Link>
         ) : (
           <Link
             href={`/case/${params.id}/properties`}
-            className="flex-1 h-14 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] active:scale-[0.98] text-[var(--cream)] text-base font-bold transition-transform no-underline"
+            className="flex-1 h-12 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--navy)] active:scale-[0.98] text-[var(--cream)] text-sm font-bold transition-transform no-underline"
           >
-            <Building2 className="w-5 h-5" />
+            <Building2 className="w-4 h-4" />
             <span>إضافة عقار آخر</span>
           </Link>
         )}

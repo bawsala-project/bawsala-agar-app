@@ -192,6 +192,22 @@ export function htmlToPlainText(html: string): string {
   return collapsed.slice(0, MAX_TEXT_CHARS);
 }
 
+export function isBotBlockedInterstitial(text: string): boolean {
+  const lower = text.toLowerCase();
+  return (
+    lower.includes("you have been blocked") ||
+    text.includes("تم حظرك") ||
+    lower.includes("attention required! | cloudflare") ||
+    lower.includes("just a moment...") ||
+    lower.includes("enable javascript and cookies to continue") ||
+    lower.includes("verifying you are human") ||
+    lower.includes("target url returned error 403") ||
+    lower.includes("target url returned error 401") ||
+    lower.includes("cf-browser-verification") ||
+    lower.includes("access denied | ")
+  );
+}
+
 export async function fetchViaUnblockGateway(targetUrl: string): Promise<FetchListingResult> {
   try {
     const gatewayUrl = `https://r.jina.ai/${targetUrl}`;
@@ -210,7 +226,7 @@ export async function fetchViaUnblockGateway(targetUrl: string): Promise<FetchLi
     if (res.status >= 200 && res.status < 300) {
       const text = await res.text();
       const collapsed = text.replace(/\s+/g, " ").trim();
-      if (collapsed.length > 50) {
+      if (collapsed.length > 50 && !isBotBlockedInterstitial(collapsed)) {
         return { ok: true, text: collapsed.slice(0, MAX_TEXT_CHARS) };
       }
     }
@@ -224,7 +240,12 @@ export async function fetchViaResilientStrategies(targetUrl: string): Promise<Fe
   // Strategy 1: Headless browser on host system (Edge / Chrome via CDP)
   try {
     const browserRes = await fetchViaHeadlessBrowser(targetUrl);
-    if (browserRes.ok && browserRes.text && browserRes.text.length > 50) {
+    if (
+      browserRes.ok &&
+      browserRes.text &&
+      browserRes.text.length > 50 &&
+      !isBotBlockedInterstitial(browserRes.text)
+    ) {
       return { ok: true, text: browserRes.text.slice(0, MAX_TEXT_CHARS) };
     }
   } catch {
@@ -351,15 +372,13 @@ export async function fetchListing(
         return { ok: false, code: "empty" };
       }
 
-      // Check if Cloudflare blocked interstitial was returned
-      if (
-        !options?.fetchImpl &&
-        (plainText.includes("You have been blocked") ||
-          plainText.includes("تم حظرك") ||
-          plainText.includes("Attention Required! | Cloudflare"))
-      ) {
-        const resilient = await fetchViaResilientStrategies(urlValidation.url.toString());
-        if (resilient.ok) return resilient;
+      // Check if Cloudflare / WAF blocked interstitial was returned
+      if (isBotBlockedInterstitial(plainText)) {
+        if (!options?.fetchImpl) {
+          const resilient = await fetchViaResilientStrategies(urlValidation.url.toString());
+          if (resilient.ok) return resilient;
+        }
+        return { ok: false, code: "http_error" };
       }
 
       return { ok: true, text: plainText };

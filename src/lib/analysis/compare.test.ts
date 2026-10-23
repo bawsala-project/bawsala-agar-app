@@ -243,4 +243,107 @@ describe("Comparison Engine (compare.ts) - Acceptance 1", () => {
     expect(scores[0]).toBe(scores[1]);
     expect(scores[0]).toBeGreaterThanOrEqual(85);
   });
+
+  it("Test 7 (Note #7): Cheaper apartment without elevator NEVER outranks compliant apartment when user requires elevator", () => {
+    const cheaperNoElevatorProp: PropertyAssessmentWithProperty = {
+      id: "asmt-cheap-no-elev",
+      property_id: "prop-cheap-no-elev",
+      fit_rating: "strong",
+      fit_summary: "سعر مغري جداً 650 ألف",
+      strengths: ["أرخص سعر في الحي 650 ألف"],
+      risks: ["بدون مصعد"],
+      key_unknowns: [],
+      visit_priority: "high",
+      visit_priority_reason: "سعر ممتاز",
+      evidence_fields: ["listing_price_sar", "area_sqm", "bedrooms", "elevator"],
+      constraint_results: [
+        { key: "budget", labelAr: "ضمن الميزانية", result: "pass", detailAr: "السعر 650,000 ضمن الميزانية" },
+        { key: "bedrooms", labelAr: "غرف النوم", result: "pass", detailAr: "3 غرف نوم" },
+        { key: "min_area", labelAr: "الحد الأدنى للمساحة", result: "pass", detailAr: "المساحة 130 م²" },
+        {
+          key: "elevator_required",
+          labelAr: "وجود مصعد",
+          result: "unknown",
+          detailAr: "لا يتوفر مصعد ولكن رقم الدور غير معروف للتحقق",
+        },
+      ],
+      price_per_sqm: 5000,
+      property: {
+        id: "prop-cheap-no-elev",
+        title: "شقة رخيصة بدون مصعد",
+        district: "النرجس",
+        listing_price_sar: 650_000,
+        area_sqm: 130,
+        bedrooms: 3,
+        input_mode: "manual",
+      },
+    };
+
+    const result = resolveComparison([cheaperNoElevatorProp, propertyA], sampleRequirements);
+    const scores = computePoolFitScores(result.items, sampleRequirements.max_budget_sar);
+
+    // Compliant propertyA (800k, has elevator) MUST be Rank #1
+    expect(result.items[0].property_id).toBe("prop-a");
+    expect(result.items[0].rank).toBe(1);
+    expect(result.items[0].ranking_reason_ar).toContain("المركز #1");
+
+    // Cheaper apartment without elevator MUST be Rank #2 with failed elevator constraint & clear explanation
+    expect(result.items[1].property_id).toBe("prop-cheap-no-elev");
+    expect(result.items[1].rank).toBe(2);
+    expect(result.items[1].constraint_summary.fail).toBeGreaterThanOrEqual(1);
+    expect(result.items[1].ranking_reason_ar).toContain("وجود مصعد");
+    expect(result.items[1].score_vs_rank_note_ar).toContain("رغم أن سعرها أرخص");
+
+    // Score of compliant #1 apartment must be strictly higher than non-compliant #2 apartment
+    expect(scores[0]).toBeGreaterThan(scores[1]);
+  });
+
+  it("Test 8 (Note #7): User preferences impact ranking between compliant apartments and surface preferences_impact_ar", () => {
+    const reqsWithQuietPref: RequirementsRow = {
+      ...sampleRequirements,
+      preferences: [{ label: "الهدوء", weight: "high" }],
+    };
+
+    const slightlyCheaperNoisyProp: PropertyAssessmentWithProperty = {
+      ...propertyA,
+      id: "asmt-slightly-cheaper",
+      property_id: "prop-slightly-cheaper",
+      price_per_sqm: 6000,
+      strengths: ["سعر 780 ألف"],
+      property: {
+        ...propertyA.property!,
+        id: "prop-slightly-cheaper",
+        title: "شقة على شارع عام",
+        listing_price_sar: 780_000,
+        notes: "تقع على شارع حيوي",
+      },
+    };
+
+    const quietPreferredProp: PropertyAssessmentWithProperty = {
+      ...propertyA,
+      id: "asmt-quiet",
+      property_id: "prop-quiet",
+      price_per_sqm: 6153,
+      strengths: ["تقع في شارع داخلي هادئ جداً"],
+      property: {
+        ...propertyA.property!,
+        id: "prop-quiet",
+        title: "شقة النرجس الهادئة",
+        listing_price_sar: 800_000,
+        notes: "شارع سكني هادئ",
+      },
+    };
+
+    const result = resolveComparison(
+      [slightlyCheaperNoisyProp, quietPreferredProp],
+      reqsWithQuietPref
+    );
+
+    // Quiet apartment wins Rank #1 because it matches the user's explicit preference
+    expect(result.items[0].property_id).toBe("prop-quiet");
+    expect(result.items[0].rank).toBe(1);
+    expect(result.items[0].preferences_impact_ar).toContain("الهدوء");
+    expect(result.items[0].ranking_reason_ar).toContain("الهدوء");
+    expect(result.items[1].ranking_reason_ar).toContain("تفضيلاتك");
+  });
 });

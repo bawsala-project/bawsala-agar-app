@@ -1,10 +1,11 @@
 import { FIELD_REGISTRY, type FieldKey } from "./fields";
+import { parseWrittenHundredsValue } from "@/lib/utils/arabic-numbers";
 
 export function normalizeDigits(input: string): string {
   return input
     .replace(/[\u0660-\u0669]/g, (d) => (d.charCodeAt(0) - 0x0660).toString())
     .replace(/[\u06F0-\u06F9]/g, (d) => (d.charCodeAt(0) - 0x06F0).toString())
-    .replace(/\u066C/g, ",")
+    .replace(/[\u066C\u060C]/g, ",")
     .replace(/\u066B/g, ".");
 }
 
@@ -42,17 +43,30 @@ export function normalizePrice(raw: string): number | null {
     return checkBounds(Math.round(val * multiplier), bounds.min, bounds.max);
   }
 
-  // Thousands shorthand e.g. "850 ألف" or "850 الف" or "850k"
-  if (/ألف|الف|\bk\b/i.test(text)) {
+  // Thousands shorthand e.g. "850 ألف" or "850 الف" or "850k" or "ثمانمائة ألف"
+  if (/ألف|الف|آلاف|الاف|\bk\b/i.test(text)) {
     const numPart = text
-      .replace(/(?:ألف|الف|\bk\b)/gi, "")
+      .replace(/(?:ألف|الف|آلاف|الاف|\bk\b)/gi, "")
       .replace(/,/g, "")
       .trim();
     const multiplier = 1_000;
     if (numPart === "") return null;
-    const val = parseFloat(numPart);
-    if (isNaN(val)) return null;
-    return checkBounds(Math.round(val * multiplier), bounds.min, bounds.max);
+    if (/^[0-9]+(?:\.[0-9]+)?$/.test(numPart)) {
+      const val = parseFloat(numPart);
+      if (isNaN(val)) return null;
+      return checkBounds(Math.round(val * multiplier), bounds.min, bounds.max);
+    }
+    const writtenHundreds = parseWrittenHundredsValue(numPart, {
+      allowCompoundTens: false,
+    });
+    if (writtenHundreds !== null) {
+      return checkBounds(
+        Math.round(writtenHundreds * multiplier),
+        bounds.min,
+        bounds.max
+      );
+    }
+    return null;
   }
 
   // Direct number e.g. "850,000"

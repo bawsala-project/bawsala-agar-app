@@ -52,6 +52,15 @@ describe("normalize.ts - Normalization test suite", () => {
 
     it("handles Arabic-Indic digits with currency: ٨٥٠٬٠٠٠ ريال", () => {
       expect(normalizePrice("٨٥٠٬٠٠٠ ريال")).toBe(850000);
+      expect(normalizePrice("٨٠٠٠٠٠")).toBe(800000);
+      expect(normalizePrice("800000")).toBe(800000);
+    });
+
+    it("handles written single hundreds: ثمانمائة ألف -> 800000", () => {
+      expect(normalizePrice("ثمانمائة ألف")).toBe(800000);
+      expect(normalizePrice("ثمانمائة ألف ريال")).toBe(800000);
+      expect(normalizePrice("سبعمائة ألف")).toBe(700000);
+      expect(normalizePrice("تسعمائة ألف")).toBe(900000);
     });
 
     it("strips various currency representations: ر.س, SAR, SR", () => {

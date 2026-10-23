@@ -19,8 +19,11 @@ import {
   type ComparisonItem,
 } from "@/components/properties/comparison-matrix";
 import { DecisionFollowupQA } from "@/components/properties/decision-followup-qa";
+import { resolveFacts, type PropertyFact } from "@/lib/evidence/resolve";
 
 import type { ConstraintResult } from "@/lib/analysis/constraints";
+
+export const dynamic = "force-dynamic";
 
 interface ComparePageProps {
   params: { id: string };
@@ -97,7 +100,7 @@ export default async function ComparePage({ params }: ComparePageProps) {
         property_id: string;
         properties?: {
           floor_no?: number | null;
-          property_facts?: Array<{ bathrooms?: number | null }> | null;
+          property_facts?: PropertyFact[] | null;
         } | null;
         fit_summary?: string;
         visit_priority_reason?: string;
@@ -110,9 +113,18 @@ export default async function ComparePage({ params }: ComparePageProps) {
   const matrixItems: ComparisonItem[] = items.map((it, idx) => {
     const rawAssessment = assessmentMap.get(it.property_id);
     const rawProp = rawAssessment?.properties;
-    const fact = Array.isArray(rawProp?.property_facts)
-      ? rawProp?.property_facts[0]
-      : undefined;
+    const resolved = resolveFacts(
+      Array.isArray(rawProp?.property_facts) ? rawProp.property_facts : []
+    );
+
+    const resolvedBathrooms =
+      resolved.fields.bathrooms?.status === "known"
+        ? Number(resolved.fields.bathrooms.value)
+        : null;
+    const resolvedFloor =
+      resolved.fields.floor_no?.status === "known"
+        ? Number(resolved.fields.floor_no.value)
+        : rawProp?.floor_no ?? null;
 
     return {
       id: it.property_id,
@@ -125,8 +137,8 @@ export default async function ComparePage({ params }: ComparePageProps) {
       price_delta_budget: it.price_delta_budget,
       area_sqm: it.area_sqm,
       bedrooms: it.bedrooms,
-      bathrooms: fact?.bathrooms ?? null,
-      floor_no: rawProp?.floor_no ?? null,
+      bathrooms: resolvedBathrooms,
+      floor_no: resolvedFloor,
       fit_rating: it.fit_rating,
       visit_priority: it.visit_priority,
       visit_priority_reason: rawAssessment?.visit_priority_reason || "",
@@ -134,13 +146,19 @@ export default async function ComparePage({ params }: ComparePageProps) {
       main_advantage_ar: it.main_advantage_ar,
       main_tradeoff_ar: it.main_tradeoff_ar,
       what_could_change_rank_ar: it.what_could_change_rank_ar,
+      ranking_reason_ar: it.ranking_reason_ar,
+      preferences_impact_ar: it.preferences_impact_ar,
+      score_vs_rank_note_ar: it.score_vs_rank_note_ar,
       strengths: it.strengths,
       risks: it.risks,
       key_unknowns: it.key_unknowns,
       constraint_summary: it.constraint_summary,
-      constraint_results: Array.isArray(rawAssessment?.constraint_results)
-        ? rawAssessment?.constraint_results
-        : it.constraints,
+      constraint_results:
+        it.constraints && it.constraints.length > 0
+          ? it.constraints
+          : Array.isArray(rawAssessment?.constraint_results)
+            ? rawAssessment?.constraint_results
+            : [],
       decision_fit_score: poolScores[idx] ?? 75,
       overall_confidence: it.overall_confidence,
       confidence_label_ar: it.confidence_label_ar,

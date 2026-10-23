@@ -20,12 +20,27 @@ import {
 import { FieldError } from "@/components/ui/field-error";
 import { formatSAR } from "@/lib/utils";
 import { saveRequirements, RequirementsFormState } from "@/actions/requirements";
+import {
+  parseArabicNeedsDescription,
+  PREFERENCE_SUGGESTIONS,
+  stripArabicDiacritics,
+  type ParsedArabicNeeds,
+  type ParsedPreference,
+} from "@/lib/needs/parse-arabic-needs";
+import { preprocessNumericInput } from "@/lib/utils/arabic-numbers";
 import type { Database } from "@/types/database";
 import type {
   HardConstraint,
   PreferenceWeight,
   LocationFrequency,
 } from "@/lib/schemas/requirements";
+
+export {
+  parseArabicNeedsDescription,
+  PREFERENCE_SUGGESTIONS,
+  type ParsedArabicNeeds,
+  type ParsedPreference,
+};
 
 type RequirementsRow = Database["public"]["Tables"]["requirements"]["Row"];
 
@@ -70,146 +85,6 @@ const INTENT_LABELS: Record<string, string> = {
   invest: "استثمار عقاري",
 };
 
-export interface ParsedArabicNeeds {
-  budget?: number;
-  purchaseMethod?: "cash" | "finance" | "undecided";
-  householdSize?: number;
-  minBedrooms?: number;
-  minAreaSqm?: number;
-  hasElevator?: boolean;
-  hasParking?: boolean;
-  hasNewBuilding?: boolean;
-  maxFloor?: number;
-  districtOrLocation?: string;
-  matchedFieldsAr: string[];
-}
-
-function normalizeDigits(input: string): string {
-  const arabicIndic = "٠١٢٣٤٥٦٧٨٩";
-  let out = input;
-  for (let i = 0; i < 10; i++) {
-    out = out.split(arabicIndic[i]).join(String(i));
-  }
-  return out;
-}
-
-export function parseArabicNeedsDescription(rawText: string): ParsedArabicNeeds {
-  const text = normalizeDigits(rawText).replace(/،/g, " ").replace(/,/g, "");
-  const result: ParsedArabicNeeds = { matchedFieldsAr: [] };
-
-  // 1. Budget extraction (e.g., "1.2 مليون", "مليون و 200 ألف", "مليون ونصف", "900 ألف", "850000")
-  const millionWithThousands = text.match(/مليون\s*و\s*(\d{2,3})\s*(?:ألف|الف)/);
-  const decimalMillion = text.match(/(\d+(?:\.\d+)?)\s*مليون/);
-  const millionHalf = /مليون\s*و\s*(?:نصف|نص)/.test(text);
-  const singleMillion = /(?:ميزانية|بسعر|حدود)\s*مليون(?!\s*و)/.test(text);
-  const thousandsMatch = text.match(/(\d{3,4})\s*(?:ألف|الف)/);
-  const explicitLargeNum = text.match(/\b(\d{6,7})\b/);
-
-  if (millionWithThousands) {
-    result.budget = 1_000_000 + Number(millionWithThousands[1]) * 1_000;
-    result.matchedFieldsAr.push("الميزانية القصوى");
-  } else if (millionHalf) {
-    result.budget = 1_500_000;
-    result.matchedFieldsAr.push("الميزانية القصوى");
-  } else if (decimalMillion) {
-    result.budget = Math.round(Number(decimalMillion[1]) * 1_000_000);
-    result.matchedFieldsAr.push("الميزانية القصوى");
-  } else if (singleMillion) {
-    result.budget = 1_000_000;
-    result.matchedFieldsAr.push("الميزانية القصوى");
-  } else if (thousandsMatch) {
-    result.budget = Number(thousandsMatch[1]) * 1_000;
-    result.matchedFieldsAr.push("الميزانية القصوى");
-  } else if (explicitLargeNum) {
-    result.budget = Number(explicitLargeNum[1]);
-    result.matchedFieldsAr.push("الميزانية القصوى");
-  }
-
-  // 2. Purchase Method
-  if (/(?:كاش|نقد|نقداً|نقدا)/.test(text)) {
-    result.purchaseMethod = "cash";
-    result.matchedFieldsAr.push("الدفع كاش");
-  } else if (/(?:تمويل|بنك|عقاري|رهن|أقساط|اقساط)/.test(text)) {
-    result.purchaseMethod = "finance";
-    result.matchedFieldsAr.push("تمويل عقاري");
-  }
-
-  // 3. Bedrooms
-  const bedroomsNum = text.match(/(\d+)\s*(?:غرف|غرفة)/);
-  if (bedroomsNum) {
-    result.minBedrooms = Number(bedroomsNum[1]);
-    result.matchedFieldsAr.push("عدد الغرف");
-  } else if (/غرفتين/.test(text)) {
-    result.minBedrooms = 2;
-    result.matchedFieldsAr.push("عدد الغرف");
-  } else if (/(?:ثلاث|ثلاثة)\s*غرف/.test(text)) {
-    result.minBedrooms = 3;
-    result.matchedFieldsAr.push("عدد الغرف");
-  } else if (/(?:أربع|اربع|أربعة|اربعة)\s*غرف/.test(text)) {
-    result.minBedrooms = 4;
-    result.matchedFieldsAr.push("عدد الغرف");
-  } else if (/(?:خمس|خمسة)\s*غرف/.test(text)) {
-    result.minBedrooms = 5;
-    result.matchedFieldsAr.push("عدد الغرف");
-  }
-
-  // 4. Area (sqm)
-  const areaMatch = text.match(/(\d{2,4})\s*(?:متر|م2|م²)/);
-  if (areaMatch) {
-    result.minAreaSqm = Number(areaMatch[1]);
-    result.matchedFieldsAr.push("المساحة الدنيا");
-  }
-
-  // 5. Household size
-  const familyMatch = text.match(/(?:أسرة|اسرة|عائلة|افراد|أفراد|أشخاص|اشخاص)\s*(?:من\s*)?(\d+)/) ||
-    text.match(/(\d+)\s*(?:أفراد|افراد|أشخاص|اشخاص)/);
-  if (familyMatch) {
-    result.householdSize = Number(familyMatch[1]);
-    result.matchedFieldsAr.push("حجم الأسرة");
-  }
-
-  // 6. Hard constraints
-  if (/مصعد/.test(text)) {
-    result.hasElevator = true;
-    result.matchedFieldsAr.push("شرط المصعد");
-  }
-  if (/(?:موقف|بايكة|باركنج)/.test(text)) {
-    result.hasParking = true;
-    result.matchedFieldsAr.push("شرط الموقف الخاص");
-  }
-  if (/(?:جديد|جديدة|أول ساكن|اول ساكن)/.test(text)) {
-    result.hasNewBuilding = true;
-    result.matchedFieldsAr.push("مبنى جديد");
-  }
-  if (/(?:دور أرضي|دور ارضي|الأرضي|الارضي)/.test(text)) {
-    result.maxFloor = 0;
-    result.matchedFieldsAr.push("الحد الأعلى للدور");
-  } else if (/(?:الدور الأول|الدور الاول|دور اول|دور أول)/.test(text)) {
-    result.maxFloor = 1;
-    result.matchedFieldsAr.push("الحد الأعلى للدور");
-  } else {
-    const floorMatch = text.match(/(?:دور|الدور)\s*(\d+)/);
-    if (floorMatch) {
-      result.maxFloor = Number(floorMatch[1]);
-      result.matchedFieldsAr.push("الحد الأعلى للدور");
-    }
-  }
-
-  // 7. Important daily location / district
-  const districtMatch = text.match(/حي\s+([\u0600-\u06FF]+(?:\s+[\u0600-\u06FF]+)?)/);
-  if (districtMatch) {
-    const cleaned = districtMatch[1]
-      .replace(/\s+(?:مع|أو|او|و|بمساحة|بميزانية|كاش|تمويل).*$/, "")
-      .trim();
-    if (cleaned) {
-      result.districtOrLocation = `حي ${cleaned}`;
-      result.matchedFieldsAr.push("الموقع اليومي المهم");
-    }
-  }
-
-  return result;
-}
-
 const WIZARD_STEPS: { title: string; hint: string; fields: string[] }[] = [
   { title: "صف بيتك بكلماتك", hint: "اختياري — نعبّئ الأسئلة التالية عنك", fields: [] },
   { title: "كم ميزانيتك؟", hint: "أي عقار يتجاوزها يُستبعد", fields: ["max_budget_sar", "purchase_method"] },
@@ -250,27 +125,11 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
   // Mobile wizard: one question per screen (< lg). Desktop keeps the full form.
   const [step, setStep] = useState(0);
   const wizardTopRef = useRef<HTMLDivElement>(null);
-  const goToStep = (next: number) => {
-    setStep(Math.max(0, Math.min(WIZARD_STEPS.length - 1, next)));
-    requestAnimationFrame(() =>
-      wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    );
-  };
-  const stepCls = (i: number, base: string) =>
-    `${base} ${i === step ? "max-lg:animate-[stepIn_0.35s_cubic-bezier(0.22,1,0.36,1)]" : "max-lg:hidden"}`;
-  const isLastStep = step === WIZARD_STEPS.length - 1;
-
-  // Jump to the first step that holds a server validation error.
-  useEffect(() => {
-    const errs = state?.errors ?? {};
-    const firstErrStep = WIZARD_STEPS.findIndex((s) => s.fields.some((f) => (errs as Record<string, unknown>)[f]));
-    if (firstErrStep >= 0) goToStep(firstErrStep);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
 
   // Quick Natural-Language Needs Helper State
   const [freeTextNeeds, setFreeTextNeeds] = useState("");
   const [parsedFeedback, setParsedFeedback] = useState<string[] | null>(null);
+  const lastParsedTextRef = useRef<string>("");
 
   // Section 1: Budget and purchase method
   const [budget, setBudget] = useState(
@@ -331,34 +190,18 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
   const [customConstraints, setCustomConstraints] =
     useState<CustomConstraintItem[]>(initialCustom);
 
-  // Section 4: Preferences (weighted) — seeded with landing-page purchase intent when new
-  const defaultIntentPref: PreferenceItem[] =
-    initialContext?.intent === "invest"
-      ? [
-          { id: "p-intent", label: "عائد تأجيري مرتفع وسهولة إعادة التأجير", weight: "high" },
-          { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" },
-        ]
-      : initialContext?.intent === "upgrade"
-      ? [
-          { id: "p-intent", label: "جودة تشطيبات عالية وتصميم معماري حديث", weight: "high" },
-          { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" },
-        ]
-      : [
-          { id: "p-0", label: "واجهة شمالية أو شرقية", weight: "medium" },
-          { id: "p-1", label: "قرب من المسجد والحديقة", weight: "high" },
-        ];
-
-  const initialPrefs = Array.isArray(initialData?.preferences)
-    ? (initialData?.preferences as Array<{
+  // Section 4: Preferences — only include what the user explicitly saved or selected
+  const initialPrefs: PreferenceItem[] = Array.isArray(initialData?.preferences)
+    ? (initialData.preferences as Array<{
         label: string;
         weight: PreferenceWeight;
       }>).map((p, i) => ({ id: `p-${i}`, label: p.label, weight: p.weight }))
-    : defaultIntentPref;
+    : [];
   const [preferences, setPreferences] = useState<PreferenceItem[]>(initialPrefs);
 
-  // Section 5: Important locations
-  const initialLocs = Array.isArray(initialData?.important_locations)
-    ? (initialData?.important_locations as Array<{
+  // Section 5: Important locations — only include what the user explicitly saved or added
+  const initialLocs: LocationItem[] = Array.isArray(initialData?.important_locations)
+    ? (initialData.important_locations as Array<{
         label: string;
         address_text: string;
         frequency: LocationFrequency;
@@ -368,24 +211,126 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         address_text: l.address_text,
         frequency: l.frequency,
       }))
-    : [{ id: "l-0", label: "مقر العمل الرئيسي", address_text: "", frequency: "daily" as LocationFrequency }];
+    : [];
   const [locations, setLocations] = useState<LocationItem[]>(initialLocs);
 
-  const handleSmartParseNeeds = () => {
-    if (!freeTextNeeds.trim()) return;
-    const parsed = parseArabicNeedsDescription(freeTextNeeds);
+  // Sync form state if initialData updates when navigating back to /needs
+  useEffect(() => {
+    if (!initialData) return;
+    setBudget(
+      initialData.max_budget_sar !== undefined && initialData.max_budget_sar !== null
+        ? String(initialData.max_budget_sar)
+        : ""
+    );
+    setPurchaseMethod(initialData.purchase_method ?? "undecided");
+    setHouseholdSize(
+      initialData.household_size !== undefined && initialData.household_size !== null
+        ? String(initialData.household_size)
+        : ""
+    );
+    setMinBedrooms(
+      initialData.min_bedrooms !== undefined && initialData.min_bedrooms !== null
+        ? String(initialData.min_bedrooms)
+        : ""
+    );
+    setMinAreaSqm(
+      initialData.min_area_sqm !== undefined && initialData.min_area_sqm !== null
+        ? String(initialData.min_area_sqm)
+        : ""
+    );
+
+    const constraints = Array.isArray(initialData.hard_constraints)
+      ? (initialData.hard_constraints as Array<{
+          key: string;
+          label: string;
+          value?: number | string;
+        }>)
+      : [];
+    setHasElevator(constraints.some((c) => c.key === "elevator_required"));
+    setHasParking(constraints.some((c) => c.key === "private_parking"));
+    setHasNewBuilding(constraints.some((c) => c.key === "new_building_only"));
+    const maxFl = constraints.find((c) => c.key === "max_floor");
+    setHasMaxFloor(Boolean(maxFl));
+    setMaxFloorValue(maxFl?.value !== undefined ? String(maxFl.value) : "4");
+    setCustomConstraints(
+      constraints
+        .filter((c) => c.key === "custom" || c.key.startsWith("custom_"))
+        .map((c, i) => ({ id: `c-${i}`, text: c.label }))
+    );
+
+    setPreferences(
+      Array.isArray(initialData.preferences)
+        ? (initialData.preferences as Array<{
+            label: string;
+            weight: PreferenceWeight;
+          }>).map((p, i) => ({ id: `p-${i}`, label: p.label, weight: p.weight }))
+        : []
+    );
+
+    setLocations(
+      Array.isArray(initialData.important_locations)
+        ? (initialData.important_locations as Array<{
+            label: string;
+            address_text: string;
+            frequency: LocationFrequency;
+          }>).map((l, i) => ({
+            id: `l-${i}`,
+            label: l.label,
+            address_text: l.address_text,
+            frequency: l.frequency,
+          }))
+        : []
+    );
+  }, [initialData]);
+
+  const applyParsedNeeds = (rawInput: string, showEmptyFeedback: boolean) => {
+    const trimmed = rawInput.trim();
+    if (!trimmed) return;
+    lastParsedTextRef.current = trimmed;
+
+    const parsed = parseArabicNeedsDescription(trimmed);
     if (parsed.budget !== undefined) setBudget(String(parsed.budget));
     if (parsed.purchaseMethod) setPurchaseMethod(parsed.purchaseMethod);
     if (parsed.householdSize !== undefined) setHouseholdSize(String(parsed.householdSize));
     if (parsed.minBedrooms !== undefined) setMinBedrooms(String(parsed.minBedrooms));
     if (parsed.minAreaSqm !== undefined) setMinAreaSqm(String(parsed.minAreaSqm));
-    if (parsed.hasElevator) setHasElevator(true);
-    if (parsed.hasParking) setHasParking(true);
-    if (parsed.hasNewBuilding) setHasNewBuilding(true);
-    if (parsed.maxFloor !== undefined) {
+
+    if (parsed.hasElevator !== undefined) setHasElevator(parsed.hasElevator);
+    if (parsed.hasParking !== undefined) setHasParking(parsed.hasParking);
+    if (parsed.hasNewBuilding !== undefined) setHasNewBuilding(parsed.hasNewBuilding);
+
+    if (parsed.hasMaxFloor === false) {
+      setHasMaxFloor(false);
+    } else if (parsed.maxFloor !== undefined) {
       setHasMaxFloor(true);
       setMaxFloorValue(String(parsed.maxFloor));
     }
+
+    if (parsed.preferences && parsed.preferences.length > 0) {
+      setPreferences((prev) => {
+        const merged = prev.filter((p) => p.label.trim().length > 0);
+        for (const pref of parsed.preferences!) {
+          const normIncoming = stripArabicDiacritics(pref.label)
+            .replace(/^ال/, "")
+            .trim();
+          const alreadyExists = merged.some((existing) => {
+            const normExisting = stripArabicDiacritics(existing.label)
+              .replace(/^ال/, "")
+              .trim();
+            return normExisting === normIncoming;
+          });
+          if (!alreadyExists && merged.length < 10) {
+            merged.push({
+              id: `p-parsed-${Date.now()}-${merged.length}`,
+              label: pref.label.trim(),
+              weight: pref.weight,
+            });
+          }
+        }
+        return merged;
+      });
+    }
+
     if (parsed.districtOrLocation) {
       setLocations((prev) => {
         if (prev.length === 0) {
@@ -401,17 +346,51 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
         const next = [...prev];
         next[0] = {
           ...next[0],
+          label: next[0].label.trim() || "مقر العمل / الوجهة اليومية",
           address_text: parsed.districtOrLocation!,
         };
         return next;
       });
     }
-    setParsedFeedback(
-      parsed.matchedFieldsAr.length > 0
-        ? parsed.matchedFieldsAr
-        : ["لم يتم رصد أرقام صريحة — يمكنك استكمال الحقول أدناه مباشرة"]
+
+    if (parsed.matchedFieldsAr.length > 0) {
+      setParsedFeedback(parsed.matchedFieldsAr);
+    } else if (showEmptyFeedback) {
+      setParsedFeedback(["لم يتم رصد أرقام صريحة — يمكنك استكمال الحقول أدناه مباشرة"]);
+    }
+  };
+
+  const handleSmartParseNeeds = () => {
+    applyParsedNeeds(freeTextNeeds, true);
+  };
+
+  const goToStep = (next: number) => {
+    if (
+      step === 0 &&
+      freeTextNeeds.trim() &&
+      freeTextNeeds.trim() !== lastParsedTextRef.current
+    ) {
+      applyParsedNeeds(freeTextNeeds, false);
+    }
+    setStep(Math.max(0, Math.min(WIZARD_STEPS.length - 1, next)));
+    requestAnimationFrame(() =>
+      wizardTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     );
   };
+
+  const stepCls = (i: number, base: string) =>
+    `${base} ${i === step ? "max-lg:animate-[stepIn_0.35s_cubic-bezier(0.22,1,0.36,1)]" : "max-lg:hidden"}`;
+  const isLastStep = step === WIZARD_STEPS.length - 1;
+
+  // Jump to the first step that holds a server validation error.
+  useEffect(() => {
+    const errs = state?.errors ?? {};
+    const firstErrStep = WIZARD_STEPS.findIndex((s) =>
+      s.fields.some((f) => (errs as Record<string, unknown>)[f])
+    );
+    if (firstErrStep >= 0) goToStep(firstErrStep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   // Constraint handlers
   const handleAddCustomConstraint = () => {
@@ -446,6 +425,32 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
       ...prev,
       { id: `p-${Date.now()}`, label: "", weight: "medium" },
     ]);
+  };
+
+  const handleToggleSuggestedPreference = (suggestion: ParsedPreference) => {
+    setPreferences((prev) => {
+      const normSuggestion = stripArabicDiacritics(suggestion.label)
+        .replace(/^ال/, "")
+        .trim();
+      const existingIndex = prev.findIndex((p) => {
+        const normExisting = stripArabicDiacritics(p.label)
+          .replace(/^ال/, "")
+          .trim();
+        return normExisting === normSuggestion;
+      });
+      if (existingIndex >= 0) {
+        return prev.filter((_, idx) => idx !== existingIndex);
+      }
+      if (prev.length >= 10) return prev;
+      return [
+        ...prev,
+        {
+          id: `p-sug-${Date.now()}-${prev.length}`,
+          label: suggestion.label,
+          weight: suggestion.weight,
+        },
+      ];
+    });
   };
 
   const handleUpdatePreference = (
@@ -490,31 +495,103 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
     setLocations((prev) => prev.filter((l) => l.id !== id));
   };
 
+  // If the user typed in the free-text box and submits immediately without clicking
+  // "عبّئ الحقول تلقائياً" or blurring first, include the unparsed text in the
+  // serialized hidden inputs so their intent is never lost.
+  const hasUnparsedFreeText =
+    freeTextNeeds.trim().length > 0 &&
+    freeTextNeeds.trim() !== lastParsedTextRef.current;
+  const pendingParsed = hasUnparsedFreeText
+    ? parseArabicNeedsDescription(freeTextNeeds.trim())
+    : null;
+
+  const effectiveHasElevator =
+    pendingParsed?.hasElevator !== undefined
+      ? pendingParsed.hasElevator
+      : hasElevator;
+  const effectiveHasParking =
+    pendingParsed?.hasParking !== undefined
+      ? pendingParsed.hasParking
+      : hasParking;
+  const effectiveHasNewBuilding =
+    pendingParsed?.hasNewBuilding !== undefined
+      ? pendingParsed.hasNewBuilding
+      : hasNewBuilding;
+  const effectiveHasMaxFloor =
+    pendingParsed?.hasMaxFloor === false
+      ? false
+      : pendingParsed?.maxFloor !== undefined
+      ? true
+      : hasMaxFloor;
+  const effectiveMaxFloorValue =
+    pendingParsed?.maxFloor !== undefined
+      ? String(pendingParsed.maxFloor)
+      : maxFloorValue;
+
+  const effectiveBudgetValue =
+    budget.trim().length > 0
+      ? budget
+      : pendingParsed?.budget !== undefined
+      ? String(pendingParsed.budget)
+      : "";
+  const effectivePurchaseMethod =
+    purchaseMethod !== "undecided"
+      ? purchaseMethod
+      : pendingParsed?.purchaseMethod ?? purchaseMethod;
+  const effectiveHouseholdSizeValue =
+    householdSize.trim().length > 0
+      ? householdSize
+      : pendingParsed?.householdSize !== undefined
+      ? String(pendingParsed.householdSize)
+      : "";
+  const effectiveMinBedroomsValue =
+    minBedrooms.trim().length > 0
+      ? minBedrooms
+      : pendingParsed?.minBedrooms !== undefined
+      ? String(pendingParsed.minBedrooms)
+      : "";
+  const effectiveMinAreaSqmValue =
+    minAreaSqm.trim().length > 0
+      ? minAreaSqm
+      : pendingParsed?.minAreaSqm !== undefined
+      ? String(pendingParsed.minAreaSqm)
+      : "";
+
+  const normalizedMaxFloorNumber = Number(
+    preprocessNumericInput(effectiveMaxFloorValue)
+  );
+
   // Build serialized arrays for hidden inputs
   const serializedConstraints: HardConstraint[] = [];
-  if (hasElevator) {
+  if (effectiveHasElevator) {
     serializedConstraints.push({
       key: "elevator_required",
       label: "وجود مصعد عامل في المبنى",
     });
   }
-  if (hasParking) {
+  if (effectiveHasParking) {
     serializedConstraints.push({
       key: "private_parking",
       label: "موقف سيارة خاص ومسجل بالصك",
     });
   }
-  if (hasNewBuilding) {
+  if (effectiveHasNewBuilding) {
     serializedConstraints.push({
       key: "new_building_only",
       label: "مبنى جديد أو أول ساكن",
     });
   }
-  if (hasMaxFloor && maxFloorValue) {
+  if (effectiveHasMaxFloor && effectiveMaxFloorValue) {
     serializedConstraints.push({
       key: "max_floor",
-      label: `أقصى دور مسموح به هو الدور ${maxFloorValue}`,
-      value: Number(maxFloorValue),
+      label: `أقصى دور مسموح به هو الدور ${
+        !isNaN(normalizedMaxFloorNumber)
+          ? normalizedMaxFloorNumber
+          : effectiveMaxFloorValue
+      }`,
+      value: !isNaN(normalizedMaxFloorNumber)
+        ? normalizedMaxFloorNumber
+        : Number(effectiveMaxFloorValue),
     });
   }
   customConstraints.forEach((c) => {
@@ -533,15 +610,39 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
       weight: p.weight,
     }));
 
+  if (pendingParsed?.preferences) {
+    for (const pref of pendingParsed.preferences) {
+      const normIncoming = stripArabicDiacritics(pref.label)
+        .replace(/^ال/, "")
+        .trim();
+      const alreadyExists = serializedPreferences.some((existing) => {
+        const normExisting = stripArabicDiacritics(existing.label)
+          .replace(/^ال/, "")
+          .trim();
+        return normExisting === normIncoming;
+      });
+      if (!alreadyExists && serializedPreferences.length < 10) {
+        serializedPreferences.push({
+          label: pref.label.trim(),
+          weight: pref.weight,
+        });
+      }
+    }
+  }
+
   const serializedLocations = locations
-    .filter((l) => l.label.trim() || l.address_text.trim())
+    .filter((l) => l.address_text.trim().length > 0)
     .map((l) => ({
-      label: l.label.trim(),
+      label: l.label.trim() || "موقع مهم",
       address_text: l.address_text.trim(),
       frequency: l.frequency,
     }));
 
-  const parsedBudget = Number(budget);
+  const preprocessedBudget = preprocessNumericInput(effectiveBudgetValue);
+  const parsedBudget =
+    typeof preprocessedBudget === "number"
+      ? preprocessedBudget
+      : Number(preprocessedBudget);
   const showBudgetPreview = !isNaN(parsedBudget) && parsedBudget > 0;
 
   return (
@@ -662,11 +763,12 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             </div>
             <button
               type="button"
-              onClick={() =>
-                setFreeTextNeeds(
-                  "أبحث عن شقة جديدة 4 غرف بمساحة 150 متر وميزانية 900 ألف كاش لأسرة من 4 أفراد مع مصعد وموقف خاص قريبة من حي الملقا"
-                )
-              }
+              onClick={() => {
+                const sample =
+                  "أبحث عن شقة جديدة 4 غرف بمساحة 150 متر وميزانية 900 ألف كاش لأسرة من 4 أفراد، لا أشترط مصعدًا ولا موقفًا، وأفضل الهدوء قريبة من حي الملقا";
+                setFreeTextNeeds(sample);
+                applyParsedNeeds(sample, true);
+              }}
               className="self-start sm:self-center text-sm font-semibold text-[var(--dusty-blue)] hover:text-[var(--navy)] underline underline-offset-4 cursor-pointer"
             >
               جرّب مثالاً
@@ -677,8 +779,16 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             <textarea
               value={freeTextNeeds}
               onChange={(e) => setFreeTextNeeds(e.target.value)}
+              onBlur={() => {
+                if (
+                  freeTextNeeds.trim() &&
+                  freeTextNeeds.trim() !== lastParsedTextRef.current
+                ) {
+                  applyParsedNeeds(freeTextNeeds, false);
+                }
+              }}
               rows={2}
-              placeholder="مثال: شقة 4 غرف، 150 م²، 900 ألف كاش، مع مصعد، قرب حي العليا"
+              placeholder="مثال: شقة 4 غرف، 150 م²، 900 ألف كاش، لا أشترط مصعدًا ولا موقفًا، وأفضل الهدوء"
               className="w-full px-4 py-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all resize-none"
             />
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -730,11 +840,13 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               <input
                 id="max_budget_sar"
                 name="max_budget_sar"
-                type="number"
-                value={budget}
+                type="text"
+                inputMode="numeric"
+                dir="ltr"
+                value={effectiveBudgetValue}
                 onChange={(e) => setBudget(e.target.value)}
-                placeholder="مثال: 950000"
-                className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                placeholder="مثال: 800000 أو ٨٠٠٠٠٠"
+                className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-right text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
               />
 
               {showBudgetPreview && (
@@ -754,7 +866,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               <label className="block text-xs font-bold text-[var(--navy)]">
                 طريقة الشراء
               </label>
-              <input type="hidden" name="purchase_method" value={purchaseMethod} />
+              <input type="hidden" name="purchase_method" value={effectivePurchaseMethod} />
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -832,13 +944,13 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                 <input
                   id="household_size"
                   name="household_size"
-                  type="number"
-                  min={1}
-                  max={25}
-                  value={householdSize}
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={effectiveHouseholdSizeValue}
                   onChange={(e) => setHouseholdSize(e.target.value)}
-                  placeholder="مثال: 5"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                  placeholder="مثال: 5 أو ٥"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-right text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
                 />
               </div>
               {state?.errors?.household_size?.[0] && (
@@ -855,13 +967,13 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                 <input
                   id="min_bedrooms"
                   name="min_bedrooms"
-                  type="number"
-                  min={1}
-                  max={15}
-                  value={minBedrooms}
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={effectiveMinBedroomsValue}
                   onChange={(e) => setMinBedrooms(e.target.value)}
-                  placeholder="مثال: 3"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                  placeholder="مثال: 3 أو ٣"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-right text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
                 />
               </div>
               {state?.errors?.min_bedrooms?.[0] && (
@@ -878,13 +990,13 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                 <input
                   id="min_area_sqm"
                   name="min_area_sqm"
-                  type="number"
-                  min={30}
-                  max={5000}
-                  value={minAreaSqm}
+                  type="text"
+                  inputMode="numeric"
+                  dir="ltr"
+                  value={effectiveMinAreaSqmValue}
                   onChange={(e) => setMinAreaSqm(e.target.value)}
-                  placeholder="مثال: 150"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
+                  placeholder="مثال: 150 أو ١٥٠"
+                  className="w-full px-4 py-3.5 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] text-right text-sm font-bold text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none transition-all"
                 />
               </div>
               {state?.errors?.min_area_sqm?.[0] && (
@@ -1056,13 +1168,13 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
                 <div className="pt-2 border-t border-[var(--mist)]">
                   <input
                     id="max_floor_val"
-                    type="number"
-                    min={0}
-                    max={50}
+                    type="text"
+                    inputMode="numeric"
+                    dir="ltr"
                     value={maxFloorValue}
                     onChange={(e) => setMaxFloorValue(e.target.value)}
-                    placeholder="رقم الدور الأقصى (مثال: 3)"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-bold text-[var(--navy)] focus:border-[var(--navy)] outline-none"
+                    placeholder="رقم الدور الأقصى (مثال: 3 أو ٣)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-right text-xs font-bold text-[var(--navy)] focus:border-[var(--navy)] outline-none"
                   />
                 </div>
               )}
@@ -1137,7 +1249,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[var(--navy)]">
-                  ما يهمك أكثر
+                  ما يهمك أكثر (اختياري)
                 </span>
               </div>
               <span className="text-xs font-bold text-[var(--dusty-blue)]">
@@ -1145,47 +1257,93 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               </span>
             </div>
 
-            <div className="space-y-3">
-              {preferences.map((pref) => (
-                <div
-                  key={pref.id}
-                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)]"
-                >
-                  <input
-                    value={pref.label}
-                    maxLength={80}
-                    onChange={(e) => handleUpdatePreference(pref.id, "label", e.target.value)}
-                    placeholder="مثال: واجهة شمالية"
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
-                  />
-                  <div className="w-full sm:w-44">
-                    <select
-                      value={pref.weight}
-                      onChange={(e) =>
-                        handleUpdatePreference(
-                          pref.id,
-                          "weight",
-                          e.target.value as PreferenceWeight
-                        )
-                      }
-                      className="w-full rounded-xl border border-[var(--mist)] bg-[var(--paper)] px-3 py-2.5 text-xs font-bold text-[var(--navy)] shadow-xs focus:border-[var(--navy)] focus:outline-none"
+            {/* Selectable Preference Suggestion Chips (only added if the user selects them) */}
+            <div className="space-y-2">
+              <p className="text-[11px] text-[var(--dusty-blue)]">
+                اختر بنفسك ما تفضّله لإضافته، أو اكتب تفضيلك الخاص:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {PREFERENCE_SUGGESTIONS.map((sug) => {
+                  const normSug = stripArabicDiacritics(sug.label)
+                    .replace(/^ال/, "")
+                    .trim();
+                  const isSelected = preferences.some((p) => {
+                    const normExisting = stripArabicDiacritics(p.label)
+                      .replace(/^ال/, "")
+                      .trim();
+                    return normExisting === normSug;
+                  });
+                  return (
+                    <button
+                      key={sug.label}
+                      type="button"
+                      onClick={() => handleToggleSuggestedPreference(sug)}
+                      aria-pressed={isSelected}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[var(--navy)] text-[var(--cream)] border-[var(--navy)] shadow-xs"
+                          : "bg-[var(--cream)] text-[var(--navy)] border-[var(--mist)] hover:border-[var(--navy)]"
+                      }`}
                     >
-                      <option value="high">أهمية عالية</option>
-                      <option value="medium">أهمية متوسطة</option>
-                      <option value="low">أهمية منخفضة</option>
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePreference(pref.id)}
-                    className="p-2.5 text-[var(--dusty-blue)] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
-                    title="حذف التفضيل"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                      {isSelected ? (
+                        <Check className="w-3.5 h-3.5 shrink-0" />
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 shrink-0 text-[var(--dusty-blue)]" />
+                      )}
+                      <span>{sug.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {preferences.length > 0 ? (
+              <div className="space-y-3">
+                {preferences.map((pref) => (
+                  <div
+                    key={pref.id}
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 p-3 rounded-2xl bg-[var(--cream)] border border-[var(--mist)]"
+                  >
+                    <input
+                      value={pref.label}
+                      maxLength={80}
+                      onChange={(e) => handleUpdatePreference(pref.id, "label", e.target.value)}
+                      placeholder="مثال: الهدوء"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl bg-[var(--paper)] border border-[var(--mist)] text-xs font-medium text-[var(--navy)] placeholder:text-[var(--dusty-blue)]/50 focus:border-[var(--navy)] outline-none"
+                    />
+                    <div className="w-full sm:w-44">
+                      <select
+                        value={pref.weight}
+                        onChange={(e) =>
+                          handleUpdatePreference(
+                            pref.id,
+                            "weight",
+                            e.target.value as PreferenceWeight
+                          )
+                        }
+                        className="w-full rounded-xl border border-[var(--mist)] bg-[var(--paper)] px-3 py-2.5 text-xs font-bold text-[var(--navy)] shadow-xs focus:border-[var(--navy)] focus:outline-none"
+                      >
+                        <option value="high">أهمية عالية</option>
+                        <option value="medium">أهمية متوسطة</option>
+                        <option value="low">أهمية منخفضة</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePreference(pref.id)}
+                      className="p-2.5 text-[var(--dusty-blue)] hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all self-end sm:self-center cursor-pointer"
+                      title="حذف التفضيل"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-4 py-3 rounded-2xl bg-[var(--cream)]/60 border border-dashed border-[var(--mist)] text-xs text-[var(--dusty-blue)]">
+                لم تُضف أي تفضيلات بعد — لن يُفترض أي تفضيل إلا إذا اخترته أو كتبته بنفسك.
+              </div>
+            )}
 
             <button
               type="button"
@@ -1194,7 +1352,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--cream)] hover:bg-[var(--paper)] text-[var(--navy)] border border-[var(--mist)] text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>أضف تفضيلاً</span>
+              <span>أضف تفضيلاً آخر</span>
             </button>
 
             {state?.errors?.preferences?.[0] && (
@@ -1207,7 +1365,7 @@ export function NeedsForm({ caseId, initialData, city, initialContext }: NeedsFo
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[var(--navy)]">
-                  أماكن تذهب إليها كثيراً
+                  أماكن تذهب إليها كثيراً (اختياري)
                 </span>
               </div>
               <span className="text-xs font-bold text-[var(--dusty-blue)]">

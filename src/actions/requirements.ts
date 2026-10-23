@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requirementsSchema } from "@/lib/schemas/requirements";
@@ -89,6 +90,10 @@ export async function saveRequirements(
     .update({ status: "needs_complete" })
     .eq("id", caseId)
     .eq("status", "draft");
+
+  revalidatePath(`/case/${caseId}/needs`);
+  revalidatePath(`/case/${caseId}/properties`);
+  revalidatePath(`/case/${caseId}/preflight`);
 
   redirect(`/case/${caseId}/properties`);
 }

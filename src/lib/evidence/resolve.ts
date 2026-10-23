@@ -62,10 +62,14 @@ function resolveSingleField(
   // Rule 1: If any user_correction exists for the field, the most recent one wins -> known / user_stated
   const userCorrections = fieldFacts.filter((f) => f.source === "user_correction");
   if (userCorrections.length > 0) {
-    userCorrections.sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-    const winner = userCorrections[0];
+    const indexedCorrections = userCorrections.map((f, idx) => ({ f, idx }));
+    indexedCorrections.sort((a, b) => {
+      const timeDiff =
+        new Date(b.f.created_at).getTime() - new Date(a.f.created_at).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      return b.idx - a.idx;
+    });
+    const winner = indexedCorrections[0].f;
     return {
       status: "known",
       value: winner.value,

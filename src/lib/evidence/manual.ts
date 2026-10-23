@@ -10,6 +10,7 @@ export interface ManualPropertyInput {
   listing_price_sar?: number | null;
   area_sqm?: number | null;
   bedrooms?: number | null;
+  bathrooms?: number | null;
   floor_no?: number | null;
 }
 
@@ -52,6 +53,19 @@ export function createManualFacts(property: ManualPropertyInput): PropertyFactIn
       field: "bedrooms",
       value: Number(property.bedrooms),
       raw_text: String(property.bedrooms),
+      scope: "unit",
+      source: "manual",
+      evidence_text: null,
+      evidence_verified: false,
+    });
+  }
+
+  if (property.bathrooms !== null && property.bathrooms !== undefined) {
+    facts.push({
+      property_id: propertyId,
+      field: "bathrooms",
+      value: Number(property.bathrooms),
+      raw_text: String(property.bathrooms),
       scope: "unit",
       source: "manual",
       evidence_text: null,

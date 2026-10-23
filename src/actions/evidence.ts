@@ -130,3 +130,108 @@ export async function submitCorrection(
     success: true,
   };
 }
+
+export async function submitBulkManualFacts(
+  caseId: string,
+  propertyId: string,
+  fields: Partial<Record<FieldKey, string>>
+): Promise<EvidenceActionState> {
+  await requireCase(caseId);
+
+  const supabase = createClient();
+  const { data: property, error: propErr } = await supabase
+    .from("properties")
+    .select("id")
+    .eq("id", propertyId)
+    .eq("case_id", caseId)
+    .maybeSingle();
+
+  if (propErr || !property) {
+    return {
+      errors: {
+        form: ["العقار غير موجود أو لا تملك صلاحية الوصول إليه"],
+      },
+    };
+  }
+
+  const errors: Record<string, string[]> = {};
+  const rowsToInsert: Array<{
+    property_id: string;
+    field: FieldKey;
+    value: Json;
+    raw_text: string;
+    scope: string;
+    source: string;
+    evidence_text: null;
+    evidence_verified: boolean;
+  }> = [];
+
+  for (const [key, raw] of Object.entries(fields)) {
+    const rawValue = (raw ?? "").trim();
+    if (!rawValue) continue;
+    if (!(key in FIELD_REGISTRY) || key === "listing_claim") continue;
+
+    const fieldKey = key as FieldKey;
+    const fieldDef = FIELD_REGISTRY[fieldKey];
+    const normalized = normalizeField(fieldKey, rawValue);
+
+    if (normalized === null) {
+      let msg = `القيمة المدخلة لـ "${fieldDef.label}" غير صالحة`;
+      if (
+        "min" in fieldDef &&
+        "max" in fieldDef &&
+        fieldDef.min !== undefined &&
+        fieldDef.max !== undefined
+      ) {
+        msg = `${fieldDef.label} يجب أن تكون بين ${fieldDef.min} و ${fieldDef.max}`;
+      }
+      errors[fieldKey] = [msg];
+      continue;
+    }
+
+    const scope = ("scope" in fieldDef ? fieldDef.scope : undefined) ?? "unit";
+    rowsToInsert.push({
+      property_id: propertyId,
+      field: fieldKey,
+      value: normalized as unknown as Json,
+      raw_text: rawValue,
+      scope,
+      source: "user_correction",
+      evidence_text: null,
+      evidence_verified: false,
+    });
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { errors };
+  }
+
+  if (rowsToInsert.length === 0) {
+    return {
+      errors: {
+        form: ["يرجى إدخال حقل واحد على الأقل للحفظ"],
+      },
+    };
+  }
+
+  const { error: insertErr } = await adminSupabase
+    .from("property_facts")
+    .insert(rowsToInsert);
+
+  if (insertErr) {
+    return {
+      errors: {
+        form: [insertErr.message || "حدث خطأ أثناء حفظ البيانات"],
+      },
+    };
+  }
+
+  try {
+    revalidatePath(`/case/${caseId}/properties/${propertyId}`);
+    revalidatePath(`/case/${caseId}/properties`);
+  } catch {
+    // Ignore outside Next.js request context
+  }
+
+  return { success: true };
+}

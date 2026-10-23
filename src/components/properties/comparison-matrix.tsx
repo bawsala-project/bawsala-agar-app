@@ -44,6 +44,9 @@ export interface ComparisonItem {
   main_advantage_ar?: string;
   main_tradeoff_ar?: string;
   what_could_change_rank_ar?: string;
+  ranking_reason_ar?: string;
+  preferences_impact_ar?: string;
+  score_vs_rank_note_ar?: string;
   strengths: string[];
   risks: string[];
   key_unknowns: string[];
@@ -582,6 +585,14 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
                     key={item.id}
                     className="p-4 sm:p-5 text-sm border-l border-[var(--mist)] align-top space-y-2 leading-relaxed"
                   >
+                    {item.ranking_reason_ar && (
+                      <div className="text-[var(--navy)] font-medium">
+                        <span className="text-[var(--navy)] font-bold">
+                          السبب:{" "}
+                        </span>
+                        {item.ranking_reason_ar}
+                      </div>
+                    )}
                     <div className="text-[var(--navy)] font-medium">
                       <span className="text-[#1E6B43] font-bold">الميزة: </span>
                       {item.main_advantage_ar ||
@@ -596,6 +607,16 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
                         </span>
                         {item.tradeoffs?.[0] ||
                           item.main_tradeoff_ar}
+                      </div>
+                    )}
+                    {item.preferences_impact_ar && (
+                      <div className="text-xs text-[var(--dusty-blue)] pt-1 border-t border-[var(--mist)]/60">
+                        {item.preferences_impact_ar}
+                      </div>
+                    )}
+                    {item.score_vs_rank_note_ar && (
+                      <div className="text-xs text-[#9A6700] bg-[#FFF9EC] border border-[#F9E2AF] rounded-xl px-2.5 py-1.5 font-medium">
+                        {item.score_vs_rank_note_ar}
                       </div>
                     )}
                   </td>
@@ -692,6 +713,11 @@ export function ComparisonMatrix({ items, caseId }: ComparisonMatrixProps) {
             main_tradeoff_ar: activePropertyForSheet.main_tradeoff_ar,
             what_could_change_rank_ar:
               activePropertyForSheet.what_could_change_rank_ar,
+            ranking_reason_ar: activePropertyForSheet.ranking_reason_ar,
+            preferences_impact_ar:
+              activePropertyForSheet.preferences_impact_ar,
+            score_vs_rank_note_ar:
+              activePropertyForSheet.score_vs_rank_note_ar,
             strengths: activePropertyForSheet.strengths,
             risks: activePropertyForSheet.risks,
             key_unknowns: activePropertyForSheet.key_unknowns,

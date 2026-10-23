@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolveFacts, type PropertyFact } from "./resolve";
+import { createManualFacts } from "./manual";
+import { manualPropertySchema } from "@/lib/schemas/property";
 
 function createMockFact(overrides: Partial<PropertyFact>): PropertyFact {
   return {
@@ -184,5 +186,55 @@ describe("resolve.ts - Resolution test suite", () => {
     expect(result.claims.unit[0].value).toBe("إطلالة بانورامية رائعة");
     expect(result.claims.building).toHaveLength(1);
     expect(result.claims.neighborhood).toHaveLength(1);
+  });
+
+  it("Client Note #5: prefers the latest inserted user_correction when created_at timestamps are identical", () => {
+    const sameTimestamp = "2026-10-04T02:00:00.000Z";
+    const firstSave = createMockFact({
+      id: "c_first",
+      field: "bathrooms",
+      value: 2,
+      source: "user_correction",
+      created_at: sameTimestamp,
+    });
+    const secondSave = createMockFact({
+      id: "c_second",
+      field: "bathrooms",
+      value: 3,
+      raw_text: "٣ دورات مياه",
+      source: "user_correction",
+      created_at: sameTimestamp,
+    });
+
+    const result = resolveFacts([firstSave, secondSave]);
+    expect(result.bathrooms).toEqual({
+      status: "known",
+      value: 3,
+      certainty: "user_stated",
+      factIds: ["c_second"],
+    });
+  });
+
+  it("Client Note #5: manualPropertySchema & createManualFacts persist bathrooms ('٣ دورات مياه' -> 3)", () => {
+    const parsed = manualPropertySchema.safeParse({
+      input_mode: "manual",
+      title: "شقة النرجس",
+      listing_price_sar: "٨٠٠٠٠٠",
+      area_sqm: "١٥٠",
+      bedrooms: "٤",
+      bathrooms: "٣ دورات مياه",
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.bathrooms).toBe(3);
+      const facts = createManualFacts({
+        id: "prop-manual-1",
+        ...parsed.data,
+      });
+      const bathroomsFact = facts.find((f) => f.field === "bathrooms");
+      expect(bathroomsFact).toBeDefined();
+      expect(bathroomsFact?.value).toBe(3);
+    }
   });
 });

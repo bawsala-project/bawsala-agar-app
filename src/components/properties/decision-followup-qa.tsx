@@ -69,18 +69,21 @@ export function DecisionFollowupQA({
           <div className="w-10 h-10 rounded-2xl bg-[var(--cream)] border border-[var(--mist)] flex items-center justify-center text-[var(--navy)] shrink-0">
             <HelpCircle className="w-5 h-5" />
           </div>
-          <div>
+          <div className="space-y-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <h2
                 id="decision-qa-heading"
                 className="text-base sm:text-lg font-display font-bold text-[var(--navy)]"
               >
-                أسئلة المتابعة
+                أسئلة المتابعة حول قرارك
               </h2>
               <span className="px-2.5 py-0.5 rounded-full bg-[#E9F4EE] text-[#1E6B43] border border-[#C5E4D4] text-[11px] font-bold">
                 مجاناً
               </span>
             </div>
+            <p className="text-xs text-[var(--dusty-blue)]">
+              إجابات مباشرة مبنية على مقارنة الشقق المرشحة مع شروطك وميزانيتك
+            </p>
           </div>
         </div>
       </div>
@@ -147,7 +150,7 @@ export function DecisionFollowupQA({
                     <li>
                       <strong>سبب تقدمه على المركز الثاني ({second.title}):</strong>{" "}
                       {top.constraint_summary.fail < second.constraint_summary.fail
-                        ? `التزامه بشروطك الأساسية بينما خالف (${second.title}) ${second.constraint_summary.fail} من شروطك (${second.main_tradeoff_ar}).`
+                        ? `التزامه بشروطك الأساسية بينما خالف (${second.title}) ${second.constraint_summary.fail} من شروطك — ${second.main_tradeoff_ar.replace(/\s*\(شرط ملزم للمستخدم\)/g, "")}.`
                         : closeOptions
                           ? "الخياران متقاربان جداً؛ تفوق الأول بفارق طفيف."
                           : `تفوق في درجة الملاءمة وكفاءة سعر المتر مقارنة بـ (${second.title}).`}
