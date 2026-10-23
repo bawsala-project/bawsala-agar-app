@@ -205,7 +205,7 @@ export function preprocessNumericInput(val: unknown): number | string | undefine
   if (!trimmed) return undefined;
 
   // Normalize Eastern Arabic / Extended Arabic-Indic digits and decimal/thousand separators
-  let normalized = stripDiacritics(normalizeArabicDigits(trimmed))
+  const normalized = stripDiacritics(normalizeArabicDigits(trimmed))
     .replace(/(\d)\s*[,،٬_]\s*(\d)/g, "$1$2")
     .replace(/[,،٬]/g, "")
     .replace(
